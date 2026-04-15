@@ -100,17 +100,17 @@ Meta del sprint:
 Tener el banco de preguntas con modelo DCE y datos semilla del Saber 11.
 
 Checklist:
-- [ ] Implementar modelo de datos de areas, competencias, afirmaciones y evidencias.
-- [ ] Crear migraciones y seeds de taxonomia para 5 areas.
-- [ ] Exponer APIs de consulta de taxonomia.
-- [ ] Implementar CRUD base de preguntas manuales.
-- [ ] Implementar estados DRAFT, PENDING_REVIEW, APPROVED, REJECTED, ARCHIVED.
-- [ ] Validar reglas de negocio para preguntas de 3 y 4 opciones.
+- [x] Implementar modelo de datos de areas, competencias, afirmaciones y evidencias.
+- [x] Crear migraciones y seeds de taxonomia para 5 areas.
+- [x] Exponer APIs de consulta de taxonomia.
+- [x] Implementar CRUD base de preguntas manuales.
+- [x] Implementar estados DRAFT, PENDING_REVIEW, APPROVED, REJECTED, ARCHIVED.
+- [x] Validar reglas de negocio para preguntas de 3 y 4 opciones.
 
 Criterios de aceptacion:
-- [ ] Seed completo cargado sin errores.
-- [ ] Docente/Admin pueden crear y consultar preguntas por filtros.
-- [ ] Flujo de revision cambia estado de forma auditable.
+- [x] Seed completo cargado sin errores.
+- [x] Docente/Admin pueden crear y consultar preguntas por filtros.
+- [x] Flujo de revision cambia estado de forma auditable.
 
 ### Sprint 5 (Semanas 9-10) - Estrategia visual: upload y asset library
 
