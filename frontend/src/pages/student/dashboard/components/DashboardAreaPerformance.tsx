@@ -10,8 +10,8 @@ const CIRCUMFERENCE = 2 * Math.PI * 34; // ≈ 213.6
 
 export default function DashboardAreaPerformance({ items, loading }: DashboardAreaPerformanceProps) {
   return (
-    <section className="flex h-full flex-col rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-8">
-      <div className="mb-8 flex items-center justify-between">
+    <section className="flex h-full flex-col rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-6 sm:p-8">
+      <div className="mb-6 flex items-center justify-between sm:mb-8">
         <h2 className="text-xl font-bold tracking-tight">Rendimiento por área</h2>
         <button type="button" className="text-sm font-semibold text-primary hover:underline">
           Análisis completo
@@ -24,7 +24,7 @@ export default function DashboardAreaPerformance({ items, loading }: DashboardAr
           description="Completa el diagnóstico o activa tu plan para ver la distribución académica por área."
         />
       ) : (
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-8 md:grid-cols-5">
           {(loading
             ? [
                 { id: "l1", label: "Matemáticas", progressPercent: 0 },
@@ -40,9 +40,9 @@ export default function DashboardAreaPerformance({ items, loading }: DashboardAr
               : CIRCUMFERENCE * (1 - Math.min(item.progressPercent, 100) / 100);
 
             return (
-              <div key={item.id} className="flex flex-col items-center gap-3">
-                <div className="relative flex h-20 w-20 items-center justify-center">
-                  <svg className="-rotate-90" viewBox="0 0 80 80" width="80" height="80">
+              <div key={item.id} className="flex flex-col items-center gap-2 sm:gap-3">
+                <div className="relative mx-auto aspect-square w-full max-w-18 sm:max-w-20">
+                  <svg className="h-full w-full -rotate-90" viewBox="0 0 80 80">
                     <circle
                       className="text-surface-container-high"
                       cx="40"
@@ -65,7 +65,7 @@ export default function DashboardAreaPerformance({ items, loading }: DashboardAr
                       style={{ transition: "stroke-dashoffset 0.5s ease" }}
                     />
                   </svg>
-                  <span className="absolute text-sm font-black">
+                  <span className="absolute inset-0 flex items-center justify-center text-xs font-black sm:text-sm">
                     {loading ? "" : `${Math.round(item.progressPercent)}`}
                   </span>
                 </div>

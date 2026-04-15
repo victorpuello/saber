@@ -912,6 +912,12 @@ export async function fetchTeacherDashboardSummary(
   };
 }
 
+export interface AdminDashboardModuleHealth {
+  questionBank: StudentDashboardModuleHealth;
+  analytics: StudentDashboardModuleHealth;
+  notifications: StudentDashboardModuleHealth;
+}
+
 export interface AdminDashboardSummary {
   questionBankTotal: number;
   pendingReviewQuestions: number;
@@ -920,6 +926,7 @@ export interface AdminDashboardSummary {
   avgQuestionAccuracy: number | null;
   unreadNotifications: number;
   recentAuditEntries: number;
+  moduleHealth: AdminDashboardModuleHealth;
   errors: string[];
 }
 
@@ -932,6 +939,21 @@ export async function fetchAdminDashboardSummary(authFetch: AuthFetch): Promise<
     safeCall(() => authFetch<unknown[]>("/api/notifications/audit?limit=5"), { optionalStatuses: [404] }),
   ]);
 
+  const questionBankStatus: DashboardDataStatus = questionStatsRes.error
+    ? "degraded"
+    : (questionStatsRes.data?.total ?? 0) > 0
+      ? "connected"
+      : "pending";
+
+  const analyticsStatus: DashboardDataStatus =
+    institutionRes.error ?? performanceRes.error
+      ? "degraded"
+      : institutionRes.data
+        ? "connected"
+        : "pending";
+
+  const notificationsStatus: DashboardDataStatus = notificationsRes.error ? "degraded" : "connected";
+
   return {
     questionBankTotal: questionStatsRes.data?.total ?? 0,
     pendingReviewQuestions: questionStatsRes.data?.by_status?.PENDING_REVIEW ?? 0,
@@ -940,6 +962,11 @@ export async function fetchAdminDashboardSummary(authFetch: AuthFetch): Promise<
     avgQuestionAccuracy: performanceRes.data?.avg_accuracy_rate ?? null,
     unreadNotifications: notificationsRes.data?.unread ?? 0,
     recentAuditEntries: auditRes.data?.length ?? 0,
+    moduleHealth: {
+      questionBank: { status: questionBankStatus, error: questionStatsRes.error },
+      analytics: { status: analyticsStatus, error: institutionRes.error ?? performanceRes.error },
+      notifications: { status: notificationsStatus, error: notificationsRes.error },
+    },
     errors: compactErrors(
       questionStatsRes.error,
       institutionRes.error,

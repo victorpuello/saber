@@ -17,7 +17,7 @@ export default function DashboardNotificationsPreview({
   const unreadCount = items.filter((item) => item.unread).length;
 
   return (
-    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-8">
+    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-6 sm:p-8">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold tracking-tight">Notificaciones recientes</h2>
@@ -25,7 +25,7 @@ export default function DashboardNotificationsPreview({
         </div>
         <button
           type="button"
-          className="rounded-xl bg-surface-container px-3 py-2 text-xs font-semibold text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-40"
+          className="min-h-11 shrink-0 rounded-xl bg-surface-container px-3 py-2 text-xs font-semibold text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-40"
           disabled={loading || markingRead || unreadCount === 0}
           onClick={onMarkAllRead}
         >

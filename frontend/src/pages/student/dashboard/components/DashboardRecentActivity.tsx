@@ -20,8 +20,8 @@ function toneClasses(tone: DashboardActivityModel["tone"]): string {
 
 export default function DashboardRecentActivity({ items, loading }: DashboardRecentActivityProps) {
   return (
-    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-8">
-      <h2 className="mb-6 text-xl font-bold tracking-tight">Actividad reciente</h2>
+    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-6 sm:p-8">
+      <h2 className="mb-5 text-lg font-bold tracking-tight sm:mb-6 sm:text-xl">Actividad reciente</h2>
 
       {items.length === 0 ? (
         <DashboardSectionEmptyState
@@ -43,7 +43,7 @@ export default function DashboardRecentActivity({ items, loading }: DashboardRec
                 <div className="flex-1">
                   <p className="text-sm font-bold">{item.title}</p>
                   {loading ? (
-                    <div className="mt-1 h-3.5 w-48 animate-pulse rounded bg-surface-container-high" />
+                    <div className="mt-1 h-3.5 w-32 animate-pulse rounded bg-surface-container-high sm:w-48" />
                   ) : (
                     <p className="text-xs text-secondary">{item.detail}</p>
                   )}
@@ -54,7 +54,7 @@ export default function DashboardRecentActivity({ items, loading }: DashboardRec
 
           <button
             type="button"
-            className="mt-8 w-full rounded-xl py-3 text-sm font-bold text-primary transition-colors hover:bg-primary/5"
+            className="mt-6 min-h-11 w-full rounded-xl py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/5 sm:mt-8 sm:py-3"
           >
             Ver toda la actividad
           </button>

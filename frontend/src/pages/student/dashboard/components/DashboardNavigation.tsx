@@ -6,7 +6,7 @@ interface DashboardNavigationProps {
 
 const NAV_ITEMS = [
   { to: "/student", label: "Dashboard", icon: "dashboard" },
-  { to: "/student/diagnostico", label: "Diagnostic", icon: "analytics" },
+  { to: "/student/diagnostico", label: "Diagnóstico", icon: "analytics" },
   { to: "/student/plan", label: "Study Plan", icon: "auto_stories" },
   { to: "/student/resultados", label: "Results", icon: "military_tech" },
 ];

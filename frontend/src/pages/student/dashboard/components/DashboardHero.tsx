@@ -7,24 +7,24 @@ interface DashboardHeroProps {
 
 export default function DashboardHero({ model, loading }: DashboardHeroProps) {
   return (
-    <article className="flex h-full min-h-80 flex-col justify-between rounded-4xl bg-linear-to-br from-primary to-primary-container p-8 text-white shadow-lg shadow-primary/10">
+    <article className="flex h-full min-h-64 flex-col justify-between rounded-4xl bg-linear-to-br from-primary to-primary-container p-6 text-white shadow-lg shadow-primary/10 sm:min-h-80 sm:p-8">
       <div>
         <span className="text-xs font-bold uppercase tracking-widest opacity-80">{model.title}</span>
         <div className="mt-4 flex items-baseline gap-2">
           {loading ? (
-            <div className="h-16 w-40 animate-pulse rounded-lg bg-white/30" />
+            <div className="h-12 w-32 animate-pulse rounded-lg bg-white/30 sm:h-16 sm:w-40" />
           ) : (
             <>
-              <span className="text-7xl font-black tracking-tighter">{model.value}</span>
+              <span className="text-5xl font-black tracking-tighter sm:text-6xl md:text-7xl">{model.value}</span>
               {model.maxValueLabel && (
-                <span className="text-xl font-medium opacity-60">{model.maxValueLabel}</span>
+                <span className="text-lg font-medium opacity-60 sm:text-xl">{model.maxValueLabel}</span>
               )}
             </>
           )}
         </div>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-6 sm:mt-8">
         <div className="mb-2 flex items-end justify-between">
           <span className="text-sm font-medium">{model.trendLabel}</span>
           <span className="text-sm font-medium">{model.progressPercent}%</span>

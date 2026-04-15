@@ -34,19 +34,33 @@ setInterval(() => {
 
 /**
  * Mapea el rol de Kampus (Django) al rol del simulador.
- * Kampus puede enviar: is_staff, is_superuser, groups, o un campo rol personalizado.
+ * Kampus puede enviar: is_staff, is_superuser, groups, o un campo role/tipo personalizado.
  */
 function mapKampusRole(kampusUser) {
+  // 1. Flags de Django admin
   if (kampusUser.is_superuser || kampusUser.is_staff) {
     return "ADMIN";
   }
 
-  // Verificar grupos de Kampus
+  // 2. Campo role/tipo explícito que Kampus pueda incluir
+  const explicitRole = (kampusUser.role || kampusUser.tipo || kampusUser.tipo_usuario || "").toLowerCase();
+  if (["admin", "administrador", "administrator", "superadmin", "super_admin", "super-admin"].includes(explicitRole)) {
+    return "ADMIN";
+  }
+  if (explicitRole === "teacher" || explicitRole === "docente" || explicitRole === "profesor") {
+    return "TEACHER";
+  }
+
+  // 3. Verificar grupos de Kampus
   const groups = (kampusUser.groups || []).map((g) =>
     typeof g === "string" ? g.toLowerCase() : (g.name || "").toLowerCase()
   );
 
-  if (groups.includes("docentes") || groups.includes("teachers")) {
+  if (groups.some((g) => ["admin", "admins", "administrador", "administradores", "administrator"].includes(g))) {
+    return "ADMIN";
+  }
+
+  if (groups.some((g) => ["docentes", "teachers", "docente", "teacher", "profesores"].includes(g))) {
     return "TEACHER";
   }
 
@@ -102,7 +116,10 @@ router.post("/api/auth/login", ipLimiter, async (req, res) => {
   }
 
   try {
-    // ─── Modo desarrollo: permite cuentas demo y fallback a Kampus ───────
+    // ─── Modo desarrollo: permite cuentas demo con contraseña "demo1234" ────
+    // Solo intercepta si username Y contraseña coinciden exactamente con una
+    // cuenta demo. Cualquier otro caso cae a Kampus para no bloquear usuarios
+    // reales cuyo username coincida con un nombre demo.
     if (config.devAuthEnabled) {
       const devUser = DEV_USERS[username.toLowerCase()];
 
@@ -116,13 +133,8 @@ router.post("/api/auth/login", ipLimiter, async (req, res) => {
         });
       }
 
-      // Si intenta usar una cuenta demo con clave incorrecta, fallar rápido.
-      if (devUser && password !== "demo1234") {
-        logger.info({ username }, "Login dev fallido — contraseña demo inválida");
-        return res.status(401).json({ error: "Credenciales inválidas" });
-      }
-
-      logger.info({ username }, "Usuario no demo en modo dev — se intenta autenticación Kampus");
+      // Contraseña ≠ demo1234 → intentar Kampus aunque el username coincida
+      // con un usuario demo (puede ser un usuario real de Kampus con ese nombre).
     }
 
     // 1. Autenticar contra Kampus (SimpleJWT por defecto)
@@ -175,6 +187,21 @@ router.post("/api/auth/login", ipLimiter, async (req, res) => {
     }
 
     const kampusUser = await userRes.json();
+
+    // Log para diagnóstico de mapeo de roles
+    logger.info(
+      {
+        kampus_id: kampusUser.id,
+        is_staff: kampusUser.is_staff,
+        is_superuser: kampusUser.is_superuser,
+        role: kampusUser.role,
+        tipo: kampusUser.tipo,
+        groups: (kampusUser.groups || []).map((g) =>
+          typeof g === "string" ? g : g.name
+        ),
+      },
+      "Datos de usuario recibidos desde Kampus"
+    );
 
     // 3. Mapear a estructura del simulador
     const userData = {

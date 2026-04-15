@@ -1,91 +1,120 @@
-import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { fetchAdminDashboardSummary, type AdminDashboardSummary } from "../../services/dashboard";
+import { useAuth } from "../../context/AuthContext";
+import { useAdminDashboardViewModel } from "./dashboard/useAdminDashboardViewModel";
+import type { AdminQuickActionModel } from "./dashboard/types";
+import {
+  AdminErrorBanner,
+  AdminHero,
+  AdminInstitutionStats,
+  AdminMetricsGrid,
+  AdminModulesStatus,
+  AdminQuestionBankCard,
+  AdminQuickActions,
+} from "./dashboard/components";
 
 export default function AdminDashboard() {
-  const { user, logout, authFetch } = useAuth();
+  const { user, authFetch } = useAuth();
   const navigate = useNavigate();
-  const [loadingSummary, setLoadingSummary] = useState(true);
-  const [summary, setSummary] = useState<AdminDashboardSummary | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  const { loading, errors, adminName, hero, metrics, modules, quickActions, reload } =
+    useAdminDashboardViewModel({
+      authFetch,
+      adminName: user?.name ?? "Administrador",
+    });
 
-    async function loadSummary() {
-      setLoadingSummary(true);
-      const nextSummary = await fetchAdminDashboardSummary(authFetch);
-      if (!active) {
-        return;
-      }
-      setSummary(nextSummary);
-      setLoadingSummary(false);
-    }
+  function handleQuickAction(action: AdminQuickActionModel) {
+    if (action.targetPath) navigate(action.targetPath);
+  }
 
-    loadSummary();
-
-    return () => {
-      active = false;
-    };
-  }, [authFetch]);
-
-  const hasErrors = (summary?.errors.length ?? 0) > 0;
+  function handleNavigateQuestions() {
+    navigate("/admin/preguntas");
+  }
 
   return (
-    <main className="min-h-screen bg-surface p-6 text-on-surface md:p-10">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <>
+      <AdminErrorBanner errors={errors} onRetry={reload} />
+
+      {/* Welcome row */}
+      <section className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="font-headline text-3xl font-bold tracking-tight">Panel de Administración</h1>
-          <p className="text-sm text-secondary">Sesión activa: {user?.name}</p>
+          <h2 className="text-2xl font-bold tracking-tight text-on-surface sm:text-3xl">
+            Bienvenido, {adminName}
+          </h2>
+          <p className="mt-1 text-base text-secondary sm:text-lg">
+            Panel de control institucional de Saber 11.
+          </p>
         </div>
-        <button
-          className="rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2 text-sm font-semibold"
-          onClick={() => {
-            logout();
-            navigate("/login");
-          }}
-        >
-          Salir
-        </button>
-      </header>
-
-      {hasErrors && (
-        <section className="mb-5 rounded-xl border border-error/30 bg-error-container px-4 py-3 text-sm text-on-error-container">
-          Algunos módulos no pudieron cargarse: {summary?.errors.join(" | ")}
-        </section>
-      )}
-
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <article className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
-          <p className="text-xs font-semibold tracking-wide text-secondary uppercase">Banco de preguntas</p>
-          <p className="mt-2 text-2xl font-bold">{loadingSummary ? "..." : summary?.questionBankTotal ?? 0}</p>
-        </article>
-
-        <article className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
-          <p className="text-xs font-semibold tracking-wide text-secondary uppercase">Pendientes revisión</p>
-          <p className="mt-2 text-2xl font-bold">{loadingSummary ? "..." : summary?.pendingReviewQuestions ?? 0}</p>
-        </article>
-
-        <article className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
-          <p className="text-xs font-semibold tracking-wide text-secondary uppercase">Estudiantes institución</p>
-          <p className="mt-2 text-2xl font-bold">{loadingSummary ? "..." : summary?.institutionStudents ?? 0}</p>
-        </article>
-
-        <article className="rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
-          <p className="text-xs font-semibold tracking-wide text-secondary uppercase">Notificaciones</p>
-          <p className="mt-2 text-2xl font-bold">{loadingSummary ? "..." : summary?.unreadNotifications ?? 0}</p>
-        </article>
+        <div className="flex items-center gap-2">
+          <span
+            className="material-symbols-outlined text-[14px] text-secondary opacity-60"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            fiber_manual_record
+          </span>
+          <span className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60">
+            Rol: Administrador
+          </span>
+        </div>
       </section>
 
-      <nav className="mt-8 rounded-2xl border border-outline-variant bg-surface-container-lowest p-4">
-        <h2 className="mb-3 text-sm font-semibold text-secondary uppercase tracking-wide">Módulos conectados</h2>
-        <ul className="space-y-2 text-sm">
-          <li>Reporte institucional: promedio global {loadingSummary ? "..." : summary?.institutionAvgScore ?? "-"}</li>
-          <li>Rendimiento del banco: precisión media {loadingSummary ? "..." : summary?.avgQuestionAccuracy ?? "-"}</li>
-          <li>Auditoría reciente: {loadingSummary ? "..." : `${summary?.recentAuditEntries ?? 0} eventos`}</li>
-          <li>Notificaciones: endpoint /api/notifications/unread-count</li>
-        </ul>
-      </nav>
-    </main>
+      {/* Row 1: Hero (col-5) + Metrics (col-7) */}
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <AdminHero model={hero} loading={loading} />
+        </div>
+        <div className="lg:col-span-7">
+          <AdminMetricsGrid metrics={metrics} loading={loading} />
+        </div>
+      </div>
+
+      {/* Row 2: Institution Stats (col-7) + Quick Actions (col-5) */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <AdminInstitutionStats model={hero} loading={loading} />
+        </div>
+        <div className="lg:col-span-5">
+          <AdminQuickActions
+            actions={quickActions}
+            loading={loading}
+            onAction={handleQuickAction}
+          />
+        </div>
+      </div>
+
+      {/* Row 3: Question Bank Card (col-5) + placeholder (col-7) */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <AdminQuestionBankCard
+            total={hero.questionBankTotal}
+            pendingReview={hero.pendingCount}
+            avgAccuracyPercent={hero.avgAccuracyPercent}
+            loading={loading}
+            onNavigate={handleNavigateQuestions}
+          />
+        </div>
+        <div className="lg:col-span-7">
+          <section className="flex h-full flex-col items-center justify-center rounded-4xl border border-dashed border-outline-variant/40 bg-surface-container-lowest p-8 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+              <span className="material-symbols-outlined text-[28px]">bar_chart</span>
+            </div>
+            <p className="mt-4 text-base font-bold text-on-surface">Analytics detallado</p>
+            <p className="mt-2 max-w-xs text-sm text-on-surface-variant">
+              Los reportes de rendimiento por área y grado estarán disponibles en el módulo de
+              Analytics Institucional.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/admin/analytics")}
+              className="mt-5 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-bold text-primary transition-colors hover:bg-primary/10 active:scale-[0.98]"
+            >
+              Ver Analytics
+            </button>
+          </section>
+        </div>
+      </div>
+
+      {/* Row 4: Modules status (full width) */}
+      <AdminModulesStatus modules={modules} />
+    </>
   );
 }

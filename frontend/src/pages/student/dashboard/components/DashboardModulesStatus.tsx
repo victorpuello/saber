@@ -31,12 +31,12 @@ const MODULE_ICON: Record<string, string> = {
 
 export default function DashboardModulesStatus({ modules }: DashboardModulesStatusProps) {
   return (
-    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-8">
-      <h2 className="mb-6 text-xs font-bold uppercase tracking-widest text-secondary">
+    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-6 sm:p-8">
+      <h2 className="mb-5 text-xs font-bold uppercase tracking-widest text-secondary sm:mb-6">
         Estado de módulos
       </h2>
 
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
         {modules.map((module) => (
           <li key={module.id} className="rounded-2xl bg-surface-container-low p-4">
             <div className="mb-3 flex items-center justify-between gap-2">

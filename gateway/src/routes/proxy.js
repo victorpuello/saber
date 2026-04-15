@@ -27,6 +27,8 @@ function proxyTo(target) {
   return createProxyMiddleware({
     target,
     changeOrigin: true,
+    autoRewrite: true,
+    protocolRewrite: "http",
     // Mantener la ruta completa (incluyendo prefijo /api/*) al reenviar.
     pathRewrite: (_path, req) => req.originalUrl,
     on: {

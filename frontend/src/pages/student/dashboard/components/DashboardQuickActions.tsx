@@ -14,15 +14,15 @@ const ACTION_ICON: Record<string, string> = {
 
 export default function DashboardQuickActions({ actions, loading, onAction }: DashboardQuickActionsProps) {
   return (
-    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-8">
-      <h2 className="mb-5 text-xl font-bold tracking-tight">Acciones rápidas</h2>
+    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-6 sm:p-8">
+      <h2 className="mb-4 text-lg font-bold tracking-tight sm:mb-5 sm:text-xl">Acciones rápidas</h2>
 
       <div className="grid gap-3">
         {actions.map((action) => (
           <button
             key={action.id}
             type="button"
-            className="flex items-center gap-3 rounded-2xl bg-surface-container-low px-4 py-3 text-left transition-all hover:scale-[1.01] hover:bg-surface-container active:scale-[0.99]"
+            className="flex min-h-13 items-center gap-3 rounded-2xl bg-surface-container-low px-4 py-3 text-left transition-all hover:scale-[1.01] hover:bg-surface-container active:scale-[0.99]"
             onClick={() => onAction?.(action)}
           >
             <span className="material-symbols-outlined text-[20px] text-primary">

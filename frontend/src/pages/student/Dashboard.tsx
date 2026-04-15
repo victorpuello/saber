@@ -57,12 +57,12 @@ export default function StudentDashboard() {
       <DashboardErrorBanner errors={viewModel.errors} onRetry={reload} />
 
       {/* Welcome row */}
-      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <section className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-on-surface">
+          <h2 className="text-2xl font-bold tracking-tight text-on-surface sm:text-3xl">
             Bienvenido, {viewModel.studentName}
           </h2>
-          <p className="mt-1 text-lg text-secondary">
+          <p className="mt-1 text-base text-secondary sm:text-lg">
             Tu camino hacia la excelencia académica continúa aquí.
           </p>
         </div>
@@ -71,26 +71,26 @@ export default function StudentDashboard() {
         </div>
       </section>
 
-      {/* Row 1: Hero (col-4) + Area Performance (col-8) */}
-      <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-12">
-        <div className="md:col-span-4">
+      {/* Row 1: Hero (col-4) + Area Performance (col-8) — side-by-side only at lg+ */}
+      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-4">
           <DashboardHero model={viewModel.hero} loading={viewModel.loading} />
         </div>
-        <div className="md:col-span-8">
+        <div className="lg:col-span-8">
           <DashboardAreaPerformance items={viewModel.areaPerformance} loading={viewModel.loading} />
         </div>
       </div>
 
-      {/* Row 2: Next Task + Recent Activity */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-        <div className="md:col-span-7">
+      {/* Row 2: Next Task + Recent Activity — 2-col at md, 7/5 at lg */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12">
+        <div className="lg:col-span-7">
           <DashboardNextTask
             model={viewModel.nextTask}
             loading={viewModel.loading}
             onAction={handleNextTaskAction}
           />
         </div>
-        <div className="md:col-span-5">
+        <div className="lg:col-span-5">
           <DashboardRecentActivity items={viewModel.activities} loading={viewModel.loading} />
         </div>
       </div>
@@ -98,9 +98,9 @@ export default function StudentDashboard() {
       {/* Secondary: KPI metrics */}
       <DashboardMetricsGrid metrics={viewModel.metrics} loading={viewModel.loading} />
 
-      {/* Secondary: Notifications + Quick Actions */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-        <div className="md:col-span-7">
+      {/* Secondary: Notifications + Quick Actions — 2-col at md, 7/5 at lg */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12">
+        <div className="lg:col-span-7">
           <DashboardNotificationsPreview
             items={viewModel.notifications}
             loading={viewModel.loading}
@@ -108,7 +108,7 @@ export default function StudentDashboard() {
             onMarkAllRead={handleMarkVisibleNotificationsRead}
           />
         </div>
-        <div className="md:col-span-5">
+        <div className="lg:col-span-5">
           <DashboardQuickActions
             actions={viewModel.quickActions}
             loading={viewModel.loading}
