@@ -20,7 +20,7 @@ jobs:
   # Gateway (Node.js)
   # ---------------------------------------------------------------------------
   gateway:
-    name: Gateway — Lint & Build
+    name: Gateway — Lint, Test & Build
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,6 +40,9 @@ jobs:
           cache-dependency-path: gateway/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Tests
+        run: pnpm test
 
       - name: Verificar que el servidor arranca
         run: |
@@ -136,3 +139,6 @@ jobs:
 
       - name: Validar docker-compose.yml
         run: docker compose config --quiet
+
+      - name: Validar docker-compose.prod.yml
+        run: docker compose -f docker-compose.prod.yml config --quiet

@@ -1,0 +1,362 @@
+# =============================================================================
+# Simulador Saber 11 — Docker Compose PRODUCCIÓN
+# Uso: docker compose -f docker-compose.prod.yml up -d
+# Requiere: .env con variables de producción
+# =============================================================================
+
+services:
+  # --- Nginx reverse proxy + SSL ---
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - gateway
+      - frontend
+    restart: always
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: /bin/sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done"
+
+  # --- API Gateway ---
+  gateway:
+    build: ./gateway
+    environment:
+      - NODE_ENV=production
+      - KAMPUS_BASE_URL=${KAMPUS_BASE_URL}
+      - KAMPUS_AUTH_ENDPOINT=${KAMPUS_AUTH_ENDPOINT:-/api/token/}
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - AI_GENERATOR_URL=http://ai-generator:3002
+      - EXAM_ENGINE_URL=http://exam-engine:3003
+      - DIAGNOSTIC_URL=http://diagnostic:3004
+      - STUDY_PLANNER_URL=http://study-planner:3005
+      - ANALYTICS_URL=http://analytics:3006
+      - NOTIFICATIONS_URL=http://notifications:3007
+    depends_on:
+      - redis-saber11
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- Question Bank ---
+  question-bank:
+    build:
+      context: .
+      dockerfile: services/question-bank/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD}@db-questions:5432/saber11_questions
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      db-questions:
+        condition: service_healthy
+      redis-saber11:
+        condition: service_started
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- AI Generator ---
+  ai-generator:
+    build:
+      context: .
+      dockerfile: services/ai-generator/Dockerfile
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - question-bank
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # --- Exam Engine ---
+  exam-engine:
+    build:
+      context: .
+      dockerfile: services/exam-engine/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD}@db-exams:5432/saber11_exams
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      db-exams:
+        condition: service_healthy
+      question-bank:
+        condition: service_started
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- Diagnostic Engine ---
+  diagnostic:
+    build:
+      context: .
+      dockerfile: services/diagnostic/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD}@db-profiles:5432/saber11_profiles
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      db-profiles:
+        condition: service_healthy
+      question-bank:
+        condition: service_started
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- Study Planner ---
+  study-planner:
+    build:
+      context: .
+      dockerfile: services/study-planner/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD}@db-profiles:5432/saber11_profiles
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      db-profiles:
+        condition: service_healthy
+      question-bank:
+        condition: service_started
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- Analytics ---
+  analytics:
+    build:
+      context: .
+      dockerfile: services/analytics/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD}@db-analytics:5432/saber11_analytics
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      db-analytics:
+        condition: service_healthy
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- Notifications ---
+  notifications:
+    build:
+      context: .
+      dockerfile: services/notifications/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD}@db-notifications:5432/saber11_notifications
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - KAMPUS_API_URL=${KAMPUS_BASE_URL}
+      - KAMPUS_API_TOKEN=${KAMPUS_API_TOKEN:-}
+      - JWT_SECRET=${JWT_SECRET}
+      - SYNC_INTERVAL_MINUTES=${SYNC_INTERVAL_MINUTES:-60}
+    depends_on:
+      db-notifications:
+        condition: service_healthy
+      redis-saber11:
+        condition: service_started
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # --- Frontend ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ==========================================================================
+  # Infraestructura
+  # ==========================================================================
+
+  db-questions:
+    image: postgres:15-alpine
+    volumes:
+      - questions_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_questions
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_questions"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  db-exams:
+    image: postgres:15-alpine
+    volumes:
+      - exams_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_exams
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_exams"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  db-profiles:
+    image: postgres:15-alpine
+    volumes:
+      - profiles_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_profiles
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_profiles"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  db-analytics:
+    image: postgres:15-alpine
+    volumes:
+      - analytics_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_analytics
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  db-notifications:
+    image: postgres:15-alpine
+    volumes:
+      - notifications_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_notifications
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_notifications"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  redis-saber11:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
+  # --- Backup automático diario ---
+  db-backup:
+    image: postgres:15-alpine
+    volumes:
+      - db_backups:/backups
+    environment:
+      - PGPASSWORD=${DB_PASSWORD}
+    entrypoint: /bin/sh -c "
+      while true; do
+        TIMESTAMP=$$(date +%Y%m%d_%H%M%S);
+        for DB in questions exams profiles analytics notifications; do
+          pg_dump -h db-$$DB -U saber11 saber11_$$DB | gzip > /backups/$${DB}_$${TIMESTAMP}.sql.gz;
+        done;
+        find /backups -type f -mtime +7 -delete;
+        sleep 86400;
+      done"
+    depends_on:
+      db-questions:
+        condition: service_healthy
+      db-exams:
+        condition: service_healthy
+      db-profiles:
+        condition: service_healthy
+      db-analytics:
+        condition: service_healthy
+      db-notifications:
+        condition: service_healthy
+    restart: always
+
+volumes:
+  questions_data:
+  exams_data:
+  profiles_data:
+  analytics_data:
+  notifications_data:
+  redis_data:
+  db_backups:
+  certbot_certs:
+  certbot_www:

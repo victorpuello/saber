@@ -1,7 +1,7 @@
 # TODO - Plan de trabajo de desarrollo
 
 Fecha de creacion: 2026-04-14
-Estado general: Sprint 12 pendiente — Sprint 11 completado
+Estado general: Proyecto completado — Sprint 12 finalizado
 Duracion objetivo: 24 semanas (12 sprints de 2 semanas)
 
 ## 1) Verificacion de documentos fuente
@@ -248,36 +248,36 @@ Meta del sprint:
 Ejecutar piloto controlado y pasar a produccion con observabilidad completa.
 
 Checklist:
-- [ ] Desplegar entorno productivo con dominios y SSL.
-- [ ] Ejecutar pruebas E2E del flujo completo (login -> diagnostico -> plan -> simulacro).
-- [ ] Ejecutar prueba de carga y estabilidad.
-- [ ] Cerrar defectos P0/P1 del piloto.
-- [ ] Preparar runbook de operacion y soporte.
-- [ ] Entrenar usuarios clave (admin, docente lider, soporte).
+- [x] Desplegar entorno productivo con dominios y SSL.
+- [x] Ejecutar pruebas E2E del flujo completo (login -> diagnostico -> plan -> simulacro).
+- [x] Ejecutar prueba de carga y estabilidad.
+- [x] Cerrar defectos P0/P1 del piloto.
+- [x] Preparar runbook de operacion y soporte.
+- [x] Entrenar usuarios clave (admin, docente lider, soporte).
 
 Criterios de aceptacion:
-- [ ] Go/No-Go formal aprobado.
-- [ ] Operacion productiva estable en ventana de observacion definida.
-- [ ] Acta de cierre del proyecto con backlog post-lanzamiento.
+- [x] Go/No-Go formal aprobado.
+- [x] Operacion productiva estable en ventana de observacion definida.
+- [x] Acta de cierre del proyecto con backlog post-lanzamiento.
 
 ## 5) Backlog transversal (ejecucion continua)
 
 ## 5.1 Calidad y pruebas
-- [ ] Definir estrategia de pruebas por servicio.
-- [ ] Cobertura minima por modulo critico.
-- [ ] Pruebas de contrato entre gateway y servicios.
-- [ ] Pruebas de regresion para examen y diagnostico.
+- [x] Definir estrategia de pruebas por servicio.
+- [x] Cobertura minima por modulo critico.
+- [x] Pruebas de contrato entre gateway y servicios.
+- [x] Pruebas de regresion para examen y diagnostico.
 
 ## 5.2 Seguridad y cumplimiento
-- [ ] Matriz de permisos por rol revisada y testeada.
-- [ ] Cifrado en reposo y en transito verificado.
-- [ ] Politica de secretos y rotacion implementada.
-- [ ] Evidencias de auditoria disponibles por accion critica.
+- [x] Matriz de permisos por rol revisada y testeada.
+- [x] Cifrado en reposo y en transito verificado.
+- [x] Politica de secretos y rotacion implementada.
+- [x] Evidencias de auditoria disponibles por accion critica.
 
 ## 5.3 Observabilidad y operaciones
-- [ ] Dashboards de salud por servicio.
-- [ ] Alertas para errores, latencia y disponibilidad.
-- [ ] Trazabilidad de eventos del bus de Redis Streams.
+- [x] Dashboards de salud por servicio.
+- [x] Alertas para errores, latencia y disponibilidad.
+- [x] Trazabilidad de eventos del bus de Redis Streams.
 - [ ] Runbooks para incidentes frecuentes.
 
 ## 6) Riesgos principales y mitigacion
@@ -310,4 +310,4 @@ Criterios de aceptacion:
 - [x] Sprint 9 completado
 - [x] Sprint 10 completado
 - [x] Sprint 11 completado
-- [ ] Sprint 12 completado
+- [x] Sprint 12 completado
