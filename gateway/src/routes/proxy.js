@@ -12,6 +12,7 @@ const SERVICE_MAP = {
   "/api/taxonomy": config.questionBankUrl,
   "/api/ai": config.aiGeneratorUrl,
   "/api/exams": config.examEngineUrl,
+  "/api/sessions": config.examEngineUrl,
   "/api/diagnostic": config.diagnosticUrl,
   "/api/plans": config.studyPlannerUrl,
   "/api/analytics": config.analyticsUrl,
@@ -26,6 +27,8 @@ function proxyTo(target) {
   return createProxyMiddleware({
     target,
     changeOrigin: true,
+    // Mantener la ruta completa (incluyendo prefijo /api/*) al reenviar.
+    pathRewrite: (_path, req) => req.originalUrl,
     on: {
       proxyReq(proxyReq, req) {
         // Propagar identidad del usuario como headers internos

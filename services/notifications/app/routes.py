@@ -29,7 +29,7 @@ async def _get_db() -> AsyncGenerator[AsyncSession, None]:
 
 @router.get("", response_model=NotificationList)
 async def list_notifications(
-    user: CurrentUser = Depends(require_role("student", "teacher", "admin")),
+    user: CurrentUser = Depends(require_role("STUDENT", "TEACHER", "ADMIN")),
     db: AsyncSession = Depends(_get_db),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -37,7 +37,7 @@ async def list_notifications(
 ):
     """Lista las notificaciones del usuario autenticado."""
     items, total, unread = await get_user_notifications(
-        db, user.id, limit=limit, offset=offset, unread_only=unread_only
+        db, user.user_id, limit=limit, offset=offset, unread_only=unread_only
     )
     return NotificationList(
         items=[NotificationOut.model_validate(n) for n in items],
@@ -49,21 +49,21 @@ async def list_notifications(
 @router.post("/read", response_model=dict)
 async def mark_notifications_read(
     body: MarkReadRequest,
-    user: CurrentUser = Depends(require_role("student", "teacher", "admin")),
+    user: CurrentUser = Depends(require_role("STUDENT", "TEACHER", "ADMIN")),
     db: AsyncSession = Depends(_get_db),
 ):
     """Marca notificaciones como leídas."""
-    count = await mark_as_read(db, user.id, body.notification_ids)
+    count = await mark_as_read(db, user.user_id, body.notification_ids)
     return {"marked": count}
 
 
 @router.get("/unread-count", response_model=dict)
 async def unread_count(
-    user: CurrentUser = Depends(require_role("student", "teacher", "admin")),
+    user: CurrentUser = Depends(require_role("STUDENT", "TEACHER", "ADMIN")),
     db: AsyncSession = Depends(_get_db),
 ):
     """Retorna solo el conteo de notificaciones no leídas."""
-    _, _, unread = await get_user_notifications(db, user.id, limit=0)
+    _, _, unread = await get_user_notifications(db, user.user_id, limit=0)
     return {"unread": unread}
 
 
@@ -72,7 +72,7 @@ async def unread_count(
 
 @router.get("/audit", response_model=list[AuditEntryOut])
 async def list_audit(
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = Depends(require_role("ADMIN")),
     db: AsyncSession = Depends(_get_db),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -94,7 +94,7 @@ async def list_audit(
 
 @router.get("/sync-logs", response_model=list[SyncLogOut])
 async def list_sync_logs(
-    user: CurrentUser = Depends(require_role("admin")),
+    user: CurrentUser = Depends(require_role("ADMIN")),
     db: AsyncSession = Depends(_get_db),
     limit: int = Query(20, ge=1, le=100),
 ):

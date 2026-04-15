@@ -26,10 +26,32 @@ Plataforma satelital de microservicios para preparación del examen Saber 11, in
 
 ```bash
 cp .env.example .env
-docker compose up -d
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 ```
 
 El frontend estará disponible en `http://localhost:5174` y el API Gateway en `http://localhost:3000`.
+
+El entorno de desarrollo usa hot reload para frontend, gateway y microservicios Python.
+
+## Modos de ejecución
+
+Desarrollo con autoreload:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+Detener el entorno de desarrollo:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+```
+
+Producción:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
 
 ## Documentación
 

@@ -1,0 +1,93 @@
+# =============================================================================
+# Simulador Saber 11 — Docker Compose desarrollo
+# Uso: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# =============================================================================
+
+services:
+  gateway:
+    volumes:
+      - ./gateway/src:/app/src
+    command: pnpm dev
+
+  question-bank:
+    environment:
+      - PYTHONPATH=/shared:/app
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      - ./services/question-bank/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3001 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
+
+  ai-generator:
+    environment:
+      - PYTHONPATH=/shared:/app
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      - ./services/ai-generator/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3002 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
+
+  exam-engine:
+    environment:
+      - PYTHONPATH=/shared:/app
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      - ./services/exam-engine/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3003 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
+
+  diagnostic:
+    environment:
+      - PYTHONPATH=/shared:/app
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      - ./services/diagnostic/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3004 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
+
+  study-planner:
+    environment:
+      - PYTHONPATH=/shared:/app
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      - ./services/study-planner/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3005 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
+
+  analytics:
+    environment:
+      - PYTHONPATH=/shared:/app
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      - ./services/analytics/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3006 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
+
+  notifications:
+    environment:
+      - PYTHONPATH=/shared:/app
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      - ./services/notifications/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3007 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=300
+      - CI=true
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_pnpm_store:/pnpm/store
+    command: sh -c "pnpm install --frozen-lockfile --config.confirmModulesPurge=false --store-dir /pnpm/store && pnpm dev --host 0.0.0.0 --port 5174"
+
+volumes:
+  frontend_node_modules:
+  frontend_pnpm_store:

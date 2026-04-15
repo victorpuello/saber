@@ -13,6 +13,9 @@ const config = Object.freeze({
   jwtExpiration: process.env.JWT_EXPIRATION || "3600",
   jwtRefreshExpiration: process.env.JWT_REFRESH_EXPIRATION || "604800",
 
+  // Dev auth (bypass Kampus para entorno local)
+  devAuthEnabled: process.env.DEV_AUTH_ENABLED === "true",
+
   // CORS
   corsOrigins: process.env.CORS_ORIGINS || "http://localhost:5174",
 

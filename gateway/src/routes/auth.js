@@ -8,6 +8,13 @@ import { ipLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
 
+// ─── Usuarios de desarrollo (solo cuando DEV_AUTH_ENABLED=true) ──────────────
+const DEV_USERS = {
+  estudiante: { userId: 1, role: "STUDENT", name: "Estudiante Demo", grade: "11", institutionId: "demo-inst" },
+  docente:    { userId: 2, role: "TEACHER", name: "Docente Demo",    grade: null,  institutionId: "demo-inst" },
+  admin:      { userId: 3, role: "ADMIN",   name: "Admin Demo",      grade: null,  institutionId: "demo-inst" },
+};
+
 /**
  * Mapa en memoria para refresh tokens.
  * En producción se usaría Redis.
@@ -95,6 +102,29 @@ router.post("/api/auth/login", ipLimiter, async (req, res) => {
   }
 
   try {
+    // ─── Modo desarrollo: permite cuentas demo y fallback a Kampus ───────
+    if (config.devAuthEnabled) {
+      const devUser = DEV_USERS[username.toLowerCase()];
+
+      if (devUser && password === "demo1234") {
+        const userData = { ...devUser, kampusUserId: devUser.userId };
+        const tokens = generateTokenPair(userData);
+        logger.info({ userId: userData.userId, role: userData.role }, "Login dev exitoso");
+        return res.json({
+          ...tokens,
+          user: { id: userData.userId, name: userData.name, role: userData.role, grade: userData.grade },
+        });
+      }
+
+      // Si intenta usar una cuenta demo con clave incorrecta, fallar rápido.
+      if (devUser && password !== "demo1234") {
+        logger.info({ username }, "Login dev fallido — contraseña demo inválida");
+        return res.status(401).json({ error: "Credenciales inválidas" });
+      }
+
+      logger.info({ username }, "Usuario no demo en modo dev — se intenta autenticación Kampus");
+    }
+
     // 1. Autenticar contra Kampus (SimpleJWT por defecto)
     const kampusTokenUrl = `${config.kampusBaseUrl}${config.kampusAuthEndpoint}`;
     const tokenRes = await fetch(kampusTokenUrl, {

@@ -1,0 +1,11 @@
+export { default as DashboardErrorBanner } from "./DashboardErrorBanner";
+export { default as DashboardAreaPerformance } from "./DashboardAreaPerformance";
+export { default as DashboardHeader } from "./DashboardHeader";
+export { default as DashboardHero } from "./DashboardHero";
+export { default as DashboardMetricsGrid } from "./DashboardMetricsGrid";
+export { default as DashboardModulesStatus } from "./DashboardModulesStatus";
+export { default as DashboardNavigation } from "./DashboardNavigation";
+export { default as DashboardNextTask } from "./DashboardNextTask";
+export { default as DashboardNotificationsPreview } from "./DashboardNotificationsPreview";
+export { default as DashboardQuickActions } from "./DashboardQuickActions";
+export { default as DashboardRecentActivity } from "./DashboardRecentActivity";

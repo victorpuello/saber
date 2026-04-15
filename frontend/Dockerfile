@@ -1,3 +1,18 @@
+FROM node:20-alpine AS development
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY package.json pnpm-lock.yaml* ./
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
+EXPOSE 5174
+
+CMD ["pnpm", "dev", "--host", "0.0.0.0", "--port", "5174"]
+
 FROM node:20-alpine AS build
 
 WORKDIR /app

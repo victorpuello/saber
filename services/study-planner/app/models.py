@@ -31,8 +31,9 @@ class StudyPlan(Base):
     )
     profile_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("student_profiles.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
+        comment="Referencia lógica a student_profiles.id (BD separada)",
     )
     student_user_id: Mapped[int] = mapped_column(Integer, nullable=False)
 

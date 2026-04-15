@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Saber 11 Simulator - Student Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-container": "#2563eb",
+                      "secondary-container": "#d0e1fb",
+                      "on-surface-variant": "#434655",
+                      "tertiary-container": "#007d55",
+                      "primary-fixed-dim": "#b4c5ff",
+                      "on-secondary-container": "#54647a",
+                      "surface-container": "#eceef0",
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary": "#ffffff",
+                      "primary": "#004ac6",
+                      "surface-tint": "#0053db",
+                      "background": "#f7f9fb",
+                      "secondary": "#505f76",
+                      "outline-variant": "#c3c6d7",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed-dim": "#4edea3",
+                      "on-primary-fixed": "#00174b",
+                      "on-surface": "#191c1e",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "on-tertiary-fixed-variant": "#005236",
+                      "on-error": "#ffffff",
+                      "on-background": "#191c1e",
+                      "on-tertiary-fixed": "#002113",
+                      "on-primary-fixed-variant": "#003ea8",
+                      "on-primary-container": "#eeefff",
+                      "error-container": "#ffdad6",
+                      "on-primary": "#ffffff",
+                      "surface-container-low": "#f2f4f6",
+                      "on-secondary-fixed": "#0b1c30",
+                      "on-tertiary-container": "#bdffdb",
+                      "secondary-fixed": "#d3e4fe",
+                      "surface-container-highest": "#e0e3e5",
+                      "primary-fixed": "#dbe1ff",
+                      "inverse-surface": "#2d3133",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "inverse-on-surface": "#eff1f3",
+                      "inverse-primary": "#b4c5ff",
+                      "surface-bright": "#f7f9fb",
+                      "surface": "#f7f9fb",
+                      "tertiary-fixed": "#6ffbbe",
+                      "surface-container-high": "#e6e8ea",
+                      "tertiary": "#006242",
+                      "on-error-container": "#93000a",
+                      "surface-variant": "#e0e3e5",
+                      "outline": "#737686",
+                      "surface-dim": "#d8dadc",
+                      "on-tertiary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Inter"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<aside class="fixed left-0 top-0 hidden md:flex flex-col h-screen w-64 bg-slate-50 dark:bg-slate-900 font-inter tracking-tight text-slate-900 dark:text-slate-100 py-6 px-4">
+<div class="mb-10 px-4">
+<h1 class="text-xl font-bold text-blue-700 dark:text-blue-400">Saber 11</h1>
+<p class="text-xs text-secondary opacity-70">The Digital Curator</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-blue-700 dark:text-blue-400 font-bold border-r-4 border-blue-700 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                Diagnostic
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+                Study Plan
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+                Results
+            </a>
+</nav>
+<div class="mt-auto px-4">
+<button class="w-full py-3 bg-primary text-on-primary rounded-xl font-semibold active:scale-95 transition-transform">
+                Start Practice
+            </button>
+</div>
+</aside>
+<header class="fixed top-0 w-full z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl flex justify-between items-center h-16 px-8 ml-0 md:ml-64 shadow-sm shadow-slate-200/50 dark:shadow-none">
+<div class="flex items-center">
+<h2 class="text-lg font-black tracking-tighter text-blue-700 dark:text-blue-400">Saber 11 Simulator</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:opacity-80" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:opacity-80" data-icon="settings">settings</span>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container-highest">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="close-up portrait of a young student smiling with a soft natural background blur" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5VQBA5tjjznRhA3HA6vEKOfjq9grfviiDp9O35lF8JMbz8GcbKUOdsK1fIIwmd9QobPuPdIh4G2L4PcPCO54-reLdcFfwzalsS_8BrYYsftVHC-XU2c0-DB2aLGrMICoey2bfPfTc_L7sWuiHmIt94AbhPW74IDdhcDj1TXgfMIXrxKMhxsau7mO6hRZmXbnZY1XSKAist-iUPxusv7KYHWH7TrqRmJMkGBdiNfa3sR4JrCirVCi3uJujSeNbfw7BBYlZGCfbuu1t"/>
+</div>
+</div>
+</header>
+<main class="ml-0 md:ml-64 mt-16 p-8 min-h-screen">
+<div class="max-w-6xl mx-auto space-y-8">
+<section class="flex flex-col md:flex-row justify-between items-end gap-4">
+<div>
+<h2 class="text-3xl font-bold tracking-tight text-on-surface">Welcome back, Mateo</h2>
+<p class="text-secondary text-lg mt-1">Your path to academic excellence continues here.</p>
+</div>
+<div class="flex items-center gap-2 text-label-md font-bold tracking-widest text-secondary opacity-60 uppercase">
+                    Current Period: Aug - Nov 2024
+                </div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<div class="md:col-span-4 h-full">
+<div class="bg-gradient-to-br from-primary to-primary-container p-8 rounded-[2rem] text-on-primary shadow-lg shadow-primary/10 flex flex-col justify-between min-h-[320px]">
+<div>
+<span class="text-xs font-bold tracking-widest uppercase opacity-80">Estimated Global Score</span>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="text-7xl font-black tracking-tighter">384</span>
+<span class="text-xl font-medium opacity-60">/ 500</span>
+</div>
+</div>
+<div class="mt-8">
+<div class="flex justify-between items-end mb-2">
+<span class="text-sm font-medium">Percentile: Top 5%</span>
+<span class="text-sm font-medium">+12 pts last week</span>
+</div>
+<div class="h-3 bg-white/20 rounded-full overflow-hidden">
+<div class="h-full bg-white rounded-full" style="width: 76.8%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="md:col-span-8 space-y-6">
+<div class="bg-surface-container-lowest p-8 rounded-[2rem] border border-outline-variant/10">
+<div class="flex justify-between items-center mb-8">
+<h3 class="text-xl font-bold tracking-tight">Performance by Area</h3>
+<button class="text-primary text-sm font-semibold hover:underline">Full Analytics</button>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8">
+<div class="flex flex-col items-center gap-3">
+<div class="relative w-20 h-20 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle class="text-surface-container-high" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213.6" stroke-dashoffset="42" stroke-width="6"></circle>
+</svg>
+<span class="absolute text-sm font-black">82</span>
+</div>
+<span class="text-xs font-bold tracking-wider text-secondary uppercase">Mathematics</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="relative w-20 h-20 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle class="text-surface-container-high" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213.6" stroke-dashoffset="64" stroke-width="6"></circle>
+</svg>
+<span class="absolute text-sm font-black">74</span>
+</div>
+<span class="text-xs font-bold tracking-wider text-secondary uppercase">Critical Reading</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="relative w-20 h-20 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle class="text-surface-container-high" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213.6" stroke-dashoffset="21" stroke-width="6"></circle>
+</svg>
+<span class="absolute text-sm font-black">91</span>
+</div>
+<span class="text-xs font-bold tracking-wider text-secondary uppercase">Science</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="relative w-20 h-20 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle class="text-surface-container-high" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213.6" stroke-dashoffset="85" stroke-width="6"></circle>
+</svg>
+<span class="absolute text-sm font-black">68</span>
+</div>
+<span class="text-xs font-bold tracking-wider text-secondary uppercase">Socials</span>
+</div>
+<div class="flex flex-col items-center gap-3">
+<div class="relative w-20 h-20 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle class="text-surface-container-high" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="text-primary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213.6" stroke-dashoffset="30" stroke-width="6"></circle>
+</svg>
+<span class="absolute text-sm font-black">86</span>
+</div>
+<span class="text-xs font-bold tracking-wider text-secondary uppercase">English</span>
+</div>
+</div>
+</div>
+</div>
+<div class="md:col-span-7">
+<div class="bg-surface-container-low p-1 rounded-[2rem] h-full">
+<div class="bg-surface-container-lowest p-8 rounded-[1.75rem] h-full flex flex-col">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h3 class="text-xl font-bold tracking-tight">Next Study Task</h3>
+<p class="text-secondary text-sm mt-1">Based on your personalized Study Plan</p>
+</div>
+<span class="bg-tertiary-container/10 text-tertiary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Recommended</span>
+</div>
+<div class="bg-surface-container-low rounded-2xl p-6 flex-1 flex flex-col justify-center">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shrink-0">
+<span class="material-symbols-outlined" data-icon="functions">functions</span>
+</div>
+<div>
+<h4 class="text-lg font-bold">Quadratic Functions &amp; Parables</h4>
+<p class="text-secondary text-sm">Target: Improve analysis of graphical representations in mathematics.</p>
+<div class="flex items-center gap-4 mt-4 text-xs font-semibold text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm" data-icon="timer">timer</span> 25 min</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm" data-icon="quiz">quiz</span> 15 Questions</span>
+</div>
+</div>
+</div>
+</div>
+<button class="mt-6 w-full py-4 bg-primary text-on-primary rounded-xl font-bold shadow-md shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all">
+                                Launch Task Now
+                            </button>
+</div>
+</div>
+</div>
+<div class="md:col-span-5">
+<div class="bg-surface-container-lowest p-8 rounded-[2rem] border border-outline-variant/10 h-full">
+<h3 class="text-xl font-bold tracking-tight mb-6">Recent Activity</h3>
+<div class="space-y-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Full Mock Test #4</p>
+<p class="text-xs text-secondary">Completed 2 hours ago • Score: 391</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Critical Reading Practice</p>
+<p class="text-xs text-secondary">Started yesterday • 12/20 completed</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="trophy">trophy</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Badge Earned: Science Pro</p>
+<p class="text-xs text-secondary">Awarded for 90+ score in Physics</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="feedback">feedback</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold">Review Needed: Geometry</p>
+<p class="text-xs text-secondary">Performance drop detected in 'Volume'</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 text-primary font-bold text-sm hover:bg-primary/5 rounded-xl transition-colors">
+                            View All Activity
+                        </button>
+</div>
+</div>
+</div>
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="relative overflow-hidden group rounded-[2.5rem] h-64 flex flex-col justify-end p-8 text-white">
+<img alt="Mathematics focus" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="vibrant abstract geometry with neon blue lines and mathematical formulas softly glowing in a dark space" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfcFiaDAR-T7rlcgkGiBdqZHSBsVgA28-x4JYeq-eyAVPTEKgyh6Ffe8lSbEeIbLaqWXuKbuaVEJmff-Wu2Iq4Sb218dIWqhMwgwB8P4p4sn4ZPOqWtFJd6YHObLR2VBf2zSCCuBhcLIapCdTeLh3CJ8UNrcG-tS1LDY6rCEaSvGvyHfqwLlVzwPUgTq6IzAH7UGLo_gQkYsgHEA-NRWPAiSbb9PWzgWHywVwJFGsOcSuxpkRBl9As7Gw0WwZRznqASUpziWFrz3u1"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="relative z-10">
+<h4 class="text-2xl font-black tracking-tight">Focus: Numerical Reasoning</h4>
+<p class="text-sm opacity-80 mt-2 max-w-sm">Master the art of logic with our new advanced challenge bank designed for top tier candidates.</p>
+<button class="mt-4 px-6 py-2 bg-white text-on-surface rounded-full text-sm font-bold active:scale-95 transition-transform">Explore Bank</button>
+</div>
+</div>
+<div class="relative overflow-hidden group rounded-[2.5rem] h-64 flex flex-col justify-end p-8 text-white">
+<img alt="Reading and comprehension" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="modern library interior with warm atmospheric lighting and rows of books in soft focus bokeh" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3E8uxkIs0VoQcvYjyap02jPwKHMXnjOU78DzOhx0hx0g80tSByt2qhV6eCHuPNZp_-7b4tWLYjenuCXgbddGSMYxjjdD_d6NdU26S5KtaW_oCBpZkS7yfpmsjmGOig139V9UyI6bhrYu7JHoOHisrfvmj17VqFEejLZGU0MYSUQQCECwMUDISqUQDsffUjMVR33jRgU97PonlaZjCoNxvTHPfW0tDV8aGE6LYdeU-Ykg5ss9FsHj4V-aKvN2H519JoMmzi_G4iQ_o"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="relative z-10">
+<h4 class="text-2xl font-black tracking-tight">Literature Deep Dive</h4>
+<p class="text-sm opacity-80 mt-2 max-w-sm">Refine your comprehension of complex narrative structures and rhetorical devices.</p>
+<button class="mt-4 px-6 py-2 bg-white text-on-surface rounded-full text-sm font-bold active:scale-95 transition-transform">Start Reading</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-md border-t-0 flex items-center justify-around px-4 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-primary" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-[10px] font-bold mt-0.5">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-[10px] font-medium mt-0.5">Analyze</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+<span class="text-[10px] font-medium mt-0.5">Plan</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary opacity-60" href="#">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+<span class="text-[10px] font-medium mt-0.5">Results</span>
+</a>
+</nav>
+</body></html>

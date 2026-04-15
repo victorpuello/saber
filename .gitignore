@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+frontend/.pnpm-store/
 __pycache__/
 *.pyc
 .venv/
@@ -15,11 +16,13 @@ venv/
 .idea/
 *.swp
 *.swo
+.claude/
 
 # Build
 dist/
 build/
 *.egg-info/
+*.tsbuildinfo
 
 # Docker
 *.log
