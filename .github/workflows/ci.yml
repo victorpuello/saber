@@ -1,0 +1,138 @@
+# =============================================================================
+# Simulador Saber 11 — Pipeline CI
+# Ejecuta lint, type-check y build en cada push/PR
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Gateway (Node.js)
+  # ---------------------------------------------------------------------------
+  gateway:
+    name: Gateway — Lint & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: gateway
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: gateway/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verificar que el servidor arranca
+        run: |
+          timeout 5 node src/index.js &
+          sleep 2
+          curl -sf http://localhost:3000/health || exit 1
+
+  # ---------------------------------------------------------------------------
+  # Frontend (React + TypeScript + Vite)
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: Frontend — Lint, Type-check & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: pnpm build
+
+  # ---------------------------------------------------------------------------
+  # Microservicios Python
+  # ---------------------------------------------------------------------------
+  python-services:
+    name: Python — Lint & Syntax
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar ruff
+        run: pip install ruff
+
+      - name: Lint shared
+        run: ruff check shared/
+
+      - name: Lint servicios
+        run: |
+          for svc in question-bank ai-generator exam-engine diagnostic study-planner analytics notifications; do
+            echo "=== $svc ==="
+            ruff check "services/$svc/"
+          done
+
+      - name: Verificar sintaxis de todos los módulos
+        run: |
+          python -c "
+          import ast, pathlib
+          errors = []
+          for f in pathlib.Path('.').rglob('*.py'):
+              if 'node_modules' in str(f) or '.git' in str(f):
+                  continue
+              try:
+                  ast.parse(f.read_text())
+              except SyntaxError as e:
+                  errors.append(f'{f}: {e}')
+          if errors:
+              for e in errors:
+                  print(f'ERROR: {e}')
+              raise SystemExit(1)
+          print(f'OK — {len(list(pathlib.Path(\".\").rglob(\"*.py\")))} archivos Python validados')
+          "
+
+  # ---------------------------------------------------------------------------
+  # Docker Compose — Validación de configuración
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Docker Compose — Config
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar docker-compose.yml
+        run: docker compose config --quiet

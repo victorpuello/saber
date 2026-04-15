@@ -1,8 +1,9 @@
 """Modelos SQLAlchemy — Taxonomía DCE del Saber 11."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+from saber11_shared.database import Base
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -17,11 +18,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from saber11_shared.database import Base
-
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Area(Base):
@@ -55,7 +54,9 @@ class Competency(Base):
     )
 
     area: Mapped[Area] = relationship(back_populates="competencies")
-    assertions: Mapped[list["Assertion"]] = relationship(back_populates="competency", lazy="selectin")
+    assertions: Mapped[list["Assertion"]] = relationship(
+        back_populates="competency", lazy="selectin"
+    )
 
 
 class Assertion(Base):
@@ -187,10 +188,14 @@ class Question(Base):
     times_used: Mapped[int] = mapped_column(Integer, default=0)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
     # Relaciones
-    media: Mapped[list["QuestionMedia"]] = relationship(back_populates="question", cascade="all, delete-orphan")
+    media: Mapped[list["QuestionMedia"]] = relationship(
+        back_populates="question", cascade="all, delete-orphan"
+    )
 
 
 class QuestionMedia(Base):

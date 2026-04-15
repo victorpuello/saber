@@ -12,7 +12,7 @@ Eventos principales:
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import redis.asyncio as redis
 
@@ -33,7 +33,7 @@ class EventBus:
         message = {
             "type": event_type,
             "payload": json.dumps(payload),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         event_id = await self._redis.xadd(self.STREAM_KEY, message)
         logger.info("Evento publicado: %s [%s]", event_type, event_id)

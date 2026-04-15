@@ -1,7 +1,6 @@
 """Punto de entrada del AI Generator Service."""
 
 from fastapi import FastAPI
-
 from saber11_shared.health import create_health_router
 
 from .config import settings

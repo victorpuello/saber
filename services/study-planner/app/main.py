@@ -3,7 +3,6 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-
 from saber11_shared.database import Base, create_db_engine
 from saber11_shared.health import create_health_router
 

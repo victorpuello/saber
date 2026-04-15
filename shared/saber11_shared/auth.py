@@ -48,8 +48,9 @@ async def get_current_user(
 
 def require_role(*allowed_roles: str):
     """Devuelve una dependencia que verifica que el usuario tenga un rol permitido."""
+    from fastapi import Depends
 
-    async def _check(user: CurrentUser = __import__("fastapi").Depends(get_current_user)):
+    async def _check(user: CurrentUser = Depends(get_current_user)):  # noqa: B008
         if user.role not in allowed_roles:
             raise HTTPException(
                 status_code=403,
