@@ -1,0 +1,254 @@
+# =============================================================================
+# Simulador Saber 11 — Docker Compose (desarrollo)
+# Levantar todo: docker compose up -d
+# =============================================================================
+
+services:
+  # --- API Gateway ---
+  gateway:
+    build: ./gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - KAMPUS_BASE_URL=${KAMPUS_BASE_URL:-http://host.docker.internal:8000}
+      - KAMPUS_AUTH_ENDPOINT=${KAMPUS_AUTH_ENDPOINT:-/api/token/}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5174}
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - AI_GENERATOR_URL=http://ai-generator:3002
+      - EXAM_ENGINE_URL=http://exam-engine:3003
+      - DIAGNOSTIC_URL=http://diagnostic:3004
+      - STUDY_PLANNER_URL=http://study-planner:3005
+      - ANALYTICS_URL=http://analytics:3006
+    volumes:
+      - ./gateway/src:/app/src
+    depends_on:
+      - redis-saber11
+    restart: unless-stopped
+
+  # --- Question Bank Service ---
+  question-bank:
+    build:
+      context: .
+      dockerfile: services/question-bank/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-questions:5432/saber11_questions
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+    volumes:
+      - ./services/question-bank/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    depends_on:
+      db-questions:
+        condition: service_healthy
+      redis-saber11:
+        condition: service_started
+    restart: unless-stopped
+
+  # --- AI Generator Service ---
+  ai-generator:
+    build:
+      context: .
+      dockerfile: services/ai-generator/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+    volumes:
+      - ./services/ai-generator/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    depends_on:
+      - question-bank
+    restart: unless-stopped
+
+  # --- Exam Engine Service ---
+  exam-engine:
+    build:
+      context: .
+      dockerfile: services/exam-engine/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-exams:5432/saber11_exams
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+    volumes:
+      - ./services/exam-engine/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    depends_on:
+      db-exams:
+        condition: service_healthy
+      question-bank:
+        condition: service_started
+    restart: unless-stopped
+
+  # --- Diagnostic Engine ---
+  diagnostic:
+    build:
+      context: .
+      dockerfile: services/diagnostic/Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-profiles:5432/saber11_profiles
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+    volumes:
+      - ./services/diagnostic/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    depends_on:
+      db-profiles:
+        condition: service_healthy
+      question-bank:
+        condition: service_started
+    restart: unless-stopped
+
+  # --- Study Planner Service ---
+  study-planner:
+    build:
+      context: .
+      dockerfile: services/study-planner/Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-profiles:5432/saber11_profiles
+      - QUESTION_BANK_URL=http://question-bank:3001
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+    volumes:
+      - ./services/study-planner/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    depends_on:
+      db-profiles:
+        condition: service_healthy
+      question-bank:
+        condition: service_started
+    restart: unless-stopped
+
+  # --- Analytics Service ---
+  analytics:
+    build:
+      context: .
+      dockerfile: services/analytics/Dockerfile
+    ports:
+      - "3006:3006"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-analytics:5432/saber11_analytics
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+    volumes:
+      - ./services/analytics/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    depends_on:
+      db-analytics:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Notification Service ---
+  notifications:
+    build:
+      context: .
+      dockerfile: services/notifications/Dockerfile
+    environment:
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - KAMPUS_API_URL=${KAMPUS_BASE_URL:-http://host.docker.internal:8000}
+    volumes:
+      - ./services/notifications/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    depends_on:
+      - redis-saber11
+    restart: unless-stopped
+
+  # --- Frontend ---
+  frontend:
+    build: ./frontend
+    ports:
+      - "5174:5174"
+    depends_on:
+      - gateway
+
+  # ==========================================================================
+  # Infraestructura
+  # ==========================================================================
+
+  # --- Bases de datos ---
+  db-questions:
+    image: postgres:15-alpine
+    volumes:
+      - questions_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_questions
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-saber11_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_questions"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db-exams:
+    image: postgres:15-alpine
+    volumes:
+      - exams_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_exams
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-saber11_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_exams"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db-profiles:
+    image: postgres:15-alpine
+    volumes:
+      - profiles_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_profiles
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-saber11_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_profiles"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db-analytics:
+    image: postgres:15-alpine
+    volumes:
+      - analytics_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_analytics
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-saber11_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_analytics"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- Redis ---
+  redis-saber11:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  questions_data:
+  exams_data:
+  profiles_data:
+  analytics_data:
