@@ -7,8 +7,8 @@ venv/
 
 # Environment
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 
 # IDE
 .vscode/settings.json
@@ -23,6 +23,9 @@ build/
 
 # Docker
 *.log
+pnpm-debug.log*
+npm-debug.log*
+yarn-error.log*
 
 # OS
 .DS_Store
@@ -31,6 +34,7 @@ Thumbs.db
 # Coverage
 htmlcov/
 .coverage
+.coverage.*
 coverage/
 
 # Python

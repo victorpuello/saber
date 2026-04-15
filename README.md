@@ -37,3 +37,24 @@ El frontend estará disponible en `http://localhost:5174` y el API Gateway en `h
 - [Estrategia visual](docs/estrategia_imagenes_saber11.md)
 - [Integración Kampus](docs/integracion_kampus_produccion.md)
 - [Plan de trabajo](docs/TODO.md)
+
+## Publicación en GitHub
+
+La rama principal del repositorio es `main` y se recomienda usar `develop` para integración.
+
+Primer push a un repositorio remoto nuevo:
+
+```bash
+git remote add origin <URL_DEL_REPOSITORIO>
+git push -u origin main
+```
+
+Flujo recomendado para trabajo diario:
+
+```bash
+git checkout -b develop
+git push -u origin develop
+git checkout -b feature/mi-cambio develop
+```
+
+Guía de colaboración completa en [CONTRIBUTING.md](CONTRIBUTING.md).
