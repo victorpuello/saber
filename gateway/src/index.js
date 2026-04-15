@@ -6,8 +6,10 @@ import morgan from "morgan";
 import config from "./lib/config.js";
 import logger from "./lib/logger.js";
 import { ipLimiter } from "./middleware/rateLimiter.js";
+import { auditLog } from "./middleware/audit.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import healthRoutes from "./routes/health.js";
+import authRoutes from "./routes/auth.js";
 import proxyRoutes from "./routes/proxy.js";
 
 const app = express();
@@ -29,9 +31,11 @@ app.use(
     stream: { write: (msg) => logger.info(msg.trim()) },
   })
 );
+app.use(auditLog);
 
 // --- Rutas ---
 app.use(healthRoutes);
+app.use(authRoutes);
 app.use(proxyRoutes);
 
 // --- Errores ---

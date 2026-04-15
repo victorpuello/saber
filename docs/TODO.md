@@ -66,13 +66,13 @@ Checklist:
 - [x] Configurar docker compose de desarrollo con Postgres y Redis.
 - [x] Implementar health checks por servicio.
 - [x] Configurar manejo de variables de entorno y secretos locales.
-- [ ] Configurar pipeline CI basico (lint, test, build).
+- [x] Configurar pipeline CI basico (lint, test, build).
 - [x] Definir convenciones de logs, tracing y correlacion de requests.
 
 Criterios de aceptacion:
 - [x] Comando unico para levantar entorno local completo.
-- [ ] Todos los servicios reportan estado saludable.
-- [ ] Pipeline CI ejecuta validaciones base sin errores.
+- [x] Todos los servicios reportan estado saludable.
+- [x] Pipeline CI ejecuta validaciones base sin errores.
 
 ### Sprint 3 (Semanas 5-6) - API Gateway + autenticacion federada
 
@@ -80,17 +80,17 @@ Meta del sprint:
 Operar autenticacion federada de punta a punta desde el gateway.
 
 Checklist:
-- [ ] Implementar endpoint de login del simulador (proxy controlado a Kampus).
-- [ ] Emitir JWT interno del simulador con claims requeridos.
-- [ ] Implementar middleware de autorizacion por rol y permisos.
-- [ ] Configurar rate limiting por usuario e IP.
-- [ ] Implementar refresh token y expiracion de sesiones.
-- [ ] Pruebas de seguridad basicas (token invalido, expirado, rol incorrecto).
+- [x] Implementar endpoint de login del simulador (proxy controlado a Kampus).
+- [x] Emitir JWT interno del simulador con claims requeridos.
+- [x] Implementar middleware de autorizacion por rol y permisos.
+- [x] Configurar rate limiting por usuario e IP.
+- [x] Implementar refresh token y expiracion de sesiones.
+- [x] Pruebas de seguridad basicas (token invalido, expirado, rol incorrecto).
 
 Criterios de aceptacion:
-- [ ] Flujo login -> acceso protegido -> refresh funcionando.
-- [ ] Rutas protegidas niegan acceso cuando el rol no aplica.
-- [ ] Auditoria minima de autenticacion habilitada.
+- [x] Flujo login -> acceso protegido -> refresh funcionando.
+- [x] Rutas protegidas niegan acceso cuando el rol no aplica.
+- [x] Auditoria minima de autenticacion habilitada.
 
 ## Fase B - Banco de preguntas y recursos visuales (Sprints 4-6)
 
