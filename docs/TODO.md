@@ -156,17 +156,17 @@ Meta del sprint:
 Ejecutar simulacros con sesiones reales y calificacion segura server-side.
 
 Checklist:
-- [ ] Implementar creacion de examenes (DIAGNOSTIC, FULL_SIMULATION, AREA_PRACTICE, CUSTOM).
-- [ ] Implementar inicio de sesion de examen y guardado de respuestas.
-- [ ] Implementar cierre de sesion y calculo de puntajes.
-- [ ] Emitir evento exam.completed al finalizar.
-- [ ] Asegurar que el frontend no reciba la respuesta correcta durante examen.
-- [ ] Implementar historial de sesiones por estudiante.
+- [x] Implementar creacion de examenes (DIAGNOSTIC, FULL_SIMULATION, AREA_PRACTICE, CUSTOM).
+- [x] Implementar inicio de sesion de examen y guardado de respuestas.
+- [x] Implementar cierre de sesion y calculo de puntajes.
+- [x] Emitir evento exam.completed al finalizar.
+- [x] Asegurar que el frontend no reciba la respuesta correcta durante examen.
+- [x] Implementar historial de sesiones por estudiante.
 
 Criterios de aceptacion:
-- [ ] Estudiante puede presentar y finalizar examen completo.
-- [ ] Puntaje y resultados quedan persistidos y consultables.
-- [ ] Validacion de seguridad evita fuga de respuesta correcta.
+- [x] Estudiante puede presentar y finalizar examen completo.
+- [x] Puntaje y resultados quedan persistidos y consultables.
+- [x] Validacion de seguridad evita fuga de respuesta correcta.
 
 ### Sprint 8 (Semanas 15-16) - Diagnostic Engine (CAT/TRI)
 
