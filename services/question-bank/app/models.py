@@ -254,3 +254,59 @@ class QuestionMedia(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
     question: Mapped[Question] = relationship(back_populates="media")
+
+
+class VisualAsset(Base):
+    """Banco curado de recursos visuales reutilizables."""
+
+    __tablename__ = "visual_assets"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+
+    # Clasificación
+    area_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("areas.id"))
+    media_type: Mapped[str] = mapped_column(
+        String(25),
+        CheckConstraint(
+            "media_type IN ('chart','table','diagram','map','infographic','comic',"
+            "'public_sign','photograph','timeline','state_structure','geometric_figure',"
+            "'probability_diagram')"
+        ),
+        nullable=False,
+    )
+
+    # Almacenamiento
+    storage_url: Mapped[str] = mapped_column(Text, nullable=False)
+    thumbnail_url: Mapped[str | None] = mapped_column(Text)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    width_px: Mapped[int | None] = mapped_column(Integer)
+    height_px: Mapped[int | None] = mapped_column(Integer)
+
+    # Metadata y accesibilidad
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    alt_text: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    tags: Mapped[str | None] = mapped_column(Text)  # Comma-separated
+    license_type: Mapped[str] = mapped_column(
+        String(30),
+        CheckConstraint(
+            "license_type IN ('OWN','CC0','CC_BY','CC_BY_SA','CC_BY_NC','PUBLIC_DOMAIN',"
+            "'EDUCATIONAL_USE')"
+        ),
+        default="OWN",
+    )
+    attribution: Mapped[str | None] = mapped_column(Text)
+
+    # Uso
+    times_used: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    uploaded_by_user_id: Mapped[int | None] = mapped_column(Integer)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )

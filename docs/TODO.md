@@ -118,17 +118,17 @@ Meta del sprint:
 Soportar medios visuales como entidad de primera clase del item.
 
 Checklist:
-- [ ] Implementar upload manual con validaciones de formato, peso y dimensiones.
-- [ ] Procesar imagenes (optimizacion, thumbnail, version HD).
-- [ ] Persistir media en object storage y relacionar en question_media.
-- [ ] Implementar visual_assets con metadata, tags y licencias.
-- [ ] Implementar busqueda y seleccion de assets por area/tipo/tag.
-- [ ] Hacer alt_text obligatorio para todo recurso visual.
+- [x] Implementar upload manual con validaciones de formato, peso y dimensiones.
+- [x] Procesar imagenes (optimizacion, thumbnail, version HD).
+- [x] Persistir media en object storage y relacionar en question_media.
+- [x] Implementar visual_assets con metadata, tags y licencias.
+- [x] Implementar busqueda y seleccion de assets por area/tipo/tag.
+- [x] Hacer alt_text obligatorio para todo recurso visual.
 
 Criterios de aceptacion:
-- [ ] Docente puede subir imagen, verla y asociarla a una pregunta.
-- [ ] Docente/Admin pueden reutilizar assets del banco curado.
-- [ ] Preguntas con media no se publican si falta alt_text.
+- [x] Docente puede subir imagen, verla y asociarla a una pregunta.
+- [x] Docente/Admin pueden reutilizar assets del banco curado.
+- [x] Preguntas con media no se publican si falta alt_text.
 
 ### Sprint 6 (Semanas 11-12) - AI Generator + visuales programaticos
 

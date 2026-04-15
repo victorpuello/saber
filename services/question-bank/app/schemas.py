@@ -252,3 +252,132 @@ class PaginatedResponse(BaseModel):
     page: int
     page_size: int
     pages: int
+
+
+# =============================================================================
+# Question Media
+# =============================================================================
+
+
+class MediaType(str, Enum):
+    chart = "chart"
+    table = "table"
+    diagram = "diagram"
+    map = "map"
+    infographic = "infographic"
+    comic = "comic"
+    public_sign = "public_sign"
+    photograph = "photograph"
+    timeline = "timeline"
+    state_structure = "state_structure"
+    geometric_figure = "geometric_figure"
+    probability_diagram = "probability_diagram"
+
+
+class MediaSource(str, Enum):
+    UPLOAD = "UPLOAD"
+    PROGRAMMATIC = "PROGRAMMATIC"
+    ASSET_LIBRARY = "ASSET_LIBRARY"
+
+
+class DisplayMode(str, Enum):
+    INLINE = "INLINE"
+    ABOVE_STEM = "ABOVE_STEM"
+    FULL_WIDTH = "FULL_WIDTH"
+    SIDE_BY_SIDE = "SIDE_BY_SIDE"
+
+
+class QuestionMediaCreate(BaseModel):
+    media_type: MediaType
+    source: MediaSource
+    alt_text: str = Field(min_length=5)
+    alt_text_detailed: str | None = None
+    is_essential: bool = True
+    position: int = 0
+    display_mode: DisplayMode = DisplayMode.INLINE
+    caption: str | None = None
+    visual_data: str | None = None
+    render_engine: str | None = None
+    asset_id: uuid.UUID | None = None  # Si viene de asset library
+
+
+class QuestionMediaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    question_id: uuid.UUID
+    media_type: str
+    source: str
+    storage_url: str | None = None
+    thumbnail_url: str | None = None
+    visual_data: str | None = None
+    render_engine: str | None = None
+    alt_text: str
+    alt_text_detailed: str | None = None
+    is_essential: bool
+    position: int
+    display_mode: str
+    caption: str | None = None
+    width_px: int | None = None
+    height_px: int | None = None
+    created_at: datetime
+
+
+# =============================================================================
+# Visual Assets (banco curado reutilizable)
+# =============================================================================
+
+
+class LicenseType(str, Enum):
+    OWN = "OWN"
+    CC0 = "CC0"
+    CC_BY = "CC_BY"
+    CC_BY_SA = "CC_BY_SA"
+    CC_BY_NC = "CC_BY_NC"
+    PUBLIC_DOMAIN = "PUBLIC_DOMAIN"
+    EDUCATIONAL_USE = "EDUCATIONAL_USE"
+
+
+class VisualAssetCreate(BaseModel):
+    area_id: uuid.UUID | None = None
+    media_type: MediaType
+    title: str = Field(min_length=3, max_length=200)
+    alt_text: str = Field(min_length=5)
+    description: str | None = None
+    tags: str | None = None
+    license_type: LicenseType = LicenseType.OWN
+    attribution: str | None = None
+
+
+class VisualAssetOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    area_id: uuid.UUID | None = None
+    media_type: str
+    storage_url: str
+    thumbnail_url: str | None = None
+    original_filename: str
+    content_type: str
+    file_size_bytes: int
+    width_px: int | None = None
+    height_px: int | None = None
+    title: str
+    alt_text: str
+    description: str | None = None
+    tags: str | None = None
+    license_type: str
+    attribution: str | None = None
+    times_used: int = 0
+    is_active: bool = True
+    uploaded_by_user_id: int | None = None
+    created_at: datetime
+
+
+class VisualAssetSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: uuid.UUID
+    media_type: str
+    title: str
+    thumbnail_url: str | None = None
+    alt_text: str
+    tags: str | None = None
+    times_used: int = 0
