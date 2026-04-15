@@ -1,7 +1,7 @@
 # TODO - Plan de trabajo de desarrollo
 
 Fecha de creacion: 2026-04-14
-Estado general: Sprint 2 en progreso
+Estado general: Sprint 12 pendiente — Sprint 11 completado
 Duracion objetivo: 24 semanas (12 sprints de 2 semanas)
 
 ## 1) Verificacion de documentos fuente
@@ -174,17 +174,17 @@ Meta del sprint:
 Calcular perfil inicial por competencias con evaluacion adaptativa.
 
 Checklist:
-- [ ] Implementar sesion de diagnostico adaptativo por area.
-- [ ] Implementar seleccion de items cercana a theta y cobertura de competencias.
-- [ ] Implementar actualizacion de theta y error estandar por respuesta.
-- [ ] Implementar criterio de parada por precision minima.
-- [ ] Persistir student_profiles y competency_scores.
-- [ ] Emitir evento diagnostic.completed.
+- [x] Implementar sesion de diagnostico adaptativo por area.
+- [x] Implementar seleccion de items cercana a theta y cobertura de competencias.
+- [x] Implementar actualizacion de theta y error estandar por respuesta.
+- [x] Implementar criterio de parada por precision minima.
+- [x] Persistir student_profiles y competency_scores.
+- [x] Emitir evento diagnostic.completed.
 
 Criterios de aceptacion:
-- [ ] Diagnostico finaliza con clasificacion por competencia.
-- [ ] Perfil resultante es consultable por estudiante y por docente/admin autorizado.
-- [ ] Eventos de diagnostico disponibles para plan y analitica.
+- [x] Diagnostico finaliza con clasificacion por competencia.
+- [x] Perfil resultante es consultable por estudiante y por docente/admin autorizado.
+- [x] Eventos de diagnostico disponibles para plan y analitica.
 
 ### Sprint 9 (Semanas 17-18) - Study Planner adaptativo
 
@@ -192,17 +192,17 @@ Meta del sprint:
 Generar y reajustar plan de estudio semanal segun debilidades detectadas.
 
 Checklist:
-- [ ] Implementar generacion inicial de plan (8-12 semanas).
-- [ ] Priorizar competencias CRITICAL y WEAKNESS.
-- [ ] Crear unidades semanales con practica asignada.
-- [ ] Implementar marcado de avance por unidad.
-- [ ] Recalcular prioridad del plan tras progreso o estancamiento.
-- [ ] Emitir evento plan.updated para notificaciones.
+- [x] Implementar generacion inicial de plan (8-12 semanas).
+- [x] Priorizar competencias CRITICAL y WEAKNESS.
+- [x] Crear unidades semanales con practica asignada.
+- [x] Implementar marcado de avance por unidad.
+- [x] Recalcular prioridad del plan tras progreso o estancamiento.
+- [x] Emitir evento plan.updated para notificaciones.
 
 Criterios de aceptacion:
-- [ ] Estudiante visualiza plan activo y puede completar unidades.
-- [ ] Plan se reajusta con evidencia de rendimiento.
-- [ ] Docente/Admin pueden consultar plan por estudiante.
+- [x] Estudiante visualiza plan activo y puede completar unidades.
+- [x] Plan se reajusta con evidencia de rendimiento.
+- [x] Docente/Admin pueden consultar plan por estudiante.
 
 ## Fase D - Analitica, operaciones y salida a produccion (Sprints 10-12)
 
@@ -212,17 +212,17 @@ Meta del sprint:
 Entregar analitica accionable por estudiante, grado e institucion.
 
 Checklist:
-- [ ] Consumir eventos del bus (exam.completed, diagnostic.completed, question.created).
-- [ ] Implementar KPIs de progreso individual y por curso.
-- [ ] Implementar reporte de desempeno por competencia y area.
-- [ ] Implementar metricas de rendimiento del banco de preguntas.
-- [ ] Exponer endpoints de analitica por rol.
-- [ ] Validar performance de consultas analiticas.
+- [x] Consumir eventos del bus (exam.completed, diagnostic.completed, question.created).
+- [x] Implementar KPIs de progreso individual y por curso.
+- [x] Implementar reporte de desempeno por competencia y area.
+- [x] Implementar metricas de rendimiento del banco de preguntas.
+- [x] Exponer endpoints de analitica por rol.
+- [x] Validar performance de consultas analiticas.
 
 Criterios de aceptacion:
-- [ ] Dashboard muestra datos consistentes con resultados reales.
-- [ ] Consultas clave responden dentro de tiempos objetivo definidos.
-- [ ] Reportes institucionales exportables y auditables.
+- [x] Dashboard muestra datos consistentes con resultados reales.
+- [x] Consultas clave responden dentro de tiempos objetivo definidos.
+- [x] Reportes institucionales exportables y auditables.
 
 ### Sprint 11 (Semanas 21-22) - Notificaciones, sync y hardening
 
@@ -230,17 +230,17 @@ Meta del sprint:
 Completar operacion institucional con sincronizacion y seguridad reforzada.
 
 Checklist:
-- [ ] Implementar Notification Service para hitos y recordatorios.
-- [ ] Implementar jobs periodicos de sync de estudiantes/docentes desde Kampus.
-- [ ] Completar auditoria de acciones criticas (crear/editar/aprobar).
-- [ ] Aplicar politicas finales de CORS, rate limiting y rotacion de tokens.
-- [ ] Configurar backups, retencion y plan de recuperacion.
-- [ ] Ejecutar pruebas de seguridad basicas (authz, inyeccion, abuso API).
+- [x] Implementar Notification Service para hitos y recordatorios.
+- [x] Implementar jobs periodicos de sync de estudiantes/docentes desde Kampus.
+- [x] Completar auditoria de acciones criticas (crear/editar/aprobar).
+- [x] Aplicar politicas finales de CORS, rate limiting y rotacion de tokens.
+- [x] Configurar backups, retencion y plan de recuperacion.
+- [x] Ejecutar pruebas de seguridad basicas (authz, inyeccion, abuso API).
 
 Criterios de aceptacion:
-- [ ] Notificaciones disparadas por eventos reales del sistema.
-- [ ] Datos sincronizados con Kampus sin inconsistencias criticas.
-- [ ] Checklist de seguridad operativa aprobado.
+- [x] Notificaciones disparadas por eventos reales del sistema.
+- [x] Datos sincronizados con Kampus sin inconsistencias criticas.
+- [x] Checklist de seguridad operativa aprobado.
 
 ### Sprint 12 (Semanas 23-24) - Piloto institucional y salida a produccion
 
@@ -302,12 +302,12 @@ Criterios de aceptacion:
 - [ ] Sprint 1 completado
 - [ ] Sprint 2 completado
 - [ ] Sprint 3 completado
-- [ ] Sprint 4 completado
-- [ ] Sprint 5 completado
-- [ ] Sprint 6 completado
-- [ ] Sprint 7 completado
-- [ ] Sprint 8 completado
-- [ ] Sprint 9 completado
-- [ ] Sprint 10 completado
-- [ ] Sprint 11 completado
+- [x] Sprint 4 completado
+- [x] Sprint 5 completado
+- [x] Sprint 6 completado
+- [x] Sprint 7 completado
+- [x] Sprint 8 completado
+- [x] Sprint 9 completado
+- [x] Sprint 10 completado
+- [x] Sprint 11 completado
 - [ ] Sprint 12 completado

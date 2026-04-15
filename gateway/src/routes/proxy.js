@@ -15,6 +15,7 @@ const SERVICE_MAP = {
   "/api/diagnostic": config.diagnosticUrl,
   "/api/plans": config.studyPlannerUrl,
   "/api/analytics": config.analyticsUrl,
+  "/api/notifications": config.notificationsUrl,
 };
 
 /**

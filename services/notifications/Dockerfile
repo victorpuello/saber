@@ -5,4 +5,4 @@ RUN pip install --no-cache-dir /shared/
 COPY services/notifications/ ./
 RUN pip install --no-cache-dir .
 EXPOSE 3007
-CMD ["python", "-m", "app.main"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3007"]

@@ -21,6 +21,7 @@ services:
       - DIAGNOSTIC_URL=http://diagnostic:3004
       - STUDY_PLANNER_URL=http://study-planner:3005
       - ANALYTICS_URL=http://analytics:3006
+      - NOTIFICATIONS_URL=http://notifications:3007
     volumes:
       - ./gateway/src:/app/src
     depends_on:
@@ -157,14 +158,22 @@ services:
     build:
       context: .
       dockerfile: services/notifications/Dockerfile
+    ports:
+      - "3007:3007"
     environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-notifications:5432/saber11_notifications
       - REDIS_URL=redis://redis-saber11:6379/0
       - KAMPUS_API_URL=${KAMPUS_BASE_URL:-http://host.docker.internal:8000}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+      - SYNC_INTERVAL_MINUTES=${SYNC_INTERVAL_MINUTES:-60}
     volumes:
       - ./services/notifications/app:/app/app
       - ./shared/saber11_shared:/shared/saber11_shared
     depends_on:
-      - redis-saber11
+      db-notifications:
+        condition: service_healthy
+      redis-saber11:
+        condition: service_started
     restart: unless-stopped
 
   # --- Frontend ---
@@ -236,6 +245,20 @@ services:
       timeout: 3s
       retries: 5
 
+  db-notifications:
+    image: postgres:15-alpine
+    volumes:
+      - notifications_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_notifications
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-saber11_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_notifications"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # --- Redis ---
   redis-saber11:
     image: redis:7-alpine
@@ -252,3 +275,4 @@ volumes:
   exams_data:
   profiles_data:
   analytics_data:
+  notifications_data:

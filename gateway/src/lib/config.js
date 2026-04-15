@@ -23,6 +23,7 @@ const config = Object.freeze({
   diagnosticUrl: process.env.DIAGNOSTIC_URL || "http://diagnostic:3004",
   studyPlannerUrl: process.env.STUDY_PLANNER_URL || "http://study-planner:3005",
   analyticsUrl: process.env.ANALYTICS_URL || "http://analytics:3006",
+  notificationsUrl: process.env.NOTIFICATIONS_URL || "http://notifications:3007",
 
   // Rate limiting
   rateLimitWindowMs: 60_000,
