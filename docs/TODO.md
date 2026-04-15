@@ -1,7 +1,7 @@
 # TODO - Plan de trabajo de desarrollo
 
 Fecha de creacion: 2026-04-14
-Estado general: En planificacion
+Estado general: Sprint 2 en progreso
 Duracion objetivo: 24 semanas (12 sprints de 2 semanas)
 
 ## 1) Verificacion de documentos fuente
@@ -62,15 +62,15 @@ Meta del sprint:
 Levantar arquitectura base de microservicios con ejecucion local reproducible.
 
 Checklist:
-- [ ] Crear estructura base de gateway + servicios + frontend.
-- [ ] Configurar docker compose de desarrollo con Postgres y Redis.
-- [ ] Implementar health checks por servicio.
-- [ ] Configurar manejo de variables de entorno y secretos locales.
+- [x] Crear estructura base de gateway + servicios + frontend.
+- [x] Configurar docker compose de desarrollo con Postgres y Redis.
+- [x] Implementar health checks por servicio.
+- [x] Configurar manejo de variables de entorno y secretos locales.
 - [ ] Configurar pipeline CI basico (lint, test, build).
-- [ ] Definir convenciones de logs, tracing y correlacion de requests.
+- [x] Definir convenciones de logs, tracing y correlacion de requests.
 
 Criterios de aceptacion:
-- [ ] Comando unico para levantar entorno local completo.
+- [x] Comando unico para levantar entorno local completo.
 - [ ] Todos los servicios reportan estado saludable.
 - [ ] Pipeline CI ejecuta validaciones base sin errores.
 
