@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from pydantic import BaseModel
 from saber11_shared.auth import CurrentUser, get_current_user, require_role
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -206,6 +207,64 @@ async def link_asset_to_question(
 
     # Incrementar contador de uso del asset
     asset.times_used = (asset.times_used or 0) + 1
+    await db.flush()
+    await db.refresh(media)
+    return media
+
+
+# ── Crear media programática (desde AI Generator) ────────────────────
+
+
+class ProgrammaticMediaRequest(BaseModel):
+    """Request body para media programática generada por IA."""
+
+    media_type: str
+    source: str = "PROGRAMMATIC"
+    visual_data: str
+    render_engine: str
+    alt_text: str
+    alt_text_detailed: str | None = None
+    display_mode: str = "ABOVE_STEM"
+    is_essential: bool = True
+    position: int = 0
+    caption: str | None = None
+
+
+@router.post(
+    "/{question_id}/media/programmatic",
+    response_model=QuestionMediaOut,
+    status_code=201,
+)
+async def create_programmatic_media(
+    question_id: uuid.UUID,
+    body: ProgrammaticMediaRequest,
+    db: AsyncSession = Depends(_get_db),
+    user: CurrentUser = Depends(require_role("ADMIN")),
+):
+    """Crea media programática (visual_data + render_engine) para una pregunta."""
+    question = await db.get(Question, question_id)
+    if not question:
+        raise HTTPException(404, "Pregunta no encontrada")
+
+    if len(body.alt_text.strip()) < 5:
+        raise HTTPException(
+            422, "alt_text obligatorio (mínimo 5 caracteres para accesibilidad)"
+        )
+
+    media = QuestionMedia(
+        question_id=question_id,
+        media_type=body.media_type,
+        source="PROGRAMMATIC",
+        visual_data=body.visual_data,
+        render_engine=body.render_engine,
+        alt_text=body.alt_text.strip(),
+        alt_text_detailed=body.alt_text_detailed,
+        is_essential=body.is_essential,
+        position=body.position,
+        display_mode=body.display_mode,
+        caption=body.caption,
+    )
+    db.add(media)
     await db.flush()
     await db.refresh(media)
     return media

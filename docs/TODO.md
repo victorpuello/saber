@@ -136,17 +136,17 @@ Meta del sprint:
 Generar preguntas IA con salida validada y soporte visual programatico.
 
 Checklist:
-- [ ] Implementar endpoints /generate y /generate/batch para ADMIN.
-- [ ] Implementar prompts por area y validador automatico de calidad.
-- [ ] Implementar visual_data y render_engine para chart/svg/html/map.
-- [ ] Validar coherencia imagen-pregunta-alt_text antes de enviar a revision.
-- [ ] Enviar preguntas IA a flujo PENDING_REVIEW.
-- [ ] Registrar metrica de tasa aprobacion/rechazo IA.
+- [x] Implementar endpoints /generate y /generate/batch para ADMIN.
+- [x] Implementar prompts por area y validador automatico de calidad.
+- [x] Implementar visual_data y render_engine para chart/svg/html/map.
+- [x] Validar coherencia imagen-pregunta-alt_text antes de enviar a revision.
+- [x] Enviar preguntas IA a flujo PENDING_REVIEW.
+- [x] Registrar metrica de tasa aprobacion/rechazo IA.
 
 Criterios de aceptacion:
-- [ ] Se generan preguntas validas y pasan a revision.
-- [ ] El render de visuales programaticos funciona en modo no interactivo para examen.
-- [ ] Todas las preguntas IA tienen explicaciones pedagogicas por opcion.
+- [x] Se generan preguntas validas y pasan a revision.
+- [x] El render de visuales programaticos funciona en modo no interactivo para examen.
+- [x] Todas las preguntas IA tienen explicaciones pedagogicas por opcion.
 
 ## Fase C - Evaluacion, diagnostico y plan adaptativo (Sprints 7-9)
 
