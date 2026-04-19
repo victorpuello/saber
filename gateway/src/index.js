@@ -25,7 +25,9 @@ app.use(
 app.use(ipLimiter);
 
 // --- Parsing y logging ---
-app.use(express.json({ limit: "1mb" }));
+// NO parsear body JSON en rutas de proxy — http-proxy-middleware necesita
+// el stream crudo. Solo parsear en /api/auth (rutas locales del gateway).
+app.use("/api/auth", express.json({ limit: "1mb" }));
 app.use(
   morgan("short", {
     stream: { write: (msg) => logger.info(msg.trim()) },

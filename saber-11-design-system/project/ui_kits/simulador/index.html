@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saber 11 Simulador — UI Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #004ac6; --primary-c: #2563eb; --primary-fixed: #dbe1ff;
+  --on-primary-fixed: #00174b; --on-primary-c: #eeefff;
+  --secondary: #505f76; --surface: #f7f9fb; --on-surface: #191c1e;
+  --sc-low: #f2f4f6; --sc: #eceef0; --sc-high: #e6e8ea; --sc-highest: #e0e3e5;
+  --sc-lowest: #ffffff; --on-sv: #434655; --outline: #737686; --ov: #c3c6d7;
+  --error: #ba1a1a; --error-c: #ffdad6; --on-error-c: #93000a;
+  --shadow-card: 0 24px 55px -30px rgb(0 74 198 / 35%);
+  --gradient: linear-gradient(135deg, #004ac6 0%, #2563eb 100%);
+  --gradient-br: linear-gradient(to bottom right, #004ac6, #2563eb);
+}
+body { font-family: "Inter", sans-serif; background: var(--surface); color: var(--on-surface); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+.screen { display: none; }
+.screen.active { display: flex; }
+.ms { font-family: "Material Symbols Outlined"; font-weight: normal; font-style: normal; font-variation-settings: "FILL" 0,"wght" 420,"GRAD" 0,"opsz" 24; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; }
+.ms-fill { font-variation-settings: "FILL" 1,"wght" 420,"GRAD" 0,"opsz" 24; }
+button, .btn { cursor: pointer; border: none; font-family: "Inter", sans-serif; transition: transform 0.1s, opacity 0.1s; }
+button:active { transform: scale(0.97); }
+
+/* ── Shared nav breadcrumb ─────────────────────────────── */
+.screen-nav { position: fixed; bottom: 16px; right: 16px; z-index: 9999; display: flex; gap: 6px; }
+.snav-btn { padding: 8px 14px; border-radius: 9999px; background: rgba(0,0,0,0.75); color: white; font-size: 11px; font-weight: 700; border: none; cursor: pointer; backdrop-filter: blur(8px); }
+.snav-btn:hover { background: rgba(0,74,198,0.85); }
+
+/* ══════════════════════════════════════════════════
+   SCREEN 1 — LOGIN
+══════════════════════════════════════════════════ */
+#screen-login { min-height: 100vh; }
+
+.login-left {
+  position: relative; width: 58%; background: var(--gradient); display: flex;
+  flex-direction: column; justify-content: space-between; padding: 4rem;
+  overflow: hidden;
+}
+.login-left::before {
+  content: ""; position: absolute; inset: 0; opacity: 0.1;
+  background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0L0 0 0 40' fill='none' stroke='white' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 40px 40px;
+}
+.login-logo { position: relative; z-index: 1; display: flex; align-items: center; gap: 14px; }
+.login-logo-icon { width: 48px; height: 48px; border-radius: 14px; background: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.login-logo-text h1 { font-size: 28px; font-weight: 900; letter-spacing: -0.03em; color: var(--on-primary-c); }
+.login-logo-text p { font-size: 10px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: rgba(238,239,255,0.7); }
+
+.login-hero { position: relative; z-index: 1; max-width: 520px; }
+.login-hero-img { border-radius: 24px; overflow: hidden; aspect-ratio: 16/9; margin-bottom: 2rem; box-shadow: var(--shadow-card); background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; }
+.login-hero-img img { width: 100%; height: 100%; object-fit: cover; }
+.login-hero h2 { font-size: 36px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.1; color: var(--on-primary-c); margin-bottom: 1.25rem; text-wrap: balance; }
+.login-hero p { font-size: 18px; font-weight: 300; line-height: 1.7; color: rgba(238,239,255,0.85); }
+
+.login-footer { position: relative; z-index: 1; display: flex; align-items: center; gap: 16px; }
+.login-footer-line { width: 48px; height: 1px; background: rgba(238,239,255,0.3); }
+.login-footer span { font-size: 10px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(238,239,255,0.6); }
+
+.login-right {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--surface); padding: 3rem 4rem;
+}
+.login-form-wrap { width: 100%; max-width: 400px; }
+.login-h3 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+.kampus-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--sc-high); border-radius: 9999px; padding: 6px 12px; margin-bottom: 2.5rem; }
+.kampus-badge .ms { font-size: 14px; color: var(--secondary); }
+.kampus-badge span { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--secondary); }
+
+.field-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--on-sv); display: block; margin-bottom: 6px; padding: 0 4px; }
+.field-wrap { position: relative; margin-bottom: 20px; }
+.field-icon { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: var(--outline); font-size: 20px; pointer-events: none; transition: color 0.15s; }
+.field-wrap input { display: block; width: 100%; border-radius: 12px; border: 1px solid transparent; background: var(--sc-highest); padding: 14px 14px 14px 48px; font-size: 14px; color: var(--on-surface); font-family: "Inter", sans-serif; outline: none; transition: all 0.15s; }
+.field-wrap input::placeholder { color: var(--outline); }
+.field-wrap input:focus { background: white; border-color: rgba(0,74,198,0.3); box-shadow: 0 0 0 3px rgba(0,74,198,0.12); }
+.field-wrap input:focus + .field-icon-overlay { color: var(--primary); }
+
+.row-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 0 4px; }
+.forgot { font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; }
+.forgot:hover { opacity: 0.75; }
+
+.btn-submit {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 15px; border-radius: 12px; background: var(--gradient); color: white;
+  font-size: 16px; font-weight: 700; box-shadow: var(--shadow-card);
+  border: none; cursor: pointer; margin-top: 8px; margin-bottom: 2rem;
+  transition: transform 0.15s, opacity 0.15s;
+}
+.btn-submit:hover { transform: scale(1.01); }
+.login-legal { font-size: 13px; font-weight: 500; color: var(--secondary); line-height: 1.7; text-align: center; padding-top: 2rem; border-top: 1px solid var(--sc-high); }
+.login-legal a { color: var(--on-surface); font-weight: 700; text-decoration: underline; text-decoration-color: rgba(0,74,198,0.35); text-underline-offset: 3px; }
+.login-version { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--outline); text-align: center; margin-top: auto; padding-top: 2rem; }
+
+/* ══════════════════════════════════════════════════
+   SCREEN 2 — STUDENT DASHBOARD
+══════════════════════════════════════════════════ */
+#screen-dashboard { min-height: 100vh; }
+
+.sidebar {
+  position: fixed; top: 0; left: 0; width: 256px; height: 100vh;
+  background: #f8fafc; display: flex; flex-direction: column; padding: 24px 16px;
+}
+.sidebar-logo { display: flex; align-items: center; gap: 12px; padding: 0 12px; margin-bottom: 36px; }
+.sidebar-logo-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--primary); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,74,198,0.25); }
+.sidebar-logo-title { font-size: 20px; font-weight: 900; letter-spacing: -0.025em; }
+.sidebar-logo-sub { font-size: 9px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--secondary); }
+.sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.nav-link { display: flex; align-items: center; gap: 10px; padding: 11px 14px; font-size: 14px; font-weight: 600; color: var(--secondary); text-decoration: none; cursor: pointer; border-right: 4px solid transparent; transition: background 0.1s, color 0.1s; border-radius: 0; }
+.nav-link:hover { background: rgba(148,163,184,0.2); color: var(--primary); }
+.nav-link.active { border-right-color: var(--primary); color: var(--primary); font-weight: 700; }
+.nav-link .ms { font-size: 20px; }
+.sidebar-bottom { padding: 0 4px; }
+.sidebar-cta { width: 100%; padding: 12px; border-radius: 12px; background: var(--primary); color: white; font-size: 14px; font-weight: 700; border: none; cursor: pointer; }
+
+.dash-header {
+  position: fixed; top: 0; left: 256px; right: 0; height: 64px; z-index: 40;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,0.8); backdrop-filter: blur(20px);
+  padding: 0 32px; box-shadow: 0 1px 3px rgba(148,163,184,0.3);
+}
+.dash-header-title { font-size: 16px; font-weight: 700; }
+.dash-header-actions { display: flex; align-items: center; gap: 20px; }
+.dash-header-icons { display: flex; gap: 16px; }
+.dash-header-icons .ms { font-size: 22px; color: var(--secondary); cursor: pointer; }
+.dash-avatar { width: 32px; height: 32px; border-radius: 9999px; background: var(--primary); color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+.dash-main { margin-left: 256px; padding-top: 64px; min-height: 100vh; background: var(--surface); }
+.dash-content { padding: 32px; max-width: 1100px; display: flex; flex-direction: column; gap: 24px; }
+
+.dash-greeting { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.dash-greeting-sub { font-size: 14px; color: var(--secondary); margin-top: 4px; }
+
+.dash-top-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+
+.hero-card {
+  grid-column: span 2; border-radius: 32px; background: var(--gradient-br);
+  color: white; padding: 28px 28px 24px; display: flex; flex-direction: column; justify-content: space-between;
+  min-height: 220px; box-shadow: 0 8px 24px rgba(0,74,198,0.18); position: relative; overflow: hidden;
+}
+.hero-card::before, .hero-card::after { content: ""; position: absolute; border-radius: 9999px; background: rgba(255,255,255,0.05); pointer-events: none; }
+.hero-card::before { width: 140px; height: 140px; top: -30px; right: -30px; }
+.hero-card::after { width: 80px; height: 80px; bottom: -20px; right: 60px; }
+.hero-label { font-size: 10px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; opacity: 0.8; }
+.hero-value { font-size: 64px; font-weight: 900; letter-spacing: -0.05em; line-height: 1; margin-top: 8px; }
+.hero-max { font-size: 20px; font-weight: 500; opacity: 0.6; margin-left: 4px; }
+.hero-progress-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+.hero-bar { height: 10px; border-radius: 9999px; background: rgba(255,255,255,0.2); overflow: hidden; }
+.hero-bar-fill { height: 100%; border-radius: 9999px; background: white; }
+
+.metric-card { border-radius: 24px; background: white; border: 1px solid rgba(195,198,215,0.1); box-shadow: 0 12px 40px rgba(25,28,30,0.05); padding: 20px; }
+.metric-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--secondary); }
+.metric-value { font-size: 28px; font-weight: 700; margin-top: 6px; }
+.metric-helper { font-size: 11px; color: var(--on-sv); margin-top: 6px; }
+
+.area-section { background: white; border-radius: 24px; border: 1px solid rgba(195,198,215,0.1); box-shadow: 0 12px 40px rgba(25,28,30,0.05); padding: 20px 24px; }
+.section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+.area-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.area-item { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.area-circle { position: relative; width: 56px; height: 56px; }
+.area-circle svg { transform: rotate(-90deg); }
+.area-code { font-size: 11px; font-weight: 700; margin-top: 2px; }
+.area-score { font-size: 10px; color: var(--secondary); }
+
+.next-task { background: var(--primary-fixed); border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: transform 0.1s; }
+.next-task:hover { transform: scale(1.01); }
+.next-task-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.next-task-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--on-primary-fixed); opacity: 0.7; }
+.next-task-title { font-size: 15px; font-weight: 700; color: var(--on-primary-fixed); margin-top: 2px; }
+.next-task-arrow { margin-left: auto; }
+.next-task-arrow .ms { font-size: 22px; color: var(--primary); }
+
+/* ══════════════════════════════════════════════════
+   SCREEN 3 — DIAGNOSTIC SESSION
+══════════════════════════════════════════════════ */
+#screen-exam { height: 100vh; flex-direction: column; background: var(--surface); }
+
+.exam-header {
+  height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+  background: rgba(247,249,251,0.8); backdrop-filter: blur(20px); padding: 0 32px;
+  box-shadow: 0 8px 24px rgba(25,28,30,0.05); z-index: 50;
+}
+.exam-brand { display: flex; align-items: center; gap: 12px; }
+.exam-brand-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--gradient-br); display: flex; align-items: center; justify-content: center; }
+.exam-brand-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; color: var(--primary); }
+.exam-brand-area { font-size: 10px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: var(--secondary); }
+.exam-divider { width: 1px; height: 32px; background: rgba(195,198,215,0.3); margin: 0 8px; }
+.exam-progress-wrap { display: flex; flex-direction: column; gap: 4px; width: 200px; }
+.exam-progress-labels { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--secondary); }
+.exam-bar { height: 8px; border-radius: 9999px; background: var(--sc-high); overflow: hidden; }
+.exam-bar-fill { height: 100%; border-radius: 9999px; background: #006242; transition: width 0.5s; }
+
+.exam-timer { display: flex; align-items: center; gap: 8px; background: var(--sc-low); border-radius: 12px; padding: 8px 16px; }
+.exam-timer .ms { font-size: 18px; color: var(--secondary); }
+.exam-timer-value { font-family: monospace; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.exam-actions { display: flex; align-items: center; gap: 8px; }
+.exam-icon-btn { width: 40px; height: 40px; border-radius: 12px; background: transparent; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--secondary); transition: background 0.1s; }
+.exam-icon-btn:hover { background: var(--sc-high); }
+.exam-pause-btn { background: var(--sc-highest); border-radius: 12px; padding: 10px 20px; font-size: 14px; font-weight: 700; color: var(--on-surface); border: none; cursor: pointer; }
+
+.exam-body { flex: 1; display: flex; gap: 24px; padding: 24px 32px; overflow: hidden; min-height: 0; }
+
+.exam-context-pane {
+  flex: 1; border-radius: 32px; background: var(--sc-low); display: flex; flex-direction: column; overflow: hidden;
+}
+.exam-context-header { padding: 28px 32px 16px; display: flex; align-items: flex-end; justify-content: space-between; }
+.exam-context-badge { display: inline-block; background: var(--primary-fixed); border-radius: 9999px; padding: 4px 12px; font-size: 9px; font-weight: 900; letter-spacing: 0.28em; text-transform: uppercase; color: #003ea8; margin-bottom: 8px; }
+.exam-context-title { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.exam-context-tools { display: flex; gap: 8px; }
+.exam-tool-btn { width: 40px; height: 40px; border-radius: 10px; background: white; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--secondary); transition: color 0.1s; }
+.exam-tool-btn:hover { color: var(--primary); }
+.exam-text-scroll { flex: 1; overflow-y: auto; padding: 8px 40px 40px; scrollbar-width: thin; scrollbar-color: var(--sc-highest) transparent; }
+.exam-text { max-width: 65ch; font-size: 17px; line-height: 1.85; color: var(--on-sv); }
+.exam-text p + p { margin-top: 18px; }
+
+.exam-question-pane { width: 440px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+.exam-q-card { flex: 1; overflow-y: auto; border-radius: 32px; background: white; padding: 28px; box-shadow: 0 12px 40px rgba(25,28,30,0.04); scrollbar-width: thin; scrollbar-color: var(--sc-highest) transparent; }
+.q-num { width: 40px; height: 40px; border-radius: 9999px; background: #d0e1fb; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; color: #54647a; }
+.q-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.q-header-label { font-size: 12px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: var(--secondary); }
+.q-stem { font-size: 17px; font-weight: 500; line-height: 1.65; color: var(--on-surface); margin-bottom: 24px; }
+.options { display: flex; flex-direction: column; gap: 12px; }
+.option {
+  display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px;
+  border-radius: 16px; background: var(--sc-low); cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s; border: 2px solid transparent;
+}
+.option:hover { background: white; box-shadow: 0 0 0 2px rgba(0,74,198,0.15); }
+.option.selected { background: #d0e1fb; box-shadow: 0 0 0 2px rgba(0,74,198,0.2); }
+.option-letter {
+  width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; border: 1px solid rgba(195,198,215,0.3);
+  background: white; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--secondary); transition: background 0.15s, color 0.15s;
+}
+.option.selected .option-letter { background: var(--primary); color: white; border-color: var(--primary); }
+.option-text { font-size: 15px; line-height: 1.55; color: var(--on-sv); }
+.option.selected .option-text { font-weight: 500; color: var(--on-surface); }
+
+.exam-nav { display: flex; gap: 12px; }
+.exam-nav-prev { flex: 1; height: 60px; border-radius: 16px; background: var(--sc-high); font-size: 15px; font-weight: 700; color: var(--on-surface); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.exam-nav-next { flex: 1.5; height: 60px; border-radius: 16px; background: var(--gradient-br); font-size: 15px; font-weight: 700; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 12px 40px rgba(0,74,198,0.25); }
+
+/* ══════════════════════════════════════════════════
+   SCREEN 4 — ADMIN DASHBOARD
+══════════════════════════════════════════════════ */
+#screen-admin { min-height: 100vh; }
+
+.admin-sidebar { position: fixed; top: 0; left: 0; width: 256px; height: 100vh; background: #f8fafc; display: flex; flex-direction: column; padding: 24px 16px; }
+.admin-header { position: fixed; top: 0; left: 256px; right: 0; height: 64px; z-index: 40; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); padding: 0 32px; box-shadow: 0 1px 3px rgba(148,163,184,0.3); }
+.admin-main { margin-left: 256px; padding-top: 64px; background: var(--surface); min-height: 100vh; }
+.admin-content { padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+
+.admin-hero {
+  border-radius: 32px; background: var(--gradient-br); color: white;
+  padding: 28px 32px; position: relative; overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,74,198,0.18);
+}
+.admin-hero::before { content: ""; position: absolute; width: 140px; height: 140px; border-radius: 9999px; background: rgba(255,255,255,0.05); top: -30px; right: -20px; }
+.admin-hero::after { content: ""; position: absolute; width: 80px; height: 80px; border-radius: 9999px; background: rgba(255,255,255,0.05); bottom: -20px; right: 80px; }
+.admin-hero-top { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.admin-hero-top .ms { font-size: 18px; opacity: 0.8; }
+.admin-hero-top span { font-size: 10px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; opacity: 0.8; }
+.admin-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.admin-stat-label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.7; margin-bottom: 4px; }
+.admin-stat-value { font-size: 32px; font-weight: 900; letter-spacing: -0.04em; }
+.admin-hero-footer { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+.admin-chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 9999px; padding: 6px 14px; font-size: 11px; font-weight: 700; }
+.admin-chip.blue { background: rgba(255,255,255,0.15); }
+.admin-chip.amber { background: rgba(251,191,36,0.2); color: #fde68a; }
+
+.qb-section { background: white; border-radius: 24px; box-shadow: 0 12px 40px rgba(25,28,30,0.05); overflow: hidden; }
+.qb-header { padding: 20px 24px; border-bottom: 1px solid rgba(195,198,215,0.1); display: flex; align-items: center; justify-content: space-between; }
+.qb-header-title { font-size: 16px; font-weight: 700; }
+.qb-filters { display: flex; gap: 8px; }
+.qb-filter { background: var(--sc-low); border: none; border-radius: 10px; padding: 8px 14px; font-size: 12px; font-weight: 600; color: var(--on-sv); cursor: pointer; font-family: "Inter", sans-serif; }
+.qb-filter.active { background: var(--primary-fixed); color: var(--on-primary-fixed); }
+table { width: 100%; border-collapse: collapse; }
+thead tr { background: var(--sc-low); }
+th { padding: 10px 20px; text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--secondary); }
+tbody tr { border-bottom: 1px solid rgba(195,198,215,0.08); }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover td { background: var(--sc-low); }
+td { padding: 14px 20px; font-size: 13px; }
+.td-code { border-radius: 8px; padding: 3px 8px; font-size: 11px; font-weight: 700; }
+.perf-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 80px; }
+.perf-track { flex: 1; height: 6px; border-radius: 9999px; background: var(--sc-high); overflow: hidden; }
+.perf-fill { height: 100%; border-radius: 9999px; }
+.status-badge { border-radius: 9999px; padding: 3px 10px; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.author-wrap { display: flex; align-items: center; gap: 8px; }
+.author-av { width: 28px; height: 28px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+
+.admin-metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+</style>
+</head>
+<body>
+
+
+
+<!-- ════════════════════════════════════════════════════
+     SCREEN 1 — LOGIN
+════════════════════════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-left">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <span class="ms ms-fill" style="font-size:28px;color:var(--primary)">auto_stories</span>
+      </div>
+      <div class="login-logo-text">
+        <h1>Saber 11</h1>
+        <p>Simulador</p>
+      </div>
+    </div>
+    <div class="login-hero">
+      <div class="login-hero-img">
+        <img src="https://images.unsplash.com/photo-1588072432836-e10032774350?w=900&auto=format&fit=crop&q=80" alt="Estudiantes realizando prueba con tablet" onerror="this.parentElement.style.background='rgba(255,255,255,0.1)'">
+      </div>
+      <h2>El dominio académico comienza con una práctica disciplinada.</h2>
+      <p>Accede a una experiencia curada de aprendizaje diseñada para optimizar tu flujo cognitivo y elevar tus resultados.</p>
+    </div>
+    <div class="login-footer">
+      <div class="login-footer-line"></div>
+      <span>@victorpuellog</span>
+    </div>
+  </div>
+
+  <div class="login-right">
+    <div class="login-form-wrap">
+      <h3 class="login-h3">Iniciar sesión</h3>
+      <label class="field-label" for="username">Usuario o correo (Kampus ID)</label>
+      <div class="field-wrap">
+        <input id="username" type="text" placeholder="nombre.apellido@institucion.edu" autocomplete="username">
+        <span class="ms field-icon">person</span>
+      </div>
+
+      <div class="row-label">
+        <label class="field-label" style="margin:0" for="password">Contraseña</label>
+        <a href="#" class="forgot">¿Olvidó su contraseña?</a>
+      </div>
+      <div class="field-wrap" style="margin-top:6px">
+        <input id="password" type="password" placeholder="••••••••••••" autocomplete="current-password">
+        <span class="ms field-icon">lock</span>
+      </div>
+
+      <button class="btn-submit" onclick="goto('dashboard')">
+        Iniciar sesión
+        <span class="ms" style="font-size:20px">login</span>
+      </button>
+
+      <div class="login-legal">
+        Este simulador utiliza una infraestructura federada. Al iniciar sesión, usted acepta los
+        <a href="#">Términos de Servicio</a> y la <a href="#">Política de Privacidad</a>.
+      </div>
+    </div>
+    <div class="login-version">Versión 4.2.0-Scholar · © 2026 Víctor Puello. Todos los derechos reservados.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     SCREEN 2 — STUDENT DASHBOARD
+════════════════════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen" style="flex-direction:column;min-height:100vh;background:var(--surface)">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <span class="ms ms-fill" style="font-size:24px;color:white">auto_stories</span>
+      </div>
+      <div>
+        <div class="sidebar-logo-title">Saber 11</div>
+        <div class="sidebar-logo-sub">Simulador</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-link active"><span class="ms">dashboard</span>Dashboard</div>
+      <div class="nav-link" onclick="goto('exam')" style="cursor:pointer"><span class="ms">analytics</span>Diagnóstico</div>
+      <div class="nav-link"><span class="ms">auto_stories</span>Plan de estudio</div>
+      <div class="nav-link"><span class="ms">military_tech</span>Resultados</div>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="sidebar-cta" onclick="goto('exam')">Iniciar práctica</button>
+    </div>
+  </div>
+
+  <!-- Top header -->
+  <div class="dash-header">
+    <span class="dash-header-title">Dashboard</span>
+    <div class="dash-header-actions">
+      <div class="dash-header-icons">
+        <span class="ms">notifications</span>
+        <span class="ms">settings</span>
+      </div>
+      <div class="dash-avatar">VP</div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="dash-main">
+    <div class="dash-content">
+      <div>
+        <div class="dash-greeting">Buenos días, Víctor 👋</div>
+        <div class="dash-greeting-sub">Tienes 3 actividades pendientes para hoy en tu plan de estudio.</div>
+      </div>
+
+      <!-- Top grid: hero + metrics -->
+      <div class="dash-top-grid">
+        <div class="hero-card">
+          <div>
+            <div class="hero-label">Puntaje Global</div>
+            <div style="margin-top:12px;display:flex;align-items:baseline;gap:8px">
+              <span class="hero-value">278</span>
+              <span class="hero-max">/ 500</span>
+            </div>
+          </div>
+          <div>
+            <div class="hero-progress-label"><span>Progreso semanal</span><span>62%</span></div>
+            <div class="hero-bar"><div class="hero-bar-fill" style="width:62%"></div></div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-label">Preguntas respondidas</div>
+          <div class="metric-value">142</div>
+          <div class="metric-helper">esta semana</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Precisión global</div>
+          <div class="metric-value">68%</div>
+          <div class="metric-helper">+4% vs. semana pasada</div>
+        </div>
+      </div>
+
+      <!-- Area performance -->
+      <div class="area-section">
+        <div class="section-title">Rendimiento por área</div>
+        <div class="area-grid">
+          <!-- MAT -->
+          <div class="area-item">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#e0e3e5" stroke-width="6"/>
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#1d4ed8" stroke-width="6" stroke-dasharray="138.2" stroke-dashoffset="55" stroke-linecap="round"/>
+              <text x="28" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#191c1e" font-family="Inter">60%</text>
+            </svg>
+            <div class="area-code" style="color:#1d4ed8">MAT</div>
+            <div class="area-score">300 pts</div>
+          </div>
+          <!-- LC -->
+          <div class="area-item">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#e0e3e5" stroke-width="6"/>
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#6d28d9" stroke-width="6" stroke-dasharray="138.2" stroke-dashoffset="35" stroke-linecap="round"/>
+              <text x="28" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#191c1e" font-family="Inter">75%</text>
+            </svg>
+            <div class="area-code" style="color:#6d28d9">LC</div>
+            <div class="area-score">375 pts</div>
+          </div>
+          <!-- ING -->
+          <div class="area-item">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#e0e3e5" stroke-width="6"/>
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#b45309" stroke-width="6" stroke-dasharray="138.2" stroke-dashoffset="80" stroke-linecap="round"/>
+              <text x="28" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#191c1e" font-family="Inter">42%</text>
+            </svg>
+            <div class="area-code" style="color:#b45309">ING</div>
+            <div class="area-score">210 pts</div>
+          </div>
+          <!-- CN -->
+          <div class="area-item">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#e0e3e5" stroke-width="6"/>
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#047857" stroke-width="6" stroke-dasharray="138.2" stroke-dashoffset="48" stroke-linecap="round"/>
+              <text x="28" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#191c1e" font-family="Inter">65%</text>
+            </svg>
+            <div class="area-code" style="color:#047857">CN</div>
+            <div class="area-score">325 pts</div>
+          </div>
+          <!-- SC -->
+          <div class="area-item">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#e0e3e5" stroke-width="6"/>
+              <circle cx="28" cy="28" r="22" fill="none" stroke="#be123c" stroke-width="6" stroke-dasharray="138.2" stroke-dashoffset="60" stroke-linecap="round"/>
+              <text x="28" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#191c1e" font-family="Inter">57%</text>
+            </svg>
+            <div class="area-code" style="color:#be123c">SC</div>
+            <div class="area-score">285 pts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Next task -->
+      <div class="next-task" onclick="goto('exam')">
+        <div class="next-task-icon">
+          <span class="ms ms-fill" style="font-size:22px;color:white">analytics</span>
+        </div>
+        <div>
+          <div class="next-task-label">Tarea pendiente</div>
+          <div class="next-task-title">Diagnóstico Adaptativo · Inglés — Partes 1–3</div>
+        </div>
+        <div class="next-task-arrow"><span class="ms">arrow_forward</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     SCREEN 3 — DIAGNOSTIC SESSION
+════════════════════════════════════════════════════ -->
+<div id="screen-exam" class="screen" style="height:100vh;flex-direction:column">
+  <div class="exam-header">
+    <div style="display:flex;align-items:center;gap:20px">
+      <div class="exam-brand">
+        <div class="exam-brand-icon">
+          <span class="ms ms-fill" style="font-size:20px;color:white">auto_stories</span>
+        </div>
+        <div>
+          <div class="exam-brand-title">Saber 11 Simulador</div>
+          <div class="exam-brand-area">Matemáticas</div>
+        </div>
+      </div>
+      <div class="exam-divider"></div>
+      <div class="exam-progress-wrap">
+        <div class="exam-progress-labels"><span>Progreso: 3 / 8</span><span>37%</span></div>
+        <div class="exam-bar"><div class="exam-bar-fill" style="width:37%"></div></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="exam-timer">
+        <span class="ms">timer</span>
+        <span class="exam-timer-value" id="timer-display">00:08:42</span>
+      </div>
+      <button class="exam-icon-btn"><span class="ms">help</span></button>
+      <button class="exam-pause-btn" onclick="goto('dashboard')">Pausar</button>
+    </div>
+  </div>
+
+  <div class="exam-body">
+    <!-- Left: context -->
+    <div class="exam-context-pane">
+      <div class="exam-context-header">
+        <div>
+          <div class="exam-context-badge">Material de Lectura</div>
+          <div class="exam-context-title">Producción agrícola departamental 2018–2024</div>
+        </div>
+        <div class="exam-context-tools">
+          <button class="exam-tool-btn"><span class="ms">zoom_in</span></button>
+          <button class="exam-tool-btn"><span class="ms">format_size</span></button>
+        </div>
+      </div>
+      <div class="exam-text-scroll">
+        <div class="exam-text">
+          <p>La siguiente tabla muestra la producción agrícola (en miles de toneladas) de cinco departamentos de Colombia durante el período 2018–2024. Los datos fueron recopilados por el Ministerio de Agricultura y Desarrollo Rural.</p>
+          <div style="margin:20px 0;overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.06)">
+              <thead style="background:#eceef0">
+                <tr>
+                  <th style="padding:10px 14px;text-align:left;font-size:11px;color:#505f76;font-weight:700">Departamento</th>
+                  <th style="padding:10px 14px;text-align:right;font-weight:700;font-size:11px;color:#505f76">2018</th>
+                  <th style="padding:10px 14px;text-align:right;font-weight:700;font-size:11px;color:#505f76">2020</th>
+                  <th style="padding:10px 14px;text-align:right;font-weight:700;font-size:11px;color:#505f76">2022</th>
+                  <th style="padding:10px 14px;text-align:right;font-weight:700;font-size:11px;color:#505f76">2024</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom:1px solid #f2f4f6"><td style="padding:10px 14px;font-weight:600">Antioquia</td><td style="padding:10px 14px;text-align:right">280</td><td style="padding:10px 14px;text-align:right">320</td><td style="padding:10px 14px;text-align:right">390</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#004ac6">410</td></tr>
+                <tr style="border-bottom:1px solid #f2f4f6"><td style="padding:10px 14px;font-weight:600">Valle del Cauca</td><td style="padding:10px 14px;text-align:right">240</td><td style="padding:10px 14px;text-align:right">280</td><td style="padding:10px 14px;text-align:right">310</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#004ac6">350</td></tr>
+                <tr style="border-bottom:1px solid #f2f4f6"><td style="padding:10px 14px;font-weight:600">Cundinamarca</td><td style="padding:10px 14px;text-align:right">210</td><td style="padding:10px 14px;text-align:right">200</td><td style="padding:10px 14px;text-align:right">190</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#be123c">180</td></tr>
+                <tr style="border-bottom:1px solid #f2f4f6"><td style="padding:10px 14px;font-weight:600">Boyacá</td><td style="padding:10px 14px;text-align:right">130</td><td style="padding:10px 14px;text-align:right">150</td><td style="padding:10px 14px;text-align:right">195</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#004ac6">220</td></tr>
+                <tr><td style="padding:10px 14px;font-weight:600">Nariño</td><td style="padding:10px 14px;text-align:right">100</td><td style="padding:10px 14px;text-align:right">120</td><td style="padding:10px 14px;text-align:right">160</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#004ac6">190</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Según los datos presentados, es posible identificar tendencias de crecimiento, estancamiento y reducción en la producción de los diferentes departamentos durante el período analizado.</p>
+          <p>Para responder correctamente, es necesario interpretar las variaciones relativas entre años y no solo los valores absolutos de producción.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: question -->
+    <div class="exam-question-pane">
+      <div class="exam-q-card">
+        <div class="q-header">
+          <div class="q-num">4</div>
+          <div class="q-header-label">Enunciado</div>
+        </div>
+        <div class="q-stem">Con base en la tabla, ¿cuál de los siguientes departamentos presentó el mayor porcentaje de crecimiento en producción agrícola entre 2018 y 2024?</div>
+        <div class="options">
+          <div class="option" onclick="selectOption(this,'A')">
+            <div class="option-letter">A</div>
+            <div class="option-text">Antioquia, con un crecimiento de 130 mil toneladas en el período.</div>
+          </div>
+          <div class="option" onclick="selectOption(this,'B')">
+            <div class="option-letter">B</div>
+            <div class="option-text">Valle del Cauca, porque su producción superó a la de Cundinamarca en 2024.</div>
+          </div>
+          <div class="option selected" onclick="selectOption(this,'C')">
+            <div class="option-letter">C</div>
+            <div class="option-text">Nariño, al aumentar de 100 a 190 mil toneladas, equivalente a un 90% de crecimiento.</div>
+          </div>
+          <div class="option" onclick="selectOption(this,'D')">
+            <div class="option-letter">D</div>
+            <div class="option-text">Boyacá, al registrar el segundo valor más alto de producción en 2024.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="exam-nav">
+        <button class="exam-nav-prev"><span class="ms">chevron_left</span>Anterior</button>
+        <button class="exam-nav-next" onclick="goto('dashboard')">Siguiente<span class="ms">chevron_right</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     SCREEN 4 — ADMIN DASHBOARD
+════════════════════════════════════════════════════ -->
+<div id="screen-admin" class="screen" style="flex-direction:column;min-height:100vh">
+  <!-- Sidebar -->
+  <div class="admin-sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">
+        <span class="ms ms-fill" style="font-size:24px;color:white">auto_stories</span>
+      </div>
+      <div>
+        <div class="sidebar-logo-title">Saber 11</div>
+        <div class="sidebar-logo-sub">Admin</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-link active"><span class="ms ms-fill">dashboard</span>Dashboard</div>
+      <div class="nav-link" onclick="window.location='QuestionBank.html'" style="cursor:pointer"><span class="ms">quiz</span>Banco de preguntas</div>
+      <div class="nav-link"><span class="ms">people</span>Estudiantes</div>
+      <div class="nav-link"><span class="ms">analytics</span>Reportes</div>
+      <div class="nav-link"><span class="ms">settings</span>Configuración</div>
+    </nav>
+  </div>
+
+  <div class="admin-header">
+    <span class="dash-header-title">Panel de Administración</span>
+    <div class="dash-header-actions">
+      <div class="dash-header-icons"><span class="ms">notifications</span></div>
+      <div class="dash-avatar">VP</div>
+    </div>
+  </div>
+
+  <div class="admin-main">
+    <div class="admin-content">
+
+      <!-- Admin hero -->
+      <div class="admin-hero">
+        <div class="admin-hero-top">
+          <span class="ms ms-fill">admin_panel_settings</span>
+          <span>Institución — IE Playas del Viento</span>
+        </div>
+        <div class="admin-stats">
+          <div>
+            <div class="admin-stat-label">Estudiantes</div>
+            <div class="admin-stat-value">847</div>
+          </div>
+          <div>
+            <div class="admin-stat-label">Puntaje promedio</div>
+            <div class="admin-stat-value">312 pts</div>
+          </div>
+          <div>
+            <div class="admin-stat-label">Precisión banco</div>
+            <div class="admin-stat-value">71%</div>
+          </div>
+        </div>
+        <div class="admin-hero-footer">
+          <div class="admin-chip blue">
+            <span class="ms" style="font-size:14px;margin-right:4px">quiz</span>
+            2.340 preguntas
+          </div>
+          <div class="admin-chip amber">
+            <span class="ms" style="font-size:14px;margin-right:4px">pending_actions</span>
+            12 pendientes de revisión
+          </div>
+        </div>
+      </div>
+
+      <!-- Metric cards -->
+      <div class="admin-metrics-row">
+        <div class="metric-card"><div class="metric-label">Diagnósticos completados</div><div class="metric-value">634</div><div class="metric-helper">75% del total</div></div>
+        <div class="metric-card"><div class="metric-label">Planes activos</div><div class="metric-value">589</div><div class="metric-helper">semana actual</div></div>
+        <div class="metric-card"><div class="metric-label">Preguntas IA aprobadas</div><div class="metric-value">1.840</div><div class="metric-helper">78% del banco</div></div>
+        <div class="metric-card"><div class="metric-label">Promedio sesión</div><div class="metric-value">42 min</div><div class="metric-helper">por estudiante/día</div></div>
+      </div>
+
+      <!-- Question bank table -->
+      <div class="qb-section">
+        <div class="qb-header">
+          <div class="qb-header-title">Banco de preguntas</div>
+          <div class="qb-filters">
+            <button class="qb-filter active">Todas</button>
+            <button class="qb-filter">MAT</button>
+            <button class="qb-filter">LC</button>
+            <button class="qb-filter">ING</button>
+            <button class="qb-filter">CN</button>
+            <button class="qb-filter">SC</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Área / Competencia</th>
+              <th>Enunciado</th>
+              <th>Autor</th>
+              <th>Estado</th>
+              <th>Desempeño</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="td-code" style="background:#eff6ff;color:#1d4ed8">MAT-0042</span></td>
+              <td><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;border-radius:9999px;background:#60a5fa;flex-shrink:0"></div><div><div style="font-weight:600">Matemáticas</div><div style="font-size:11px;color:#505f76">Interpretación</div></div></div></td>
+              <td style="max-width:220px"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(25,28,30,0.8)">La siguiente gráfica muestra la producción agrícola de cinco departamentos...</span></td>
+              <td><div class="author-wrap"><div class="author-av" style="background:#ede9fe;color:#6d28d9"><span class="ms ms-fill" style="font-size:14px">auto_awesome</span></div><span>ScholarAI</span></div></td>
+              <td><span class="status-badge" style="background:#d1fae5;color:#047857">APROBADO</span></td>
+              <td><div class="perf-bar-wrap"><div class="perf-track"><div class="perf-fill" style="width:78%;background:#34d399"></div></div><span style="font-size:11px;font-weight:600;color:#505f76">78%</span></div></td>
+            </tr>
+            <tr>
+              <td><span class="td-code" style="background:#f5f3ff;color:#6d28d9">LC-0119</span></td>
+              <td><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;border-radius:9999px;background:#a78bfa;flex-shrink:0"></div><div><div style="font-weight:600">Lectura Crítica</div><div style="font-size:11px;color:#505f76">Comprensión</div></div></div></td>
+              <td style="max-width:220px"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(25,28,30,0.8)">El siguiente cómic representa una situación de conflicto generacional...</span></td>
+              <td><div class="author-wrap"><div class="author-av" style="background:#dbe1ff;color:#004ac6">VP</div><span>V. Puello</span></div></td>
+              <td><span class="status-badge" style="background:#fef3c7;color:#b45309">PENDIENTE</span></td>
+              <td><div class="perf-bar-wrap"><div class="perf-track"><div class="perf-fill" style="width:43%;background:#fbbf24"></div></div><span style="font-size:11px;font-weight:600;color:#505f76">43%</span></div></td>
+            </tr>
+            <tr>
+              <td><span class="td-code" style="background:#ecfdf5;color:#047857">CN-0087</span></td>
+              <td><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;border-radius:9999px;background:#34d399;flex-shrink:0"></div><div><div style="font-weight:600">Ciencias Naturales</div><div style="font-size:11px;color:#505f76">Indagación</div></div></div></td>
+              <td style="max-width:220px"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(25,28,30,0.8)">El diagrama de cuerpo libre adjunto representa un bloque en plano inclinado...</span></td>
+              <td><div class="author-wrap"><div class="author-av" style="background:#ede9fe;color:#6d28d9"><span class="ms ms-fill" style="font-size:14px">auto_awesome</span></div><span>ScholarAI</span></div></td>
+              <td><span class="status-badge" style="background:#d1fae5;color:#047857">APROBADO</span></td>
+              <td><div class="perf-bar-wrap"><div class="perf-track"><div class="perf-fill" style="width:61%;background:#34d399"></div></div><span style="font-size:11px;font-weight:600;color:#505f76">61%</span></div></td>
+            </tr>
+            <tr>
+              <td><span class="td-code" style="background:#fff1f2;color:#be123c">SC-0031</span></td>
+              <td><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;border-radius:9999px;background:#fb7185;flex-shrink:0"></div><div><div style="font-weight:600">Sociales</div><div style="font-size:11px;color:#505f76">Pensamiento sistémico</div></div></div></td>
+              <td style="max-width:220px"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(25,28,30,0.8)">El mapa temático adjunto muestra la distribución de la población...</span></td>
+              <td><div class="author-wrap"><div class="author-av" style="background:#dbe1ff;color:#004ac6">MR</div><span>M. Rodríguez</span></div></td>
+              <td><span class="status-badge" style="background:#f1f5f9;color:#475569">BORRADOR</span></td>
+              <td><span style="font-size:12px;color:rgba(80,95,118,0.5)">—</span></td>
+            </tr>
+            <tr>
+              <td><span class="td-code" style="background:#fffbeb;color:#b45309">ING-0204</span></td>
+              <td><div style="display:flex;align-items:center;gap:8px"><div style="width:6px;height:6px;border-radius:9999px;background:#fbbf24;flex-shrink:0"></div><div><div style="font-weight:600">Inglés</div><div style="font-size:11px;color:#505f76">Reading Comprehension</div></div></div></td>
+              <td style="max-width:220px"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(25,28,30,0.8)">Read the following public notice and answer the question below...</span></td>
+              <td><div class="author-wrap"><div class="author-av" style="background:#ede9fe;color:#6d28d9"><span class="ms ms-fill" style="font-size:14px">auto_awesome</span></div><span>ScholarAI</span></div></td>
+              <td><span class="status-badge" style="background:#d1fae5;color:#047857">APROBADO</span></td>
+              <td><div class="perf-bar-wrap"><div class="perf-track"><div class="perf-fill" style="width:55%;background:#fbbf24"></div></div><span style="font-size:11px;font-weight:600;color:#505f76">55%</span></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const screens = ['login','dashboard','exam','admin'];
+function goto(id) {
+  screens.forEach(s => {
+    document.getElementById('screen-' + s).classList.remove('active');
+  });
+  document.getElementById('screen-' + id).classList.add('active');
+  localStorage.setItem('saber11-screen', id);
+  window.scrollTo(0, 0);
+}
+
+function selectOption(el, letter) {
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// Restore screen from localStorage
+const saved = localStorage.getItem('saber11-screen');
+if (saved && screens.includes(saved)) goto(saved);
+
+// Fake timer
+let seconds = 522;
+setInterval(() => {
+  seconds++;
+  const h = Math.floor(seconds/3600).toString().padStart(2,'0');
+  const m = Math.floor((seconds%3600)/60).toString().padStart(2,'0');
+  const s = (seconds%60).toString().padStart(2,'0');
+  const el = document.getElementById('timer-display');
+  if (el) el.textContent = h + ':' + m + ':' + s;
+}, 1000);
+
+// QBFilter toggle
+document.querySelectorAll('.qb-filter').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.qb-filter').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

@@ -7,8 +7,8 @@ interface DashboardNavigationProps {
 const NAV_ITEMS = [
   { to: "/student", label: "Dashboard", icon: "dashboard" },
   { to: "/student/diagnostico", label: "Diagnóstico", icon: "analytics" },
-  { to: "/student/plan", label: "Study Plan", icon: "auto_stories" },
-  { to: "/student/resultados", label: "Results", icon: "military_tech" },
+  { to: "/student/plan", label: "Plan de estudio", icon: "auto_stories" },
+  { to: "/student/resultados", label: "Resultados", icon: "military_tech" },
 ];
 
 export default function DashboardNavigation({ studentName: _studentName }: DashboardNavigationProps) {
@@ -16,10 +16,10 @@ export default function DashboardNavigation({ studentName: _studentName }: Dashb
     <>
       {/* Desktop sidebar */}
       <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col bg-slate-50 px-4 py-6 md:flex">
-        <div className="mb-10 flex items-center gap-3 px-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary shadow-sm">
+        <div className="mb-9 flex items-center gap-3 px-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary shadow-[0_4px_10px_rgba(0,74,198,0.25)]">
             <span
-              className="material-symbols-outlined text-3xl text-white"
+              className="material-symbols-outlined text-2xl text-white"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               auto_stories
@@ -27,21 +27,21 @@ export default function DashboardNavigation({ studentName: _studentName }: Dashb
           </div>
           <div>
             <h1 className="font-headline text-xl font-black tracking-tight text-on-surface">Saber 11</h1>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-secondary">Simulador</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.32em] text-secondary">Simulador</p>
           </div>
         </div>
 
-        <nav className="flex-1 space-y-2">
+        <nav className="flex-1 space-y-1">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === "/student"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors hover:bg-slate-200/50 ${
+                `flex items-center gap-2.5 rounded-none px-3.5 py-[11px] text-sm font-semibold transition-colors border-r-4 ${
                   isActive
-                    ? "border-r-4 border-primary font-bold text-primary"
-                    : "text-secondary hover:text-primary"
+                    ? "border-primary bg-primary/[0.04] font-bold text-primary"
+                    : "border-transparent text-secondary hover:bg-slate-200/50 hover:text-primary"
                 }`
               }
             >
@@ -51,12 +51,12 @@ export default function DashboardNavigation({ studentName: _studentName }: Dashb
           ))}
         </nav>
 
-        <div className="mt-auto px-4">
+        <div className="mt-auto px-1">
           <button
             type="button"
-            className="w-full rounded-xl bg-primary py-3 font-semibold text-white transition-transform active:scale-95"
+            className="w-full rounded-xl bg-primary p-[13px] text-sm font-bold text-white shadow-[0_4px_12px_rgba(0,74,198,0.22)] transition-opacity hover:opacity-90 active:scale-95"
           >
-            Start Practice
+            Iniciar práctica
           </button>
         </div>
       </aside>

@@ -16,10 +16,10 @@ export default function AdminQuestionBankCard({
   const reviewPercent = total > 0 ? Math.round((pendingReview / total) * 100) : 0;
 
   return (
-    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-6 sm:p-8">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold tracking-tight sm:text-xl">Banco de preguntas</h2>
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/8 text-primary">
+    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-7 shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-bold tracking-tight">Banco de preguntas</h2>
+        <div className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-primary/8 text-primary">
           <span className="material-symbols-outlined text-[20px]">quiz</span>
         </div>
       </div>
@@ -29,31 +29,31 @@ export default function AdminQuestionBankCard({
         {loading ? (
           <div className="h-14 w-28 animate-pulse rounded-lg bg-surface-container-high" />
         ) : (
-          <p className="text-5xl font-black tracking-tighter text-on-surface sm:text-6xl">{total}</p>
+          <p className="text-[56px] font-black leading-none tracking-tighter text-on-surface">{total}</p>
         )}
-        <p className="mt-1 text-sm text-secondary">preguntas en el banco</p>
+          <p className="text-sm text-secondary">preguntas en el banco</p>
       </div>
 
       {/* Stats row */}
       <div className="mb-5 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-surface-container-low p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Pendientes</p>
+        <div className="rounded-2xl bg-surface-container-low p-3.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-secondary">Pendientes</p>
           {loading ? (
             <div className="mt-2 h-7 w-14 animate-pulse rounded bg-surface-container-high" />
           ) : (
-            <p className={`mt-1 text-xl font-black ${pendingReview > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+            <p className={`mt-1 text-[22px] font-black ${pendingReview > 0 ? "text-amber-600" : "text-emerald-600"}`}>
               {pendingReview}
             </p>
           )}
           <p className="mt-0.5 text-xs text-on-surface-variant">sin revisar</p>
         </div>
 
-        <div className="rounded-2xl bg-surface-container-low p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-secondary">Precisión media</p>
+        <div className="rounded-2xl bg-surface-container-low p-3.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-secondary">Precisión media</p>
           {loading ? (
             <div className="mt-2 h-7 w-14 animate-pulse rounded bg-surface-container-high" />
           ) : (
-            <p className="mt-1 text-xl font-black text-primary">
+            <p className="mt-1 text-[22px] font-black text-primary">
               {avgAccuracyPercent !== null ? `${avgAccuracyPercent}%` : "—"}
             </p>
           )}
@@ -80,7 +80,7 @@ export default function AdminQuestionBankCard({
       <button
         type="button"
         onClick={onNavigate}
-        className="w-full rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-md shadow-primary/20 transition-all hover:opacity-90 active:scale-[0.98]"
+        className="w-full rounded-2xl bg-primary px-4 py-3.5 text-sm font-bold text-white shadow-[0_4px_14px_rgba(0,74,198,0.22)] transition-all hover:opacity-[0.92] hover:scale-[1.01] active:scale-[0.98]"
       >
         Gestionar banco de preguntas
       </button>

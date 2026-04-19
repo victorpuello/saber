@@ -35,10 +35,10 @@ export default function AdminLayout() {
     <>
       {/* Desktop sidebar */}
       <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col bg-slate-50 px-4 py-6 md:flex">
-        <div className="mb-10 flex items-center gap-3 px-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary shadow-sm">
+        <div className="mb-9 flex items-center gap-3 px-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary shadow-[0_4px_10px_rgba(0,74,198,0.25)]">
             <span
-              className="material-symbols-outlined text-3xl text-white"
+              className="material-symbols-outlined text-2xl text-white"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               admin_panel_settings
@@ -46,7 +46,7 @@ export default function AdminLayout() {
           </div>
           <div>
             <h1 className="font-headline text-xl font-black tracking-tight text-on-surface">Saber 11</h1>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-secondary">Administración</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.32em] text-secondary">Administración</p>
           </div>
         </div>
 
@@ -57,10 +57,10 @@ export default function AdminLayout() {
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                `flex items-center gap-2.5 rounded-none px-3.5 py-2.5 text-sm font-semibold transition-colors border-r-4 ${
                   isActive
-                    ? "bg-primary/10 font-bold text-primary"
-                    : "text-secondary hover:bg-slate-200/50 hover:text-primary"
+                    ? "border-primary bg-primary/[0.04] font-bold text-primary"
+                    : "border-transparent text-secondary hover:bg-slate-200/50 hover:text-primary"
                 }`
               }
             >
@@ -92,13 +92,13 @@ export default function AdminLayout() {
       </aside>
 
       {/* Fixed top header */}
-      <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between bg-white/80 px-4 shadow-sm shadow-slate-200/50 backdrop-blur-xl sm:px-6 md:left-64 md:px-8">
-        <span className="font-headline text-base font-bold text-on-surface">{pageTitle}</span>
+      <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between bg-white/82 px-4 shadow-[0_1px_3px_rgba(148,163,184,0.25)] backdrop-blur-xl sm:px-6 md:left-64 md:px-9">
+        <span className="font-headline text-[15px] font-bold text-on-surface">{pageTitle}</span>
         <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined cursor-pointer text-secondary hover:opacity-80">
+          <span className="material-symbols-outlined cursor-pointer text-[22px] text-secondary transition-opacity hover:opacity-70">
             notifications
           </span>
-          <span className="material-symbols-outlined cursor-pointer text-secondary hover:opacity-80">
+          <span className="material-symbols-outlined cursor-pointer text-[22px] text-secondary transition-opacity hover:opacity-70">
             settings
           </span>
           <button
@@ -114,7 +114,7 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <main className="min-h-screen bg-surface pb-24 pt-16 text-on-surface md:ml-64 md:pb-10">
-        <div className="mx-auto max-w-full space-y-8 px-6 py-8 md:px-8">
+        <div className="mx-auto max-w-[1400px] space-y-7 px-6 py-9 md:px-9">
           <Outlet />
         </div>
       </main>

@@ -59,20 +59,20 @@ export default function StudentDashboard() {
       {/* Welcome row */}
       <section className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-on-surface sm:text-3xl">
+          <h2 className="text-[26px] font-bold tracking-[-0.02em] text-on-surface">
             Bienvenido, {viewModel.studentName}
           </h2>
           <p className="mt-1 text-base text-secondary sm:text-lg">
             Tu camino hacia la excelencia académica continúa aquí.
           </p>
         </div>
-        <div className="text-xs font-bold uppercase tracking-widest text-secondary opacity-60">
+        <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-secondary opacity-60">
           Período actual: {viewModel.periodLabel}
         </div>
       </section>
 
       {/* Row 1: Hero (col-4) + Area Performance (col-8) — side-by-side only at lg+ */}
-      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <DashboardHero model={viewModel.hero} loading={viewModel.loading} />
         </div>
@@ -82,7 +82,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* Row 2: Next Task + Recent Activity — 2-col at md, 7/5 at lg */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <DashboardNextTask
             model={viewModel.nextTask}
@@ -99,7 +99,7 @@ export default function StudentDashboard() {
       <DashboardMetricsGrid metrics={viewModel.metrics} loading={viewModel.loading} />
 
       {/* Secondary: Notifications + Quick Actions — 2-col at md, 7/5 at lg */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <DashboardNotificationsPreview
             items={viewModel.notifications}

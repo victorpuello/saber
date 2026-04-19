@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,420,0,0" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; background: #f8fafc; font-family: "Inter", sans-serif; }
+  .sidebar { width: 220px; background: #f8fafc; padding: 20px 14px; height: 280px; display: flex; flex-direction: column; }
+  .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; padding: 0 10px; }
+  .logo-icon { width: 40px; height: 40px; border-radius: 12px; background: #004ac6; display: flex; align-items: center; justify-content: center; }
+  .logo-text { }
+  .logo-title { font-size: 17px; font-weight: 900; letter-spacing: -0.025em; color: #191c1e; }
+  .logo-sub { font-size: 9px; font-weight: 700; letter-spacing: 0.32em; text-transform: uppercase; color: #505f76; }
+  nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 0; font-size: 13px; font-weight: 600; color: #505f76; text-decoration: none; transition: background 0.1s; cursor: pointer; }
+  .nav-item.active { border-right: 4px solid #004ac6; font-weight: 700; color: #004ac6; }
+  .nav-item:hover:not(.active) { background: rgba(148,163,184,0.2); }
+  .nav-bottom { padding: 0 4px; margin-top: auto; }
+  .start-btn { width: 100%; padding: 12px; border-radius: 12px; background: #004ac6; color: white; font-size: 14px; font-weight: 600; border: none; cursor: pointer; }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">
+        <span class="material-symbols-outlined" style="color:white;font-size:24px;font-variation-settings:'FILL' 1">auto_stories</span>
+      </div>
+      <div class="logo-text">
+        <div class="logo-title">Saber 11</div>
+        <div class="logo-sub">Simulador</div>
+      </div>
+    </div>
+    <nav>
+      <div class="nav-item active">
+        <span class="material-symbols-outlined" style="font-size:20px">dashboard</span>
+        Dashboard
+      </div>
+      <div class="nav-item">
+        <span class="material-symbols-outlined" style="font-size:20px">analytics</span>
+        Diagnóstico
+      </div>
+      <div class="nav-item">
+        <span class="material-symbols-outlined" style="font-size:20px">auto_stories</span>
+        Study Plan
+      </div>
+      <div class="nav-item">
+        <span class="material-symbols-outlined" style="font-size:20px">military_tech</span>
+        Results
+      </div>
+    </nav>
+    <div class="nav-bottom">
+      <button class="start-btn">Start Practice</button>
+    </div>
+  </div>
+</body>
+</html>

@@ -173,6 +173,8 @@ interface QBTableProps {
   visibleStart: number;
   visibleEnd: number;
   onPageChange: (page: number) => void;
+  selectedQuestionId?: string | null;
+  onRowClick?: (question: QuestionRow) => void;
 }
 
 const COL_HEADERS = ["Código", "Área / Competencia", "Enunciado", "Autor", "Estado", "Desempeño"];
@@ -185,6 +187,8 @@ export default function QBTable({
   visibleStart,
   visibleEnd,
   onPageChange,
+  selectedQuestionId,
+  onRowClick,
 }: QBTableProps) {
   return (
     <section className="overflow-hidden rounded-3xl bg-surface-container-lowest shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
@@ -213,7 +217,10 @@ export default function QBTable({
               return (
                 <tr
                   key={row.id}
-                  className={`group transition hover:bg-surface-container-low ${!isLast ? "border-b border-outline-variant/8" : ""}`}
+                  onClick={() => onRowClick?.(row)}
+                  className={`group cursor-pointer transition hover:bg-surface-container-low ${
+                    selectedQuestionId === row.id ? "bg-primary/5" : ""
+                  } ${!isLast ? "border-b border-outline-variant/8" : ""}`}
                 >
                   {/* Code */}
                   <td className="px-5 py-4">

@@ -1,22 +1,29 @@
+import { useState } from "react";
 import { useQuestionBankViewModel } from "./questionBank/useQuestionBankViewModel";
+import type { QuestionRow } from "./questionBank/types";
 import {
   QBHero,
   QBMetricsGrid,
   QBFilters,
   QBTable,
-  QBRecentActivity,
-  QBScholarAIPromo,
+  NewManualQuestionModal,
+  GenerateAIModal,
+  QuestionDetailDrawer,
 } from "./questionBank/components";
 
 export default function QuestionBank() {
   const vm = useQuestionBankViewModel();
+  const [showNewManual, setShowNewManual] = useState(false);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState<QuestionRow | null>(null);
+  const [editQuestionId, setEditQuestionId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
       {/* Hero — breadcrumb, title, action buttons */}
       <QBHero
-        onNewManual={() => {/* TODO: open modal */}}
-        onGenerateAI={() => {/* TODO: open AI generator */}}
+        onNewManual={() => setShowNewManual(true)}
+        onGenerateAI={() => setShowAIGenerator(true)}
       />
 
       {/* Stats cards */}
@@ -25,13 +32,13 @@ export default function QuestionBank() {
       {/* Filters bar */}
       <QBFilters
         filters={vm.filters}
+        searchQuery={vm.searchQuery}
         areaOptions={vm.areaOptions}
-        competenciaOptions={vm.competenciaOptions}
         dificultadOptions={vm.dificultadOptions}
         estadoOptions={vm.estadoOptions}
         onUpdate={vm.updateFilter}
+        onSearchChange={vm.setSearchQuery}
         onClear={vm.clearFilters}
-        onApply={() => {/* filters already live-bound */}}
       />
 
       {/* Questions table */}
@@ -43,13 +50,61 @@ export default function QuestionBank() {
         visibleStart={vm.visibleStart}
         visibleEnd={vm.visibleEnd}
         onPageChange={vm.setCurrentPage}
+        selectedQuestionId={selectedQuestion?.id ?? null}
+        onRowClick={(q) => setSelectedQuestion(q)}
       />
 
-      {/* Bottom two-column: activity + ScholarAI promo */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <QBRecentActivity items={vm.activity} />
-        <QBScholarAIPromo onExplore={() => {/* TODO: navigate to ScholarAI */}} />
-      </div>
+      {/* Drawer de detalle de pregunta */}
+      <QuestionDetailDrawer
+        question={selectedQuestion}
+        onClose={() => setSelectedQuestion(null)}
+        onEdit={(questionId) => {
+          setSelectedQuestion(null);
+          setEditQuestionId(questionId);
+        }}
+        onReview={async (id, action, notes) => {
+          await vm.handleReview(id, action, notes);
+          setSelectedQuestion(null);
+        }}
+        onSubmitForReview={async (id) => {
+          await vm.handleSubmitForReview(id);
+          setSelectedQuestion(null);
+        }}
+      />
+
+      {/* Modal de nueva pregunta manual */}
+      {showNewManual && (
+        <NewManualQuestionModal
+          onClose={() => setShowNewManual(false)}
+          onSuccess={() => {
+            setShowNewManual(false);
+            vm.refreshData();
+          }}
+        />
+      )}
+
+      {/* Modal de edición de pregunta */}
+      {editQuestionId && (
+        <NewManualQuestionModal
+          editQuestionId={editQuestionId}
+          onClose={() => setEditQuestionId(null)}
+          onSuccess={() => {
+            setEditQuestionId(null);
+            vm.refreshData();
+          }}
+        />
+      )}
+
+      {/* Modal de generación con IA */}
+      {showAIGenerator && (
+        <GenerateAIModal
+          onClose={() => setShowAIGenerator(false)}
+          onSuccess={() => {
+            setShowAIGenerator(false);
+            vm.refreshData();
+          }}
+        />
+      )}
     </div>
   );
 }

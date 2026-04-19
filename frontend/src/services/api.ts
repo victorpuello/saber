@@ -70,7 +70,17 @@ function mapAuthMessage(action: AuthAction, status: number, fallback: string): s
 
 async function parseErrorBody(response: Response): Promise<ApiErrorBody> {
   try {
-    return (await response.json()) as ApiErrorBody;
+    const json = await response.json();
+    // FastAPI devuelve { detail: string | Array } en lugar de { error: string }
+    if (!json.error && json.detail) {
+      const detail = json.detail;
+      if (typeof detail === "string") {
+        json.error = detail;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        json.error = detail.map((d: { msg?: string }) => d.msg || "").filter(Boolean).join("; ");
+      }
+    }
+    return json as ApiErrorBody;
   } catch {
     return {};
   }

@@ -12,6 +12,14 @@ export interface QBMetric {
   variant: "default" | "warning" | "success" | "ai";
 }
 
+export interface QuestionOption {
+  letter: string;
+  text: string;
+  correct: boolean;
+}
+
+export type Difficulty = "Baja" | "Media" | "Alta";
+
 export interface QuestionRow {
   id: string;
   code: string;
@@ -23,6 +31,10 @@ export interface QuestionRow {
   authorInitial: string;
   status: QuestionStatus;
   performance: number | null; // 0-100
+  difficulty: Difficulty;
+  context: string;
+  stem: string;
+  options: QuestionOption[];
 }
 
 export interface ActivityItem {

@@ -20,9 +20,9 @@ export default function AdminInstitutionStats({ model, loading }: AdminInstituti
       : null;
 
   return (
-    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-6 sm:p-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-bold tracking-tight sm:text-xl">Reporte institucional</h2>
+    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-7 shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-bold tracking-tight">Reporte institucional</h2>
         <span className="rounded-full bg-primary/8 px-3 py-1 text-xs font-bold text-primary">
           Últimos 30 días
         </span>
@@ -69,7 +69,7 @@ export default function AdminInstitutionStats({ model, loading }: AdminInstituti
         </p>
         <ul className="space-y-2">
           {AREAS.map((area) => (
-            <li key={area.code} className="flex items-center gap-3 rounded-xl bg-surface-container-low px-3 py-2.5">
+            <li key={area.code} className="flex items-center gap-2.5 rounded-[14px] bg-surface-container-low px-3.5 py-2.5">
               <span className="material-symbols-outlined text-[18px] text-secondary">{area.icon}</span>
               <span className="flex-1 text-sm font-medium text-on-surface">{area.label}</span>
               <span className="rounded-md bg-surface-container px-2 py-0.5 text-xs font-bold text-secondary">

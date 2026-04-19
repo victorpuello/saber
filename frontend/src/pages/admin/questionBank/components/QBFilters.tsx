@@ -2,13 +2,13 @@ import type { QBFiltersState } from "../types";
 
 interface QBFiltersProps {
   filters: QBFiltersState;
+  searchQuery: string;
   areaOptions: string[];
-  competenciaOptions: string[];
   dificultadOptions: string[];
   estadoOptions: string[];
   onUpdate: <K extends keyof QBFiltersState>(key: K, value: QBFiltersState[K]) => void;
+  onSearchChange: (value: string) => void;
   onClear: () => void;
-  onApply: () => void;
 }
 
 function FilterSelect({
@@ -49,13 +49,13 @@ function FilterSelect({
 
 export default function QBFilters({
   filters,
+  searchQuery,
   areaOptions,
-  competenciaOptions,
   dificultadOptions,
   estadoOptions,
   onUpdate,
+  onSearchChange,
   onClear,
-  onApply,
 }: QBFiltersProps) {
   return (
     <section className="rounded-3xl bg-surface-container-low p-5">
@@ -81,19 +81,32 @@ export default function QBFilters({
         </button>
       </div>
 
-      {/* Selects + apply button */}
+      {/* Search + selects row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        {/* Search input */}
+        <div className="flex min-w-0 flex-[1.5] flex-col gap-1">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-secondary">
+            Buscar
+          </label>
+          <div className="relative">
+            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">
+              search
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Buscar por código o enunciado…"
+              className="w-full rounded-xl bg-surface-container-lowest py-2.5 pl-10 pr-3 text-sm text-on-surface outline-none ring-1 ring-outline-variant/20 transition placeholder:text-secondary/50 focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+        </div>
+
         <FilterSelect
           label="Área"
           value={filters.area}
           options={areaOptions}
           onChange={(v) => onUpdate("area", v)}
-        />
-        <FilterSelect
-          label="Competencia"
-          value={filters.competencia}
-          options={competenciaOptions}
-          onChange={(v) => onUpdate("competencia", v)}
         />
         <FilterSelect
           label="Dificultad"
@@ -107,14 +120,6 @@ export default function QBFilters({
           options={estadoOptions}
           onChange={(v) => onUpdate("estado", v)}
         />
-
-        <button
-          type="button"
-          onClick={onApply}
-          className="shrink-0 rounded-xl bg-on-surface px-5 py-2.5 text-sm font-bold text-surface transition hover:opacity-80 sm:self-end"
-        >
-          Aplicar Filtros
-        </button>
       </div>
     </section>
   );

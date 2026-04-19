@@ -4,3 +4,6 @@ export { default as QBFilters } from "./QBFilters";
 export { default as QBTable } from "./QBTable";
 export { default as QBRecentActivity } from "./QBRecentActivity";
 export { default as QBScholarAIPromo } from "./QBScholarAIPromo";
+export { default as NewManualQuestionModal } from "./NewManualQuestionModal";
+export { default as GenerateAIModal } from "./GenerateAIModal";
+export { default as QuestionDetailDrawer } from "./QuestionDetailDrawer";

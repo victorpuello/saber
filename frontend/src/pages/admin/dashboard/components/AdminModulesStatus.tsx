@@ -33,9 +33,9 @@ export default function AdminModulesStatus({ modules }: AdminModulesStatusProps)
   const degradedCount = modules.filter((m) => m.status === "degraded").length;
 
   return (
-    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-6 sm:p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-secondary">
+    <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-7 shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
           Estado de módulos del sistema
         </h2>
         <div className="flex items-center gap-3">
@@ -58,7 +58,7 @@ export default function AdminModulesStatus({ modules }: AdminModulesStatusProps)
 
       <ul className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         {modules.map((module) => (
-          <li key={module.id} className="rounded-2xl bg-surface-container-low p-4">
+          <li key={module.id} className="rounded-[20px] bg-surface-container-low p-4">
             <div className="mb-3 flex items-start justify-between gap-2">
               <div
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${ICON_BG[module.status]}`}

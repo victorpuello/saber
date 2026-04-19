@@ -8,11 +8,11 @@ interface AdminHeroProps {
 function Stat({ label, value, loading }: { label: string; value: string; loading: boolean }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-widest opacity-70">{label}</p>
+      <p className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-70">{label}</p>
       {loading ? (
         <div className="mt-2 h-9 w-24 animate-pulse rounded-lg bg-white/30" />
       ) : (
-        <p className="mt-1 text-3xl font-black tracking-tighter sm:text-4xl">{value}</p>
+        <p className="mt-1.5 text-[30px] font-black leading-none tracking-tighter">{value}</p>
       )}
     </div>
   );
@@ -24,20 +24,20 @@ export default function AdminHero({ model, loading }: AdminHeroProps) {
   const hasPending = model.pendingCount > 0;
 
   return (
-    <article className="relative flex h-full min-h-56 flex-col justify-between overflow-hidden rounded-4xl bg-linear-to-br from-primary to-primary-container p-6 text-white shadow-lg shadow-primary/20 sm:p-8">
+    <article className="relative flex h-full min-h-56 flex-col justify-between overflow-hidden rounded-4xl bg-linear-to-br from-primary to-primary-container p-7 text-white shadow-[0_8px_24px_rgba(0,74,198,0.18)]">
       {/* Background accent */}
-      <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
-      <div className="pointer-events-none absolute -bottom-10 right-10 h-28 w-28 rounded-full bg-white/5" />
+      <div className="pointer-events-none absolute -right-8 -top-10 h-40 w-40 rounded-full bg-white/5" />
+      <div className="pointer-events-none absolute -bottom-6 right-20 h-24 w-24 rounded-full bg-white/5" />
 
       <div>
-        <div className="flex items-center gap-2">
+        <div className="mb-5 flex items-center gap-2">
           <span
             className="material-symbols-outlined text-[18px] opacity-80"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             admin_panel_settings
           </span>
-          <span className="text-xs font-bold uppercase tracking-widest opacity-80">Institución</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.32em] opacity-80">Institución</span>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">

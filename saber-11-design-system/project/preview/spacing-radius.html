@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px 24px; background: #f7f9fb; font-family: "Inter", sans-serif; display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+  .group { }
+  .group-title { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #737686; margin-bottom: 10px; }
+  .radius-row { display: flex; gap: 8px; align-items: flex-end; }
+  .rbox { background: #004ac6; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 8px; }
+  .rlabel { font-size: 9px; font-weight: 700; color: white; margin-top: 6px; }
+  .rhex { font-size: 8px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+</style>
+</head>
+<body>
+  <div class="group">
+    <div class="group-title">Border Radius Tokens</div>
+    <div class="radius-row">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="rbox" style="width:48px;height:48px;border-radius:8px">
+        </div>
+        <div style="font-size:9px;font-weight:700;color:#191c1e">sm</div>
+        <div style="font-size:8px;color:#737686;font-family:monospace">0.5rem / 8px</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="rbox" style="width:56px;height:56px;border-radius:12px"></div>
+        <div style="font-size:9px;font-weight:700;color:#191c1e">md</div>
+        <div style="font-size:8px;color:#737686;font-family:monospace">0.75rem / 12px</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="rbox" style="width:64px;height:64px;border-radius:16px"></div>
+        <div style="font-size:9px;font-weight:700;color:#191c1e">lg</div>
+        <div style="font-size:8px;color:#737686;font-family:monospace">1rem / 16px</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="rbox" style="width:72px;height:72px;border-radius:24px"></div>
+        <div style="font-size:9px;font-weight:700;color:#191c1e">xl</div>
+        <div style="font-size:8px;color:#737686;font-family:monospace">1.5rem / 24px</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="rbox" style="width:80px;height:80px;border-radius:32px"></div>
+        <div style="font-size:9px;font-weight:700;color:#191c1e">4xl (card)</div>
+        <div style="font-size:8px;color:#737686;font-family:monospace">2rem / 32px</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <div class="rbox" style="width:48px;height:48px;border-radius:9999px"></div>
+        <div style="font-size:9px;font-weight:700;color:#191c1e">full</div>
+        <div style="font-size:8px;color:#737686;font-family:monospace">9999px</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

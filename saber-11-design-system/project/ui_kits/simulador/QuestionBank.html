@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banco de Preguntas — Saber 11</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #004ac6; --primary-c: #2563eb; --primary-fixed: #dbe1ff;
+  --on-pf: #00174b; --on-pc: #eeefff; --secondary: #505f76;
+  --surface: #f7f9fb; --on-surface: #191c1e; --on-sv: #434655;
+  --sc-lowest: #ffffff; --sc-low: #f2f4f6; --sc: #eceef0;
+  --sc-high: #e6e8ea; --sc-highest: #e0e3e5;
+  --outline: #737686; --ov: #c3c6d7;
+  --error: #ba1a1a; --error-c: #ffdad6; --on-ec: #93000a;
+  --shadow-card: 0 12px 40px rgba(25,28,30,0.06);
+  --shadow-scholar: 0 24px 55px -30px rgb(0 74 198 / 35%);
+  --gradient: linear-gradient(135deg,#004ac6,#2563eb);
+  --gradient-br: linear-gradient(to bottom right,#004ac6,#2563eb);
+}
+body { font-family:"Inter",sans-serif; background:var(--surface); color:var(--on-surface); min-height:100vh; -webkit-font-smoothing:antialiased; display:flex; }
+.ms { font-family:"Material Symbols Outlined"; font-weight:normal; font-style:normal; font-variation-settings:"FILL" 0,"wght" 420,"GRAD" 0,"opsz" 24; line-height:1; display:inline-block; direction:ltr; }
+.msf { font-variation-settings:"FILL" 1,"wght" 420,"GRAD" 0,"opsz" 24; }
+button { cursor:pointer; border:none; font-family:"Inter",sans-serif; }
+select { font-family:"Inter",sans-serif; }
+input,textarea { font-family:"Inter",sans-serif; }
+:focus-visible { outline:2px solid var(--primary); outline-offset:2px; border-radius:6px; }
+
+/* ── Sidebar ── */
+.sidebar { position:fixed; top:0; left:0; width:256px; height:100vh; background:#f8fafc; display:flex; flex-direction:column; padding:24px 16px; flex-shrink:0; z-index:20; }
+.logo { display:flex; align-items:center; gap:12px; padding:0 12px; margin-bottom:36px; }
+.logo-icon { width:44px; height:44px; border-radius:12px; background:var(--primary); display:flex; align-items:center; justify-content:center; }
+.logo-title { font-size:20px; font-weight:900; letter-spacing:-0.025em; }
+.logo-sub { font-size:9px; font-weight:700; letter-spacing:0.32em; text-transform:uppercase; color:var(--secondary); }
+.nav-link { display:flex; align-items:center; gap:10px; padding:11px 14px; font-size:14px; font-weight:600; color:var(--secondary); cursor:pointer; border-right:4px solid transparent; transition:background 0.1s,color 0.1s; }
+.nav-link:hover { background:rgba(148,163,184,0.2); color:var(--primary); }
+.nav-link.active { border-right-color:var(--primary); color:var(--primary); font-weight:700; background:rgba(0,74,198,0.04); }
+.nav-link .ms { font-size:20px; }
+
+/* ── Top header ── */
+.top-header { position:fixed; top:0; left:256px; right:0; height:64px; z-index:30; display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,0.82); backdrop-filter:blur(20px); padding:0 32px; box-shadow:0 1px 3px rgba(148,163,184,0.25); }
+.header-title { font-size:15px; font-weight:700; }
+.header-actions { display:flex; align-items:center; gap:16px; }
+.header-icon { font-size:22px; color:var(--secondary); cursor:pointer; }
+.avatar { width:32px; height:32px; border-radius:9999px; background:var(--primary); color:white; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+/* ── Main ── */
+.main { margin-left:256px; padding-top:64px; min-height:100vh; width:100%; }
+.content { padding:36px 36px 60px; display:flex; flex-direction:column; gap:28px; }
+
+/* ── QBHero ── */
+.qb-hero { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.breadcrumb { display:flex; align-items:center; gap:4px; font-size:12px; color:var(--secondary); margin-bottom:10px; }
+.breadcrumb .active { font-weight:700; color:var(--primary); }
+.qb-hero h1 { font-size:44px; font-weight:900; letter-spacing:-0.04em; line-height:1; }
+.qb-hero p { margin-top:8px; font-size:14px; color:var(--secondary); max-width:480px; line-height:1.6; }
+.hero-btns { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:4px; }
+.btn-ai { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:14px; background:var(--sc-high); font-size:14px; font-weight:600; color:var(--on-surface); transition:background 0.1s; }
+.btn-ai:hover { background:var(--sc-highest); }
+.btn-ai .ms { font-size:18px; color:var(--primary); }
+.btn-manual { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:14px; background:var(--gradient-br); font-size:14px; font-weight:600; color:white; box-shadow:0 4px 14px rgba(0,74,198,0.25); transition:opacity 0.1s,transform 0.1s; }
+.btn-manual:hover { opacity:0.92; transform:scale(1.01); }
+.btn-manual .ms { font-size:18px; }
+
+/* ── Metrics grid ── */
+.metrics-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.metric-card { border-radius:24px; background:var(--sc-lowest); padding:20px; box-shadow:var(--shadow-card); position:relative; overflow:hidden; }
+.metric-label { font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--secondary); }
+.metric-value { font-size:32px; font-weight:900; letter-spacing:-0.04em; margin-top:10px; line-height:1; }
+.metric-helper { font-size:11px; color:var(--secondary); margin-top:6px; opacity:0.8; }
+.metric-icon { position:absolute; top:18px; right:18px; width:40px; height:40px; border-radius:14px; display:flex; align-items:center; justify-content:center; }
+.metric-icon .ms { font-size:20px; }
+.metric-badge { display:inline-block; margin-top:6px; background:#d1fae5; color:#047857; font-size:9px; font-weight:700; border-radius:9999px; padding:2px 8px; }
+
+/* ── Two-column layout ── */
+.two-col { display:grid; grid-template-columns:1fr 300px; gap:20px; }
+.left-col { display:flex; flex-direction:column; gap:20px; }
+.right-col { display:flex; flex-direction:column; gap:20px; }
+
+/* ── Filters ── */
+.filters-bar { background:var(--sc-low); border-radius:20px; padding:18px 20px; }
+.filters-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.filters-label { display:flex; align-items:center; gap:6px; font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--secondary); }
+.clear-btn { font-size:12px; font-weight:600; color:var(--primary); background:none; cursor:pointer; }
+.clear-btn:hover { opacity:0.7; }
+.filters-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+.filter-group { display:flex; flex-direction:column; gap:4px; flex:1; min-width:110px; }
+.filter-group label { font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--secondary); }
+.filter-select { position:relative; }
+.filter-select select { width:100%; appearance:none; border-radius:12px; background:var(--sc-lowest); padding:10px 32px 10px 12px; font-size:13px; font-weight:500; color:var(--on-surface); border:1px solid rgba(195,198,215,0.2); outline:none; transition:box-shadow 0.15s; }
+.filter-select select:focus { box-shadow:0 0 0 2px rgba(0,74,198,0.3); border-color:transparent; }
+.filter-select .ms { position:absolute; right:8px; top:50%; transform:translateY(-50%); font-size:16px; color:var(--secondary); pointer-events:none; }
+.search-wrap { position:relative; flex:1.5; min-width:160px; }
+.search-wrap input { width:100%; border-radius:12px; background:var(--sc-lowest); padding:10px 12px 10px 38px; font-size:13px; color:var(--on-surface); border:1px solid rgba(195,198,215,0.2); outline:none; transition:box-shadow 0.15s; }
+.search-wrap input:focus { box-shadow:0 0 0 2px rgba(0,74,198,0.3); border-color:transparent; }
+.search-wrap .ms { position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--outline); pointer-events:none; }
+.btn-apply { background:var(--on-surface); color:var(--sc-lowest); border-radius:12px; padding:10px 20px; font-size:13px; font-weight:700; flex-shrink:0; transition:opacity 0.1s; }
+.btn-apply:hover { opacity:0.8; }
+
+/* ── Table ── */
+.table-container { background:var(--sc-lowest); border-radius:24px; box-shadow:var(--shadow-card); overflow:hidden; }
+.table-header { padding:16px 20px; border-bottom:1px solid rgba(195,198,215,0.12); display:flex; align-items:center; justify-content:space-between; }
+.table-count { font-size:12px; color:var(--secondary); }
+.table-sort { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--secondary); cursor:pointer; }
+table { width:100%; border-collapse:collapse; min-width:700px; }
+.table-scroll { overflow-x:auto; }
+thead tr { background:var(--sc-low); border-bottom:1px solid rgba(195,198,215,0.1); }
+th { padding:10px 18px; text-align:left; font-size:9px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--secondary); white-space:nowrap; }
+td { padding:14px 18px; font-size:13px; border-bottom:1px solid rgba(195,198,215,0.08); }
+tbody tr { cursor:pointer; transition:background 0.1s; }
+tbody tr:hover td { background:rgba(242,244,246,0.7); }
+tbody tr.selected td { background:rgba(219,225,255,0.25); }
+tbody tr:last-child td { border-bottom:none; }
+.td-code { display:inline-block; border-radius:8px; padding:3px 8px; font-size:11px; font-weight:700; }
+.area-cell { display:flex; align-items:center; gap:8px; }
+.area-dot { width:6px; height:6px; border-radius:9999px; flex-shrink:0; }
+.area-name { font-weight:600; color:var(--on-surface); }
+.area-comp { font-size:11px; color:var(--secondary); }
+.enunciado-cell { max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:rgba(25,28,30,0.8); }
+.author-cell { display:flex; align-items:center; gap:8px; }
+.author-av { width:26px; height:26px; border-radius:9999px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+.status-badge { display:inline-block; border-radius:9999px; padding:3px 10px; font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; }
+.perf-wrap { display:flex; align-items:center; gap:8px; min-width:90px; }
+.perf-track { flex:1; height:5px; border-radius:9999px; background:var(--sc-high); overflow:hidden; }
+.perf-fill { height:100%; border-radius:9999px; }
+.row-actions { display:flex; gap:4px; opacity:0; transition:opacity 0.1s; }
+tbody tr:hover .row-actions { opacity:1; }
+.row-action-btn { width:28px; height:28px; border-radius:8px; background:var(--sc); display:flex; align-items:center; justify-content:center; font-size:14px; color:var(--secondary); cursor:pointer; transition:background 0.1s,color 0.1s; }
+.row-action-btn:hover { background:var(--primary-fixed); color:var(--primary); }
+
+/* Pagination */
+.pagination { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-top:1px solid rgba(195,198,215,0.1); }
+.page-info { font-size:12px; color:var(--secondary); }
+.page-btns { display:flex; gap:4px; }
+.page-btn { width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:var(--secondary); cursor:pointer; transition:background 0.1s; background:none; }
+.page-btn:hover { background:var(--sc-high); }
+.page-btn.active { background:var(--primary); color:white; }
+.page-btn:disabled { opacity:0.3; cursor:not-allowed; }
+
+/* ── Sidebar cards ── */
+.scholar-promo { border-radius:24px; background:var(--gradient-br); color:white; padding:24px; position:relative; overflow:hidden; }
+.scholar-promo::before { content:""; position:absolute; width:120px; height:120px; border-radius:9999px; background:rgba(255,255,255,0.05); top:-30px; right:-20px; }
+.scholar-promo::after { content:""; position:absolute; width:70px; height:70px; border-radius:9999px; background:rgba(255,255,255,0.05); bottom:-16px; right:40px; }
+.scholar-icon { position:relative; z-index:1; width:48px; height:48px; border-radius:16px; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; margin-bottom:16px; }
+.scholar-promo h3 { position:relative; z-index:1; font-size:20px; font-weight:900; letter-spacing:-0.025em; line-height:1.2; }
+.scholar-promo p { position:relative; z-index:1; font-size:13px; line-height:1.65; opacity:0.8; margin-top:10px; }
+.scholar-cta { position:relative; z-index:1; display:flex; align-items:center; justify-content:center; gap:6px; width:100%; margin-top:20px; padding:10px; border-radius:14px; background:rgba(255,255,255,0.15); font-size:13px; font-weight:700; color:white; backdrop-filter:blur(4px); transition:background 0.1s; }
+.scholar-cta:hover { background:rgba(255,255,255,0.25); }
+
+.activity-card { border-radius:24px; background:var(--sc-lowest); padding:24px; box-shadow:var(--shadow-card); }
+.activity-header { display:flex; align-items:center; gap:8px; margin-bottom:20px; }
+.activity-header .ms { font-size:18px; color:var(--secondary); }
+.activity-header span { font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--secondary); }
+.activity-item { position:relative; display:flex; gap:12px; padding-bottom:18px; }
+.activity-item:last-child { padding-bottom:0; }
+.activity-connector { position:absolute; left:15px; top:30px; bottom:0; width:1px; background:rgba(195,198,215,0.2); }
+.activity-item:last-child .activity-connector { display:none; }
+.activity-dot { position:relative; z-index:1; width:30px; height:30px; border-radius:9999px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+.activity-dot .ms { font-size:14px; }
+.activity-text { font-size:13px; font-weight:500; color:var(--on-surface); line-height:1.45; }
+.activity-meta { display:flex; align-items:center; gap:6px; margin-top:4px; }
+.activity-time { font-size:11px; color:var(--secondary); }
+.activity-sep { width:3px; height:3px; border-radius:9999px; background:rgba(80,95,118,0.3); }
+.activity-cat { font-size:11px; color:var(--secondary); }
+
+/* ── Modal ── */
+.modal-backdrop { position:fixed; inset:0; background:rgba(25,28,30,0.45); z-index:100; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+.modal-backdrop.open { display:flex; }
+.modal { background:white; border-radius:28px; width:100%; max-width:620px; max-height:88vh; overflow-y:auto; box-shadow:0 40px 80px rgba(0,0,0,0.2); display:flex; flex-direction:column; }
+.modal-header { display:flex; align-items:center; justify-content:space-between; padding:24px 28px 0; }
+.modal-title { font-size:22px; font-weight:800; letter-spacing:-0.02em; }
+.modal-close { width:36px; height:36px; border-radius:10px; background:var(--sc-high); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background 0.1s; }
+.modal-close:hover { background:var(--sc-highest); }
+.modal-body { padding:24px 28px 28px; display:flex; flex-direction:column; gap:20px; }
+.form-group { display:flex; flex-direction:column; gap:6px; }
+.form-label { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--on-sv); }
+.form-input { border-radius:12px; border:1px solid rgba(195,198,215,0.25); background:var(--sc-highest); padding:12px 14px; font-size:14px; color:var(--on-surface); outline:none; transition:all 0.15s; }
+.form-input:focus { background:white; border-color:rgba(0,74,198,0.3); box-shadow:0 0 0 3px rgba(0,74,198,0.1); }
+.form-select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%23737686' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:36px; }
+textarea.form-input { resize:vertical; min-height:100px; line-height:1.6; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.option-fields { display:flex; flex-direction:column; gap:8px; }
+.option-field { display:flex; align-items:center; gap:10px; }
+.option-letter-tag { width:32px; height:32px; border-radius:8px; background:var(--sc-high); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--secondary); flex-shrink:0; }
+.option-field.correct .option-letter-tag { background:#d1fae5; color:#047857; }
+.form-hint { font-size:11px; color:var(--secondary); margin-top:2px; }
+.modal-footer { padding:0 28px 28px; display:flex; gap:10px; justify-content:flex-end; }
+.btn-cancel { padding:10px 20px; border-radius:12px; background:var(--sc-high); font-size:14px; font-weight:600; color:var(--on-surface); }
+.btn-submit-modal { padding:10px 24px; border-radius:12px; background:var(--gradient); font-size:14px; font-weight:700; color:white; box-shadow:var(--shadow-scholar); }
+.btn-submit-modal:hover { opacity:0.92; }
+
+/* ── AI Modal special ── */
+.ai-area-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.ai-area-btn { border-radius:12px; padding:10px 8px; text-align:center; border:2px solid transparent; background:var(--sc-high); cursor:pointer; transition:all 0.1s; }
+.ai-area-btn .area-label { font-size:11px; font-weight:700; margin-top:4px; }
+.ai-area-btn.selected { border-color:var(--primary); background:var(--primary-fixed); }
+.ai-diff-group { display:flex; gap:8px; }
+.ai-diff-btn { flex:1; padding:8px; border-radius:10px; background:var(--sc-high); font-size:12px; font-weight:600; color:var(--secondary); cursor:pointer; text-align:center; border:2px solid transparent; transition:all 0.1s; }
+.ai-diff-btn.selected { background:var(--primary-fixed); color:var(--on-pf); border-color:var(--primary); }
+.ai-count-input { display:flex; align-items:center; gap:12px; }
+.ai-count-input input { width:80px; text-align:center; }
+.generating { display:none; flex-direction:column; align-items:center; gap:16px; padding:24px 0; }
+.generating.visible { display:flex; }
+.gen-spinner { width:48px; height:48px; border-radius:9999px; border:3px solid var(--primary-fixed); border-top-color:var(--primary); animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.gen-dots { display:flex; gap:6px; }
+.gen-dot { width:6px; height:6px; border-radius:9999px; background:var(--primary); animation:dot-pulse 1.2s ease-in-out infinite; }
+.gen-dot:nth-child(2) { animation-delay:0.2s; }
+.gen-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes dot-pulse { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
+
+/* ── Detail drawer ── */
+.drawer-backdrop { position:fixed; inset:0; z-index:90; display:none; }
+.drawer-backdrop.open { display:block; }
+.drawer { position:fixed; top:0; right:0; bottom:0; width:480px; background:white; z-index:95; box-shadow:-20px 0 60px rgba(0,0,0,0.12); transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; overflow-y:auto; }
+.drawer.open { transform:translateX(0); }
+.drawer-header { padding:24px 24px 0; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:white; z-index:1; padding-bottom:16px; border-bottom:1px solid var(--sc-low); }
+.drawer-title { font-size:16px; font-weight:700; }
+.drawer-actions { display:flex; gap:8px; }
+.drawer-action { padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; border:none; }
+.da-approve { background:#d1fae5; color:#047857; }
+.da-reject { background:#fef3c7; color:#b45309; }
+.da-edit { background:var(--sc-high); color:var(--on-surface); }
+
+/* ── Toast ── */
+.toast-container { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); z-index:999; display:flex; flex-direction:column; gap:10px; align-items:center; pointer-events:none; }
+.toast { display:flex; align-items:center; gap:10px; background:#1e293b; color:white; padding:12px 20px; border-radius:14px; font-size:13px; font-weight:600; box-shadow:0 8px 30px rgba(0,0,0,0.25); opacity:0; transform:translateY(12px); transition:opacity 0.25s,transform 0.25s; pointer-events:none; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast .ms { font-size:18px; }
+.toast.success .ms { color:#34d399; }
+.toast.warning .ms { color:#fbbf24; }
+.toast.info .ms { color:#60a5fa; }
+
+/* ── Confirm dialog ── */
+.confirm-backdrop { position:fixed; inset:0; background:rgba(25,28,30,0.5); z-index:200; display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.confirm-backdrop.open { display:flex; }
+.confirm-box { background:white; border-radius:24px; padding:28px 32px; max-width:380px; width:100%; text-align:center; box-shadow:0 40px 80px rgba(0,0,0,0.2); }
+.confirm-icon { width:56px; height:56px; border-radius:9999px; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+.confirm-title { font-size:20px; font-weight:800; letter-spacing:-0.02em; margin-bottom:8px; }
+.confirm-sub { font-size:14px; color:var(--secondary); line-height:1.6; }
+.confirm-btns { display:flex; gap:10px; margin-top:24px; }
+.confirm-btns button { flex:1; padding:12px; border-radius:14px; font-size:14px; font-weight:700; cursor:pointer; border:none; font-family:"Inter",sans-serif; }
+.drawer-body { padding:24px; display:flex; flex-direction:column; gap:20px; flex:1; }
+.drawer-meta { display:flex; gap:8px; flex-wrap:wrap; }
+.drawer-section-title { font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--secondary); margin-bottom:10px; }
+.drawer-text { font-size:14px; line-height:1.7; color:var(--on-sv); background:var(--sc-low); border-radius:12px; padding:14px 16px; }
+.drawer-options { display:flex; flex-direction:column; gap:8px; }
+.drawer-option { display:flex; align-items:flex-start; gap:10px; padding:12px 14px; border-radius:12px; background:var(--sc-low); }
+.drawer-option.correct { background:#d1fae5; }
+.dopt-letter { width:28px; height:28px; border-radius:8px; background:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+.drawer-option.correct .dopt-letter { background:#047857; color:white; }
+.dopt-text { font-size:13px; line-height:1.5; color:var(--on-surface); }
+.drawer-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.drawer-info-item { }
+.di-label { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--secondary); margin-bottom:4px; }
+.di-value { font-size:13px; font-weight:600; color:var(--on-surface); }
+.difficulty-bar { height:6px; border-radius:9999px; background:var(--sc-high); overflow:hidden; margin-top:6px; }
+.difficulty-fill { height:100%; border-radius:9999px; }
+</style>
+</head>
+<body>
+
+<!-- ── Toast ── -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ── Confirm: Approve ── -->
+<div class="confirm-backdrop" id="confirm-approve">
+  <div class="confirm-box">
+    <div class="confirm-icon" style="background:#d1fae5"><span class="ms msf" style="font-size:28px;color:#047857">check_circle</span></div>
+    <div class="confirm-title">Aprobar pregunta</div>
+    <div class="confirm-sub">La pregunta estará disponible en los simulacros. Puedes cambiar el estado manualmente más adelante.</div>
+    <div class="confirm-btns">
+      <button style="background:var(--sc-high);color:var(--on-surface)" onclick="closeConfirm('confirm-approve')">Cancelar</button>
+      <button style="background:linear-gradient(135deg,#047857,#059669);color:white" onclick="confirmApprove()">Sí, aprobar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Confirm: Reject ── -->
+<div class="confirm-backdrop" id="confirm-reject">
+  <div class="confirm-box">
+    <div class="confirm-icon" style="background:#fef3c7"><span class="ms msf" style="font-size:28px;color:#b45309">block</span></div>
+    <div class="confirm-title">Rechazar pregunta</div>
+    <div class="confirm-sub">La pregunta quedará como pendiente y el autor será notificado.</div>
+    <div style="margin-top:14px;text-align:left">
+      <textarea id="reject-reason" style="width:100%;border-radius:12px;border:1px solid rgba(195,198,215,0.3);background:var(--sc-high);padding:12px;font-size:13px;font-family:inherit;resize:vertical;min-height:72px;outline:none" placeholder="Motivo del rechazo (opcional)…"></textarea>
+    </div>
+    <div class="confirm-btns">
+      <button style="background:var(--sc-high);color:var(--on-surface)" onclick="closeConfirm('confirm-reject')">Cancelar</button>
+      <button style="background:linear-gradient(135deg,#b45309,#d97706);color:white" onclick="confirmReject()">Rechazar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit modal ── -->
+<div class="modal-backdrop" id="edit-modal" onclick="closeIfBackdrop(event,'edit-modal')">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--secondary);margin-bottom:4px" id="edit-modal-code"></div>
+        <div class="modal-title">Editar Pregunta</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('edit-modal')"><span class="ms" style="font-size:20px">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Área</label><select class="form-input form-select" id="edit-area" style="width:100%"><option>Matemáticas</option><option>Lectura Crítica</option><option>Inglés</option><option>Ciencias Naturales</option><option>Sociales y Ciudadanas</option></select></div>
+        <div class="form-group"><label class="form-label">Competencia</label><select class="form-input form-select" id="edit-comp" style="width:100%"><option>Interpretación y Representación</option><option>Formulación y Ejecución</option><option>Razonamiento y Argumentación</option><option>Comprensión</option><option>Argumentación</option><option>Reading Comprehension</option><option>Indagación</option><option>Uso del conocimiento</option><option>Pensamiento sistémico</option><option>Pensamiento reflexivo</option><option>Grammar</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Contexto / Texto base</label><textarea class="form-input" id="edit-context" style="min-height:80px"></textarea></div>
+      <div class="form-group"><label class="form-label">Enunciado (stem)</label><textarea class="form-input" id="edit-stem" style="min-height:70px"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">Opciones de respuesta</label>
+        <div class="option-fields" id="edit-options-fields"></div>
+        <span class="form-hint">La opción resaltada en verde es la correcta. Haz clic en otra letra para cambiarla.</span>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Dificultad</label><select class="form-input form-select" id="edit-diff" style="width:100%"><option>Baja</option><option>Media</option><option>Alta</option></select></div>
+        <div class="form-group"><label class="form-label">Estado</label><select class="form-input form-select" id="edit-status" style="width:100%"><option>BORRADOR</option><option>PENDIENTE</option><option>APROBADO</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">Cancelar</button>
+      <button class="btn-submit-modal" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Sidebar ── -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon" style="cursor:pointer" onclick="window.location='index.html'"><span class="ms msf" style="font-size:24px;color:white">auto_stories</span></div>
+    <div style="cursor:pointer" onclick="window.location='index.html'">
+      <div class="logo-title">Saber 11</div>
+      <div class="logo-sub">Admin</div>
+    </div>
+  </div>
+  <nav style="flex:1;display:flex;flex-direction:column;gap:4px">
+    <div class="nav-link" onclick="window.location='index.html'" style="cursor:pointer"><span class="ms">dashboard</span>Dashboard</div>
+    <div class="nav-link active"><span class="ms msf">quiz</span>Banco de Preguntas</div>
+    <div class="nav-link"><span class="ms">people</span>Estudiantes</div>
+    <div class="nav-link"><span class="ms">analytics</span>Reportes</div>
+    <div class="nav-link"><span class="ms">settings</span>Configuración</div>
+  </nav>
+</div>
+
+<!-- ── Top header ── -->
+<div class="top-header">
+  <span class="header-title">Banco de Preguntas</span>
+  <div class="header-actions">
+    <span class="ms header-icon">notifications</span>
+    <span class="ms header-icon">help_outline</span>
+    <div class="avatar">VP</div>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+  <div class="content">
+
+    <!-- QBHero -->
+    <div class="qb-hero">
+      <div>
+        <nav class="breadcrumb">
+          <span>Dashboard</span>
+          <span class="ms" style="font-size:14px">chevron_right</span>
+          <span class="active">Banco de Preguntas</span>
+        </nav>
+        <h1>Banco de Preguntas</h1>
+        <p>Gestiona, revisa y crea contenido académico de alta calidad para simulacros Saber&nbsp;11.</p>
+      </div>
+      <div class="hero-btns">
+        <button class="btn-ai" onclick="openAIModal()">
+          <span class="ms msf" style="font-size:18px;color:var(--primary)">auto_awesome</span>
+          Generar con IA
+        </button>
+        <button class="btn-manual" onclick="openManualModal()">
+          <span class="ms" style="font-size:18px">add</span>
+          Nueva Pregunta Manual
+        </button>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:rgba(0,74,198,0.08)">
+          <span class="ms msf" style="color:var(--primary)">quiz</span>
+        </div>
+        <div class="metric-label">Total Preguntas</div>
+        <div class="metric-value" style="color:var(--on-surface)">2.340</div>
+        <div class="metric-helper">banco completo</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#fef9c3">
+          <span class="ms msf" style="color:#b45309">pending_actions</span>
+        </div>
+        <div class="metric-label">Pendientes</div>
+        <div class="metric-value" style="color:#b45309">47</div>
+        <div class="metric-helper">requieren revisión</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#ecfdf5">
+          <span class="ms msf" style="color:#047857">check_circle</span>
+        </div>
+        <div class="metric-label">Aprobadas</div>
+        <div class="metric-value" style="color:#047857">2.187</div>
+        <span class="metric-badge">+12 esta semana</span>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#f5f3ff">
+          <span class="ms msf" style="color:#6d28d9">auto_awesome</span>
+        </div>
+        <div class="metric-label">Generadas por IA</div>
+        <div class="metric-value" style="color:#6d28d9">1.840</div>
+        <div class="metric-helper">78% del banco</div>
+      </div>
+    </div>
+
+    <!-- Two column -->
+    <div class="two-col">
+      <div class="left-col">
+
+        <!-- Filters -->
+        <div class="filters-bar">
+          <div class="filters-header">
+            <div class="filters-label">
+              <span class="ms" style="font-size:18px">filter_list</span>
+              Filtros de Búsqueda
+            </div>
+            <button class="clear-btn" onclick="clearFilters()">Limpiar todo</button>
+          </div>
+          <div class="filters-row">
+            <div class="search-wrap">
+              <span class="ms" style="font-size:18px;color:var(--outline)">search</span>
+              <input id="search-input" type="text" placeholder="Buscar por código o enunciado…" oninput="filterTable()">
+            </div>
+            <div class="filter-group">
+              <label>Área</label>
+              <div class="filter-select">
+                <select id="filter-area" onchange="filterTable()">
+                  <option value="">Todas</option>
+                  <option>Matemáticas</option>
+                  <option>Lectura Crítica</option>
+                  <option>Inglés</option>
+                  <option>Ciencias Naturales</option>
+                  <option>Sociales</option>
+                </select>
+                <span class="ms">expand_more</span>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>Dificultad</label>
+              <div class="filter-select">
+                <select id="filter-diff" onchange="filterTable()">
+                  <option value="">Todas</option>
+                  <option>Baja</option>
+                  <option>Media</option>
+                  <option>Alta</option>
+                </select>
+                <span class="ms">expand_more</span>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>Estado</label>
+              <div class="filter-select">
+                <select id="filter-status" onchange="filterTable()">
+                  <option value="">Todos</option>
+                  <option>APROBADO</option>
+                  <option>PENDIENTE</option>
+                  <option>BORRADOR</option>
+                </select>
+                <span class="ms">expand_more</span>
+              </div>
+            </div>
+            <button class="btn-apply" onclick="filterTable()">Aplicar</button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+          <div class="table-header">
+            <span class="table-count" id="table-count">Mostrando 1–10 de 2.340 preguntas</span>
+            <div class="table-sort">
+              <span class="ms" style="font-size:16px">sort</span>
+              Más recientes
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Área / Competencia</th>
+                  <th>Enunciado</th>
+                  <th>Autor</th>
+                  <th>Estado</th>
+                  <th>Desempeño</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="question-table-body">
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span class="page-info" id="page-info">Mostrando 1–10 de 2.340 preguntas</span>
+            <div class="page-btns">
+              <button class="page-btn" onclick="changePage(-1)" id="prev-btn"><span class="ms" style="font-size:16px">chevron_left</span></button>
+              <button class="page-btn active" id="p1" onclick="setPage(1)">1</button>
+              <button class="page-btn" id="p2" onclick="setPage(2)">2</button>
+              <button class="page-btn" id="p3" onclick="setPage(3)">3</button>
+              <span style="font-size:12px;color:var(--secondary);padding:0 4px">…</span>
+              <button class="page-btn" onclick="setPage(234)">234</button>
+              <button class="page-btn" onclick="changePage(1)" id="next-btn"><span class="ms" style="font-size:16px">chevron_right</span></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right col -->
+      <div class="right-col">
+        <!-- ScholarAI Promo -->
+        <div class="scholar-promo">
+          <div class="scholar-icon">
+            <span class="ms msf" style="font-size:26px">lightbulb</span>
+          </div>
+          <h3>Potencia tu flujo de trabajo</h3>
+          <p>¿Sabías que nuestra IA puede generar distractores basados en los errores más comunes de los estudiantes colombianos en el Saber 11?</p>
+          <button class="scholar-cta" onclick="openAIModal()">
+            Explorar ScholarAI
+            <span class="ms" style="font-size:16px">arrow_forward</span>
+          </button>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="activity-card">
+          <div class="activity-header">
+            <span class="ms msf" style="font-size:18px;color:var(--secondary)">history</span>
+            <span>Actividad Reciente</span>
+          </div>
+          <div>
+            <div class="activity-item">
+              <div class="activity-connector"></div>
+              <div class="activity-dot" style="background:#d1fae5"><span class="ms msf" style="color:#047857;font-size:14px">check_circle</span></div>
+              <div>
+                <div class="activity-text">MAT-0512 aprobada por V. Puello</div>
+                <div class="activity-meta"><span class="activity-time">Hace 12 min</span><div class="activity-sep"></div><span class="activity-cat">Matemáticas</span></div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-connector"></div>
+              <div class="activity-dot" style="background:#fef3c7"><span class="ms msf" style="color:#b45309;font-size:14px">pending</span></div>
+              <div>
+                <div class="activity-text">LC-0089 enviada a revisión</div>
+                <div class="activity-meta"><span class="activity-time">Hace 38 min</span><div class="activity-sep"></div><span class="activity-cat">Lectura Crítica</span></div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-connector"></div>
+              <div class="activity-dot" style="background:rgba(0,74,198,0.1)"><span class="ms msf" style="color:var(--primary);font-size:14px">edit_note</span></div>
+              <div>
+                <div class="activity-text">ScholarAI generó 15 preguntas de CN</div>
+                <div class="activity-meta"><span class="activity-time">Hace 1 h</span><div class="activity-sep"></div><span class="activity-cat">Ciencias Naturales</span></div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-connector"></div>
+              <div class="activity-dot" style="background:#d1fae5"><span class="ms msf" style="color:#047857;font-size:14px">check_circle</span></div>
+              <div>
+                <div class="activity-text">ING-0204 aprobada por M. Rodríguez</div>
+                <div class="activity-meta"><span class="activity-time">Hace 2 h</span><div class="activity-sep"></div><span class="activity-cat">Inglés</span></div>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-dot" style="background:rgba(0,74,198,0.1)"><span class="ms msf" style="color:var(--primary);font-size:14px">edit_note</span></div>
+              <div>
+                <div class="activity-text">SC-0031 editada por V. Puello</div>
+                <div class="activity-meta"><span class="activity-time">Hace 3 h</span><div class="activity-sep"></div><span class="activity-cat">Sociales</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Nueva Pregunta Manual ══ -->
+<div class="modal-backdrop" id="manual-modal" onclick="closeIfBackdrop(event,'manual-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--secondary);margin-bottom:4px">Nueva pregunta</div>
+        <div class="modal-title">Crear Pregunta Manual</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('manual-modal')"><span class="ms" style="font-size:20px">close</span></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Área</label>
+          <div style="position:relative">
+            <select class="form-input form-select" style="width:100%">
+              <option>Matemáticas</option>
+              <option>Lectura Crítica</option>
+              <option>Inglés</option>
+              <option>Ciencias Naturales</option>
+              <option>Sociales y Ciudadanas</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Competencia</label>
+          <div style="position:relative">
+            <select class="form-input form-select" style="width:100%">
+              <option>Interpretación y Representación</option>
+              <option>Formulación y Ejecución</option>
+              <option>Razonamiento y Argumentación</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contexto / Texto base</label>
+        <textarea class="form-input" placeholder="Escribe el texto, tabla, gráfica descrita o contexto de la pregunta…" style="min-height:80px"></textarea>
+        <span class="form-hint">El contexto es el material que el estudiante debe leer o interpretar antes de responder.</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Enunciado (stem)</label>
+        <textarea class="form-input" placeholder="Escribe el enunciado de la pregunta…" style="min-height:70px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Opciones de respuesta</label>
+        <div class="option-fields">
+          <div class="option-field correct">
+            <div class="option-letter-tag">A ✓</div>
+            <input class="form-input" style="flex:1" placeholder="Opción A (correcta)…">
+          </div>
+          <div class="option-field">
+            <div class="option-letter-tag">B</div>
+            <input class="form-input" style="flex:1" placeholder="Opción B (distractor)…">
+          </div>
+          <div class="option-field">
+            <div class="option-letter-tag">C</div>
+            <input class="form-input" style="flex:1" placeholder="Opción C (distractor)…">
+          </div>
+          <div class="option-field">
+            <div class="option-letter-tag">D</div>
+            <input class="form-input" style="flex:1" placeholder="Opción D (distractor)…">
+          </div>
+        </div>
+        <span class="form-hint">Marca la opción correcta con el tag verde (A por defecto).</span>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Dificultad</label>
+          <div style="position:relative">
+            <select class="form-input form-select" style="width:100%">
+              <option>Baja</option>
+              <option>Media</option>
+              <option>Alta</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado inicial</label>
+          <div style="position:relative">
+            <select class="form-input form-select" style="width:100%">
+              <option>BORRADOR</option>
+              <option>PENDIENTE</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('manual-modal')">Cancelar</button>
+      <button class="btn-submit-modal" onclick="submitManual()">Guardar pregunta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Generar con IA ══ -->
+<div class="modal-backdrop" id="ai-modal" onclick="closeIfBackdrop(event,'ai-modal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#6d28d9;margin-bottom:4px;display:flex;align-items:center;gap:6px"><span class="ms msf" style="font-size:14px;color:#6d28d9">auto_awesome</span>ScholarAI</div>
+        <div class="modal-title">Generar Preguntas con IA</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('ai-modal')"><span class="ms" style="font-size:20px">close</span></button>
+    </div>
+    <div class="modal-body" id="ai-modal-body">
+      <div class="form-group">
+        <label class="form-label">Área del examen</label>
+        <div class="ai-area-grid">
+          <div class="ai-area-btn selected" onclick="toggleArea(this)">
+            <div style="font-size:18px">📐</div>
+            <div class="area-label" style="color:#1d4ed8">MAT</div>
+          </div>
+          <div class="ai-area-btn" onclick="toggleArea(this)">
+            <div style="font-size:18px">📖</div>
+            <div class="area-label" style="color:#6d28d9">LC</div>
+          </div>
+          <div class="ai-area-btn" onclick="toggleArea(this)">
+            <div style="font-size:18px">🌐</div>
+            <div class="area-label" style="color:#b45309">ING</div>
+          </div>
+          <div class="ai-area-btn" onclick="toggleArea(this)">
+            <div style="font-size:18px">🔬</div>
+            <div class="area-label" style="color:#047857">CN</div>
+          </div>
+          <div class="ai-area-btn" onclick="toggleArea(this)">
+            <div style="font-size:18px">🗺️</div>
+            <div class="area-label" style="color:#be123c">SC</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Competencia específica</label>
+        <div style="position:relative">
+          <select class="form-input form-select" style="width:100%">
+            <option>Interpretación y Representación</option>
+            <option>Formulación y Ejecución</option>
+            <option>Razonamiento y Argumentación</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nivel de dificultad</label>
+        <div class="ai-diff-group">
+          <div class="ai-diff-btn" onclick="selectDiff(this)">Baja</div>
+          <div class="ai-diff-btn selected" onclick="selectDiff(this)">Media</div>
+          <div class="ai-diff-btn" onclick="selectDiff(this)">Alta</div>
+          <div class="ai-diff-btn" onclick="selectDiff(this)">Mixta</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cantidad de preguntas</label>
+        <div class="ai-count-input">
+          <button onclick="adjustCount(-1)" style="width:36px;height:36px;border-radius:10px;background:var(--sc-high);font-size:18px;font-weight:700;color:var(--on-surface)">−</button>
+          <input class="form-input" id="ai-count" value="5" type="number" min="1" max="25" style="width:72px;text-align:center">
+          <button onclick="adjustCount(1)" style="width:36px;height:36px;border-radius:10px;background:var(--sc-high);font-size:18px;font-weight:700;color:var(--on-surface)">+</button>
+          <span style="font-size:13px;color:var(--secondary)">máx. 25 por sesión</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contexto adicional (opcional)</label>
+        <textarea class="form-input" placeholder="Ej: 'Preguntas sobre funciones cuadráticas con contexto de física aplicada'" style="min-height:70px"></textarea>
+        <span class="form-hint">Guía a la IA con un tema específico o tipo de contexto.</span>
+      </div>
+    </div>
+    <div class="generating" id="ai-generating">
+      <div class="gen-spinner"></div>
+      <div style="font-size:15px;font-weight:700;color:var(--on-surface)">Generando preguntas…</div>
+      <div style="font-size:12px;color:var(--secondary)">ScholarAI está creando contenido basado en el ICFES</div>
+      <div class="gen-dots"><div class="gen-dot"></div><div class="gen-dot"></div><div class="gen-dot"></div></div>
+    </div>
+    <div class="modal-footer" id="ai-modal-footer">
+      <button class="btn-cancel" onclick="closeModal('ai-modal')">Cancelar</button>
+      <button class="btn-submit-modal" style="background:linear-gradient(135deg,#6d28d9,#7c3aed);display:flex;align-items:center;gap:8px" onclick="generateAI()">
+        <span class="ms msf" style="font-size:16px">auto_awesome</span>
+        Generar preguntas
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DETAIL DRAWER ══ -->
+<div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+<div class="drawer" id="question-drawer">
+  <div class="drawer-header">
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--secondary);margin-bottom:4px" id="drawer-code">MAT-0042</div>
+      <div class="drawer-title">Detalle de Pregunta</div>
+    </div>
+    <div class="drawer-actions">
+      <button class="drawer-action da-edit" onclick="openEditModal(currentDrawerQ)"><span class="ms" style="font-size:14px;vertical-align:middle">edit</span> Editar</button>
+      <button class="drawer-action da-reject" onclick="openConfirm('confirm-reject')">Rechazar</button>
+      <button class="drawer-action da-approve" onclick="openConfirm('confirm-approve')">Aprobar</button>
+    </div>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-meta" id="drawer-meta"></div>
+    <div>
+      <div class="drawer-section-title">Contexto</div>
+      <div class="drawer-text" id="drawer-context"></div>
+    </div>
+    <div>
+      <div class="drawer-section-title">Enunciado</div>
+      <div class="drawer-text" id="drawer-stem"></div>
+    </div>
+    <div>
+      <div class="drawer-section-title">Opciones de Respuesta</div>
+      <div class="drawer-options" id="drawer-options"></div>
+    </div>
+    <div>
+      <div class="drawer-section-title">Metadatos</div>
+      <div class="drawer-info-grid" id="drawer-info"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────
+const QUESTIONS = [
+  { id:"1", code:"MAT-0042", area:"Matemáticas", areaCode:"MAT", comp:"Interpretación", enunciado:"La siguiente tabla muestra la producción agrícola de cinco departamentos entre 2018 y 2024. ¿Cuál presentó el mayor porcentaje de crecimiento?", author:"ScholarAI", authorInit:"", isAI:true, status:"APROBADO", perf:78, diff:"Media", context:"La siguiente tabla muestra la producción agrícola (miles de toneladas) de cinco departamentos entre 2018 y 2024.", stem:"Con base en la tabla, ¿cuál departamento presentó el mayor porcentaje de crecimiento en producción agrícola entre 2018 y 2024?", options:[{l:"A",t:"Antioquia, con 130 mil toneladas adicionales.",correct:false},{l:"B",t:"Valle del Cauca, porque supera a Cundinamarca en 2024.",correct:false},{l:"C",t:"Nariño, al aumentar de 100 a 190 mil toneladas (90%).",correct:true},{l:"D",t:"Boyacá, al registrar el segundo valor más alto en 2024.",correct:false}] },
+  { id:"2", code:"LC-0119", area:"Lectura Crítica", areaCode:"LEC", comp:"Comprensión", enunciado:"El siguiente cómic representa una situación de conflicto generacional. ¿Cuál es la intención comunicativa del autor?", author:"V. Puello", authorInit:"VP", isAI:false, status:"PENDIENTE", perf:43, diff:"Alta", context:"Observe el siguiente cómic que muestra una discusión entre abuelo y nieto sobre el uso de dispositivos tecnológicos.", stem:"¿Cuál es la principal intención comunicativa del autor del cómic?", options:[{l:"A",t:"Criticar el uso excesivo de la tecnología por los jóvenes.",correct:false},{l:"B",t:"Mostrar la brecha generacional como fuente de conflicto cotidiano.",correct:true},{l:"C",t:"Defender la postura del abuelo frente a los videojuegos.",correct:false},{l:"D",t:"Promover el diálogo entre diferentes generaciones.",correct:false}] },
+  { id:"3", code:"CN-0087", area:"Ciencias Naturales", areaCode:"NAT", comp:"Indagación", enunciado:"El diagrama de cuerpo libre adjunto representa un bloque en plano inclinado con fricción. ¿Cuál es la fuerza normal?", author:"ScholarAI", authorInit:"", isAI:true, status:"APROBADO", perf:61, diff:"Alta", context:"El siguiente diagrama muestra un bloque de 5 kg sobre un plano inclinado a 30°, con un coeficiente de fricción de 0,3.", stem:"Según el diagrama, ¿cuál es el valor de la fuerza normal que ejerce el plano sobre el bloque?", options:[{l:"A",t:"49 N",correct:false},{l:"B",t:"42,4 N",correct:true},{l:"C",t:"24,5 N",correct:false},{l:"D",t:"50 N",correct:false}] },
+  { id:"4", code:"ING-0204", area:"Inglés", areaCode:"ING", comp:"Reading Comprehension", enunciado:"Read the following public notice and answer: What time does the library close on Saturdays?", author:"ScholarAI", authorInit:"", isAI:true, status:"APROBADO", perf:55, diff:"Baja", context:"RIVERSIDE PUBLIC LIBRARY — Opening hours: Monday to Friday: 8:00 a.m. – 6:00 p.m. Saturday: 9:00 a.m. – 1:00 p.m. Closed on Sundays and public holidays. Free WiFi available.", stem:"According to the notice, what time does the library close on Saturdays?", options:[{l:"A",t:"6:00 p.m.",correct:false},{l:"B",t:"9:00 a.m.",correct:false},{l:"C",t:"1:00 p.m.",correct:true},{l:"D",t:"8:00 a.m.",correct:false}] },
+  { id:"5", code:"SC-0031", area:"Sociales", areaCode:"SOC", comp:"Pensamiento sistémico", enunciado:"El mapa temático adjunto muestra la distribución de la población colombiana. ¿Qué patrón de concentración se evidencia?", author:"M. Rodríguez", authorInit:"MR", isAI:false, status:"BORRADOR", perf:null, diff:"Media", context:"Observe el mapa temático que muestra la densidad poblacional por departamento en Colombia según el censo de 2018.", stem:"Según el mapa, ¿cuál es el principal patrón de distribución poblacional en Colombia?", options:[{l:"A",t:"La población se distribuye uniformemente en todo el territorio.",correct:false},{l:"B",t:"La mayoría de la población se concentra en la región Caribe.",correct:false},{l:"C",t:"La mayor concentración se da en la región Andina y las capitales.",correct:true},{l:"D",t:"La Orinoquia y Amazonia tienen mayor densidad que la Andina.",correct:false}] },
+  { id:"6", code:"MAT-0098", area:"Matemáticas", areaCode:"MAT", comp:"Formulación", enunciado:"Una tienda vende camisas a $45.000 con un descuento del 20%. Si Pedro compra 3 camisas, ¿cuánto paga en total?", author:"ScholarAI", authorInit:"", isAI:true, status:"APROBADO", perf:82, diff:"Baja", context:"Una tienda de ropa ofrece un descuento del 20% sobre el precio regular de sus productos.", stem:"Si el precio regular de una camisa es $45.000 y se aplica un descuento del 20%, ¿cuánto pagará Pedro por 3 camisas?", options:[{l:"A",t:"$108.000",correct:true},{l:"B",t:"$135.000",correct:false},{l:"C",t:"$99.000",correct:false},{l:"D",t:"$120.000",correct:false}] },
+  { id:"7", code:"LC-0205", area:"Lectura Crítica", areaCode:"LEC", comp:"Argumentación", enunciado:"En el texto, el autor usa la ironía para: ¿cuál de las siguientes opciones lo explica correctamente?", author:"V. Puello", authorInit:"VP", isAI:false, status:"PENDIENTE", perf:38, diff:"Alta", context:"Texto periodístico: '¡Claro que el tránsito capitalino mejora cada día! Solo basta recorrer la Avenida Caracas a las 8 de la mañana para comprobarlo.'", stem:"¿Cuál es la función del recurso retórico utilizado por el autor en el texto?", options:[{l:"A",t:"Exagerar la situación para hacer la noticia más llamativa.",correct:false},{l:"B",t:"Criticar irónicamente el mal estado del tráfico capitalino.",correct:true},{l:"C",t:"Invitar a los lectores a usar la Avenida Caracas.",correct:false},{l:"D",t:"Informar objetivamente sobre la situación del tránsito.",correct:false}] },
+  { id:"8", code:"CN-0134", area:"Ciencias Naturales", areaCode:"NAT", comp:"Uso del conocimiento", enunciado:"La cadena trófica muestra: productor → herbívoro → carnívoro. Si los herbívoros disminuyen, ¿qué ocurre?", author:"ScholarAI", authorInit:"", isAI:true, status:"APROBADO", perf:69, diff:"Media", context:"Observe la siguiente cadena trófica de un ecosistema de páramo: Plantas → Conejos → Zorros → Cóndores.", stem:"Si una enfermedad reduce drásticamente la población de conejos, ¿cuál sería el efecto más inmediato en el ecosistema?", options:[{l:"A",t:"Los cóndores aumentarían su población por falta de competencia.",correct:false},{l:"B",t:"Las plantas disminuirían porque los conejos las regulan.",correct:false},{l:"C",t:"Los zorros disminuirían por falta de alimento.",correct:true},{l:"D",t:"Los cóndores se convertirían en herbívoros.",correct:false}] },
+  { id:"9", code:"ING-0312", area:"Inglés", areaCode:"ING", comp:"Grammar", enunciado:"Choose the correct verb form: 'By the time she arrived, they _____ for two hours.'", author:"ScholarAI", authorInit:"", isAI:true, status:"APROBADO", perf:47, diff:"Media", context:"Complete the following sentence with the correct verb form.", stem:"Choose the correct option to complete the sentence: 'By the time she arrived, they _____ for two hours.'", options:[{l:"A",t:"were waiting",correct:false},{l:"B",t:"had been waiting",correct:true},{l:"C",t:"have waited",correct:false},{l:"D",t:"waited",correct:false}] },
+  { id:"10", code:"SC-0089", area:"Sociales", areaCode:"SOC", comp:"Pensamiento reflexivo", enunciado:"La caricatura política muestra a un político cargando una mochila llena de promesas. ¿Qué critica el caricaturista?", author:"M. Rodríguez", authorInit:"MR", isAI:false, status:"BORRADOR", perf:null, diff:"Media", context:"Observe la siguiente caricatura política publicada durante una campaña electoral.", stem:"¿Cuál es el mensaje principal que transmite el caricaturista mediante el recurso visual?", options:[{l:"A",t:"Los políticos trabajan demasiado durante las campañas.",correct:false},{l:"B",t:"Las promesas electorales representan una carga para los candidatos.",correct:false},{l:"C",t:"El peso de las promesas incumplidas como crítica al discurso político.",correct:true},{l:"D",t:"La necesidad de hacer más promesas para ganar votos.",correct:false}] },
+];
+
+const AREA_COLORS = {
+  MAT: { bg:"#eff6ff", text:"#1d4ed8", dot:"#60a5fa" },
+  LEC: { bg:"#f5f3ff", text:"#6d28d9", dot:"#a78bfa" },
+  ING: { bg:"#fffbeb", text:"#b45309", dot:"#fbbf24" },
+  NAT: { bg:"#ecfdf5", text:"#047857", dot:"#34d399" },
+  SOC: { bg:"#fff1f2", text:"#be123c", dot:"#fb7185" },
+};
+const STATUS_COLORS = {
+  APROBADO: { bg:"#d1fae5", text:"#047857" },
+  PENDIENTE: { bg:"#fef3c7", text:"#b45309" },
+  BORRADOR:  { bg:"#f1f5f9", text:"#475569" },
+};
+
+let currentPage = 1;
+let filteredData = [...QUESTIONS];
+
+function renderTable(data) {
+  const tbody = document.getElementById('question-table-body');
+  tbody.innerHTML = data.map(q => {
+    const ac = AREA_COLORS[q.areaCode] || { bg:"#f1f5f9", text:"#505f76", dot:"#94a3b8" };
+    const sc = STATUS_COLORS[q.status];
+    const perfColor = q.perf === null ? '' : q.perf >= 70 ? '#34d399' : q.perf >= 45 ? '#fbbf24' : '#fb7185';
+    return `
+    <tr onclick="openDrawer('${q.id}')">
+      <td><span class="td-code" style="background:${ac.bg};color:${ac.text}">${q.code}</span></td>
+      <td><div class="area-cell"><div class="area-dot" style="background:${ac.dot}"></div><div><div class="area-name">${q.area}</div><div class="area-comp">${q.comp}</div></div></div></td>
+      <td><div class="enunciado-cell">${q.enunciado}</div></td>
+      <td><div class="author-cell">
+        <div class="author-av" style="background:${q.isAI ? '#ede9fe' : '#dbe1ff'};color:${q.isAI ? '#6d28d9' : '#004ac6'}">
+          ${q.isAI ? '<span class="ms msf" style="font-size:13px">auto_awesome</span>' : q.authorInit}
+        </div>
+        <span>${q.author}</span>
+      </div></td>
+      <td><span class="status-badge" style="background:${sc.bg};color:${sc.text}">${q.status}</span></td>
+      <td>${q.perf === null ? '<span style="font-size:12px;color:rgba(80,95,118,0.5)">—</span>' : `<div class="perf-wrap"><div class="perf-track"><div class="perf-fill" style="width:${q.perf}%;background:${perfColor}"></div></div><span style="font-size:11px;font-weight:600;color:var(--secondary)">${q.perf}%</span></div>`}</td>
+      <td><div class="row-actions">
+        <div class="row-action-btn" onclick="event.stopPropagation()"><span class="ms" style="font-size:14px">edit</span></div>
+        <div class="row-action-btn" onclick="event.stopPropagation()"><span class="ms" style="font-size:14px">delete</span></div>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const area = document.getElementById('filter-area').value;
+  const status = document.getElementById('filter-status').value;
+  filteredData = QUESTIONS.filter(q => {
+    const matchSearch = !search || q.code.toLowerCase().includes(search) || q.enunciado.toLowerCase().includes(search);
+    const matchArea = !area || q.area === area;
+    const matchStatus = !status || q.status === status;
+    return matchSearch && matchArea && matchStatus;
+  });
+  renderTable(filteredData);
+  const count = filteredData.length;
+  document.getElementById('table-count').textContent = `Mostrando 1–${Math.min(10,count)} de ${count.toLocaleString('es-CO')} preguntas`;
+  document.getElementById('page-info').textContent = `Mostrando 1–${Math.min(10,count)} de ${count.toLocaleString('es-CO')} preguntas`;
+}
+
+function clearFilters() {
+  document.getElementById('search-input').value = '';
+  document.getElementById('filter-area').value = '';
+  document.getElementById('filter-diff').value = '';
+  document.getElementById('filter-status').value = '';
+  filterTable();
+}
+
+function changePage(dir) {
+  currentPage = Math.max(1, Math.min(234, currentPage + dir));
+  updatePageBtns();
+}
+function setPage(p) { currentPage = p; updatePageBtns(); }
+function updatePageBtns() {
+  [1,2,3].forEach(n => {
+    const btn = document.getElementById('p'+n);
+    if (btn) btn.classList.toggle('active', currentPage === n);
+  });
+}
+
+// ── Modals ────────────────────────────────────────────────────
+function openManualModal() { document.getElementById('manual-modal').classList.add('open'); }
+function openAIModal() { document.getElementById('ai-modal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); resetAI(); }
+function closeIfBackdrop(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+function submitManual() { closeModal('manual-modal'); }
+
+let aiGenerating = false;
+function generateAI() {
+  if (aiGenerating) return;
+  aiGenerating = true;
+  document.getElementById('ai-modal-body').style.display = 'none';
+  document.getElementById('ai-modal-footer').style.display = 'none';
+  document.getElementById('ai-generating').classList.add('visible');
+  setTimeout(() => { closeModal('ai-modal'); resetAI(); }, 2800);
+}
+function resetAI() {
+  aiGenerating = false;
+  document.getElementById('ai-modal-body').style.display = '';
+  document.getElementById('ai-modal-footer').style.display = '';
+  document.getElementById('ai-generating').classList.remove('visible');
+}
+function toggleArea(el) {
+  document.querySelectorAll('.ai-area-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function selectDiff(el) {
+  document.querySelectorAll('.ai-diff-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function adjustCount(d) {
+  const inp = document.getElementById('ai-count');
+  inp.value = Math.max(1, Math.min(25, parseInt(inp.value||5) + d));
+}
+
+// ── Drawer ────────────────────────────────────────────────────
+function openDrawer(id) {
+  const q = QUESTIONS.find(x => x.id === id);
+  if (!q) return;
+  const ac = AREA_COLORS[q.areaCode] || { bg:"#f1f5f9", text:"#505f76", dot:"#94a3b8" };
+  const sc = STATUS_COLORS[q.status];
+
+  document.getElementById('drawer-code').textContent = q.code;
+  document.getElementById('drawer-meta').innerHTML = `
+    <span style="background:${ac.bg};color:${ac.text};border-radius:9999px;padding:4px 12px;font-size:11px;font-weight:700">${q.area}</span>
+    <span style="background:${sc.bg};color:${sc.text};border-radius:9999px;padding:4px 12px;font-size:11px;font-weight:700">${q.status}</span>
+    <span style="background:var(--sc-high);color:var(--secondary);border-radius:9999px;padding:4px 12px;font-size:11px;font-weight:700">${q.diff}</span>
+    ${q.isAI ? '<span style="background:#f5f3ff;color:#6d28d9;border-radius:9999px;padding:4px 12px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px"><span class="ms msf" style="font-size:13px">auto_awesome</span>ScholarAI</span>' : ''}
+  `;
+  document.getElementById('drawer-context').textContent = q.context;
+  document.getElementById('drawer-stem').textContent = q.stem;
+  document.getElementById('drawer-options').innerHTML = q.options.map(o => `
+    <div class="drawer-option${o.correct ? ' correct' : ''}">
+      <div class="dopt-letter">${o.l}</div>
+      <div class="dopt-text">${o.t}</div>
+    </div>
+  `).join('');
+  const perfColor = q.perf === null ? '#94a3b8' : q.perf >= 70 ? '#34d399' : q.perf >= 45 ? '#fbbf24' : '#fb7185';
+  document.getElementById('drawer-info').innerHTML = `
+    <div class="drawer-info-item"><div class="di-label">Competencia</div><div class="di-value">${q.comp}</div></div>
+    <div class="drawer-info-item"><div class="di-label">Autor</div><div class="di-value">${q.author}</div></div>
+    <div class="drawer-info-item"><div class="di-label">Dificultad</div><div class="di-value">${q.diff}</div><div class="difficulty-bar"><div class="difficulty-fill" style="width:${q.diff==='Baja'?33:q.diff==='Media'?66:100}%;background:${q.diff==='Baja'?'#34d399':q.diff==='Media'?'#fbbf24':'#fb7185'}"></div></div></div>
+    <div class="drawer-info-item"><div class="di-label">Desempeño</div><div class="di-value">${q.perf === null ? '—' : q.perf + '%'}</div>${q.perf !== null ? `<div class="difficulty-bar"><div class="difficulty-fill" style="width:${q.perf}%;background:${perfColor}"></div></div>` : ''}</div>
+  `;
+  document.getElementById('drawer-backdrop').classList.add('open');
+  document.getElementById('question-drawer').classList.add('open');
+  // highlight row
+  document.querySelectorAll('tbody tr').forEach(r => r.classList.remove('selected'));
+  event.currentTarget && event.currentTarget.classList.add('selected');
+}
+function closeDrawer() {
+  document.getElementById('drawer-backdrop').classList.remove('open');
+  document.getElementById('question-drawer').classList.remove('open');
+  document.querySelectorAll('tbody tr').forEach(r => r.classList.remove('selected'));
+}
+
+// ── Toast ──────────────────────────────────────────────────
+function showToast(msg, type='success', icon='check_circle') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span class="ms msf" style="font-size:18px">${icon}</span>${msg}`;
+  c.appendChild(t);
+  requestAnimationFrame(() => { t.classList.add('show'); });
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ── Confirm dialogs ──────────────────────────────────────────
+let currentDrawerQ = null;
+function openConfirm(id) { document.getElementById(id).classList.add('open'); }
+function closeConfirm(id) { document.getElementById(id).classList.remove('open'); }
+function confirmApprove() {
+  closeConfirm('confirm-approve');
+  if (currentDrawerQ) {
+    const q = QUESTIONS.find(x => x.id === currentDrawerQ);
+    if (q) q.status = 'APROBADO';
+    renderTable(filteredData);
+    // update drawer status badge
+    const sc = STATUS_COLORS['APROBADO'];
+    document.getElementById('drawer-meta').querySelector && openDrawer(currentDrawerQ);
+  }
+  closeDrawer();
+  showToast('Pregunta aprobada correctamente', 'success', 'check_circle');
+}
+function confirmReject() {
+  closeConfirm('confirm-reject');
+  if (currentDrawerQ) {
+    const q = QUESTIONS.find(x => x.id === currentDrawerQ);
+    if (q) q.status = 'PENDIENTE';
+    renderTable(filteredData);
+  }
+  closeDrawer();
+  showToast('Pregunta enviada a revisión', 'warning', 'pending');
+}
+
+// ── Edit modal ───────────────────────────────────────────────
+function openEditModal(id) {
+  const q = QUESTIONS.find(x => x.id === id);
+  if (!q) return;
+  document.getElementById('edit-modal-code').textContent = q.code;
+  document.getElementById('edit-context').value = q.context;
+  document.getElementById('edit-stem').value = q.stem;
+  // set selects
+  const setVal = (sel, val) => { const s = document.getElementById(sel); [...s.options].forEach(o => { if (o.text === val || o.value === val) s.value = o.value; }); };
+  setVal('edit-diff', q.diff);
+  setVal('edit-status', q.status);
+  // render option fields
+  const container = document.getElementById('edit-options-fields');
+  let correctIdx = q.options.findIndex(o => o.correct);
+  function renderEditOptions(ci) {
+    container.innerHTML = q.options.map((o, i) => `
+      <div class="option-field${i===ci?' correct':''}">
+        <div class="option-letter-tag" style="cursor:pointer" onclick="changeCorrect(${i})">${o.l}${i===ci?' ✓':''}</div>
+        <input class="form-input" value="${o.t.replace(/"/g,'&quot;')}" oninput="QUESTIONS.find(x=>x.id==='${id}').options[${i}].t=this.value" style="flex:1">
+      </div>`).join('');
+  }
+  window.changeCorrect = (idx) => {
+    q.options.forEach((o,i) => o.correct = i===idx);
+    correctIdx = idx;
+    renderEditOptions(idx);
+  };
+  renderEditOptions(correctIdx);
+  document.getElementById('edit-modal').classList.add('open');
+}
+function saveEdit() {
+  closeModal('edit-modal');
+  renderTable(filteredData);
+  showToast('Cambios guardados correctamente', 'info', 'edit_note');
+}
+
+// ── Init ──────────────────────────────────────────────────
+renderTable(QUESTIONS);
+</script>
+</body>
+</html>
