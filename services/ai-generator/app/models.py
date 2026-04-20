@@ -1,10 +1,24 @@
-"""Modelos de BD del AI Generator — API keys cifradas y configuración de proveedores."""
+"""Modelos de BD del AI Generator."""
 
+import uuid
 from datetime import datetime
 
 from saber11_shared.database import Base
-from sqlalchemy import Boolean, DateTime, Float, Integer, LargeBinary, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class AIProviderConfig(Base):
@@ -51,3 +65,101 @@ class AIGenerationLog(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class GenerationJob(Base):
+    """Job de generación IA en segundo plano."""
+
+    __tablename__ = "generation_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    requested_by_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    requested_by_role: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        CheckConstraint(
+            "status IN ('QUEUED','RUNNING','COMPLETED','FAILED','PARTIAL','CANCELLED')"
+        ),
+        default="QUEUED",
+        nullable=False,
+        index=True,
+    )
+    cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    area_code: Mapped[str] = mapped_column(String(10), nullable=False)
+    provider: Mapped[str | None] = mapped_column(String(50))
+    model: Mapped[str | None] = mapped_column(String(100))
+    competency_code: Mapped[str | None] = mapped_column(String(30))
+    cognitive_level: Mapped[int | None] = mapped_column(Integer)
+    include_visual: Mapped[bool] = mapped_column(Boolean, default=False)
+    visual_type: Mapped[str | None] = mapped_column(String(50))
+    english_section: Mapped[int | None] = mapped_column(Integer)
+
+    total_requested: Mapped[int] = mapped_column(Integer, nullable=False)
+    total_processed: Mapped[int] = mapped_column(Integer, default=0)
+    total_generated: Mapped[int] = mapped_column(Integer, default=0)
+    total_valid: Mapped[int] = mapped_column(Integer, default=0)
+    total_failed: Mapped[int] = mapped_column(Integer, default=0)
+
+    error_summary: Mapped[str | None] = mapped_column(Text)
+    retry_of_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("generation_jobs.id")
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    items: Mapped[list["GenerationJobItem"]] = relationship(
+        back_populates="job", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class GenerationJobItem(Base):
+    """Ítem individual de un job (una pregunta del lote)."""
+
+    __tablename__ = "generation_job_items"
+    __table_args__ = (UniqueConstraint("job_id", "item_index", name="uq_job_item_index"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    job_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("generation_jobs.id"), nullable=False, index=True
+    )
+    item_index: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        CheckConstraint("status IN ('QUEUED','RUNNING','COMPLETED','FAILED','CANCELLED')"),
+        default="QUEUED",
+        nullable=False,
+        index=True,
+    )
+    provider: Mapped[str | None] = mapped_column(String(50))
+    model: Mapped[str | None] = mapped_column(String(100))
+    is_valid: Mapped[bool | None] = mapped_column(Boolean)
+    error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    token_input: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    token_output: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    created_question_area_code: Mapped[str | None] = mapped_column(String(10))
+    created_question_competency_code: Mapped[str | None] = mapped_column(String(30))
+    created_question_assertion_code: Mapped[str | None] = mapped_column(String(40))
+    created_question_evidence_code: Mapped[str | None] = mapped_column(String(50))
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    job: Mapped[GenerationJob] = relationship(back_populates="items")

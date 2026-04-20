@@ -1,10 +1,14 @@
 """Rutas API para sesiones de examen, respuestas, cierre y resultados."""
 
+import asyncio
+import logging
 import uuid
 from datetime import UTC, datetime
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
+
+logger = logging.getLogger(__name__)
 from saber11_shared.auth import CurrentUser, get_current_user, require_role
 from saber11_shared.events import EventBus
 from sqlalchemy import func, select
@@ -44,7 +48,7 @@ async def _get_db():
 # ── Iniciar sesión de examen ──────────────────────────────────────────
 
 
-@router.post("/start", response_model=SessionOut, status_code=201)
+@router.post("/start", response_model=SessionOut)
 async def start_session(
     body: SessionStart,
     db: AsyncSession = Depends(_get_db),
@@ -59,18 +63,17 @@ async def start_session(
     if exam.status != "ACTIVE":
         raise HTTPException(400, "Este examen no está activo")
 
-    # Verificar que no tenga una sesión en progreso para este examen
-    existing = await db.execute(
+    # Si ya hay una sesión en progreso, reanudarla en lugar de crear una nueva
+    existing_result = await db.execute(
         select(ExamSession).where(
             ExamSession.exam_id == body.exam_id,
             ExamSession.student_user_id == user.user_id,
             ExamSession.status == "IN_PROGRESS",
         )
     )
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            409, "Ya tienes una sesión en progreso para este examen"
-        )
+    existing_session = existing_result.scalar_one_or_none()
+    if existing_session:
+        return existing_session
 
     session = ExamSession(
         exam_id=body.exam_id,
@@ -234,7 +237,27 @@ async def finish_session(
 
     # Obtener respuestas correctas del Question Bank
     question_ids = [str(a.question_id) for a in session.answers]
+
+    if not question_ids:
+        logger.warning("finish_session: session %s has no submitted answers", session_id)
+        raise HTTPException(
+            400,
+            "No se han enviado respuestas para esta sesión. "
+            "Asegúrate de responder todas las preguntas antes de finalizar.",
+        )
+
     correct_map = await _fetch_correct_answers(question_ids)
+
+    if not correct_map:
+        logger.error(
+            "finish_session: QB returned no answers for session %s (question_ids=%s)",
+            session_id, question_ids,
+        )
+        raise HTTPException(
+            503,
+            "No se pudo obtener las respuestas correctas del banco de preguntas. "
+            "Intenta finalizar el examen nuevamente en unos segundos.",
+        )
 
     # Calificar cada respuesta
     total_correct = 0
@@ -454,51 +477,64 @@ async def get_student_history_by_id(
 
 
 async def _fetch_questions_safe(question_ids: list[str]) -> list[dict]:
-    """Obtiene preguntas del QB SIN la respuesta correcta."""
+    """Obtiene preguntas del QB SIN la respuesta correcta (requests concurrentes)."""
+    if not question_ids:
+        return []
+    async with httpx.AsyncClient(timeout=10) as client:
+        results = await asyncio.gather(
+            *[_fetch_one_question(client, q_id) for q_id in question_ids]
+        )
     questions = []
-    async with httpx.AsyncClient(timeout=30) as client:
-        for q_id in question_ids:
-            resp = await client.get(
-                f"{settings.question_bank_url}/api/questions/{q_id}",
-                headers={"X-User-Id": "0", "X-User-Role": "ADMIN"},
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                # SEGURIDAD: eliminar respuesta correcta y explanations
-                data.pop("correct_answer", None)
-                data.pop("explanation_correct", None)
-                data.pop("explanation_a", None)
-                data.pop("explanation_b", None)
-                data.pop("explanation_c", None)
-                data.pop("explanation_d", None)
-                questions.append(data)
+    for data in results:
+        if data:
+            # SEGURIDAD: eliminar respuesta correcta y explicaciones
+            data.pop("correct_answer", None)
+            data.pop("explanation_correct", None)
+            data.pop("explanation_a", None)
+            data.pop("explanation_b", None)
+            data.pop("explanation_c", None)
+            data.pop("explanation_d", None)
+            questions.append(data)
     return questions
 
 
+async def _fetch_one_question(client: httpx.AsyncClient, q_id: str) -> dict | None:
+    """Fetches a single question from QB. Returns None on any failure."""
+    try:
+        resp = await client.get(
+            f"{settings.question_bank_url}/api/questions/{q_id}",
+            headers={"X-User-Id": "0", "X-User-Role": "ADMIN"},
+        )
+        if resp.status_code == 200:
+            return resp.json()
+        logger.warning("QB returned %s for question %s", resp.status_code, q_id)
+        return None
+    except Exception as exc:
+        logger.error("QB request failed for question %s: %s", q_id, exc)
+        return None
+
+
 async def _fetch_correct_answers(question_ids: list[str]) -> dict[str, str]:
-    """Obtiene el mapa {question_id: correct_answer} del QB."""
+    """Obtiene el mapa {question_id: correct_answer} del QB (requests concurrentes)."""
+    if not question_ids:
+        return {}
+    async with httpx.AsyncClient(timeout=10) as client:
+        results = await asyncio.gather(
+            *[_fetch_one_question(client, q_id) for q_id in question_ids]
+        )
     correct_map: dict[str, str] = {}
-    async with httpx.AsyncClient(timeout=30) as client:
-        for q_id in question_ids:
-            resp = await client.get(
-                f"{settings.question_bank_url}/api/questions/{q_id}",
-                headers={"X-User-Id": "0", "X-User-Role": "ADMIN"},
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                correct_map[data["id"]] = data["correct_answer"]
+    for data in results:
+        if data and "id" in data and "correct_answer" in data:
+            correct_map[data["id"]] = data["correct_answer"]
     return correct_map
 
 
 async def _fetch_questions_full(question_ids: list[str]) -> list[dict]:
-    """Obtiene preguntas completas del QB (incluye explicaciones)."""
-    questions = []
-    async with httpx.AsyncClient(timeout=30) as client:
-        for q_id in question_ids:
-            resp = await client.get(
-                f"{settings.question_bank_url}/api/questions/{q_id}",
-                headers={"X-User-Id": "0", "X-User-Role": "ADMIN"},
-            )
-            if resp.status_code == 200:
-                questions.append(resp.json())
-    return questions
+    """Obtiene preguntas completas del QB con explicaciones (requests concurrentes)."""
+    if not question_ids:
+        return []
+    async with httpx.AsyncClient(timeout=10) as client:
+        results = await asyncio.gather(
+            *[_fetch_one_question(client, q_id) for q_id in question_ids]
+        )
+    return [d for d in results if d is not None]

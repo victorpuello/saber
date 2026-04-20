@@ -19,5 +19,11 @@ class Settings(BaseServiceSettings):
     max_tokens: int = 4096
     generation_temperature: float = 0.7
 
+    # Jobs asíncronos
+    ai_jobs_max_active_per_user: int = 3
+    ai_jobs_consumer_group: str = "ai-generator-jobs"
+    ai_jobs_consumer_name: str = "ai-generator-worker-1"
+    ai_jobs_item_timeout_seconds: int = 45
+
 
 settings = Settings()

@@ -1,27 +1,49 @@
 """Punto de entrada del AI Generator Service."""
 
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from saber11_shared.database import Base
+from saber11_shared.events import EventBus
 from saber11_shared.health import create_health_router
 
 from .config import settings
 from .database import SessionLocal, engine
+from .job_worker import GenerationJobWorker, configure_job_event_bus
 from .key_store import seed_default_providers
-from .models import AIGenerationLog, AIProviderConfig  # noqa: F401 — registrar tablas
+from .models import (  # noqa: F401 — registrar tablas
+    AIGenerationLog,
+    AIProviderConfig,
+    GenerationJob,
+    GenerationJobItem,
+)
 from .routes import router as ai_router
+
+event_bus = EventBus(settings.redis_url)
+job_worker = GenerationJobWorker(event_bus, SessionLocal)
+_worker_task: asyncio.Task | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Inicializa DB y seed de proveedores al arrancar."""
+    global _worker_task  # noqa: PLW0603
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     async with SessionLocal() as session:
         await seed_default_providers(session)
         await session.commit()
+
+    configure_job_event_bus(event_bus)
+    _worker_task = asyncio.create_task(job_worker.start())
+
     yield
+
+    await job_worker.stop()
+    if _worker_task:
+        _worker_task.cancel()
+    await event_bus.close()
     await engine.dispose()
 
 

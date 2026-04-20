@@ -3,6 +3,7 @@
 import json
 import logging
 import random
+import re
 
 import anthropic
 import google.generativeai as genai
@@ -14,6 +15,15 @@ from .prompts import SYSTEM_PROMPT, build_user_prompt
 from .schemas import GeneratedMedia, GeneratedQuestion
 
 logger = logging.getLogger(__name__)
+
+_JSON_RETRY_SUFFIX = """
+
+IMPORTANTE DE FORMATO:
+- Devuelve SOLO un objeto JSON valido (sin markdown ni texto adicional).
+- No uses saltos de linea literales dentro de strings; usa una sola linea por campo.
+- Escapa comillas dobles internas con \\\" cuando sea necesario.
+- Manten explanation_correct y explanation_a/b/c/d en maximo 2 frases cada una.
+"""
 
 
 # =============================================================================
@@ -119,6 +129,115 @@ def _resolve_taxonomy_ids(
         "evidence": evidence,
         "content_component": content_component,
     }
+
+
+def _strip_markdown_fences(raw_text: str) -> str:
+    """Elimina fences markdown si el modelo devuelve bloque ```json."""
+    text = raw_text.strip()
+    if not text.startswith("```"):
+        return text
+
+    lines = text.splitlines()
+    if lines:
+        lines = lines[1:]
+    if lines and lines[-1].strip().startswith("```"):
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
+
+
+def _extract_json_object(raw_text: str) -> str:
+    """Recorta prefijos/sufijos fuera del objeto JSON principal."""
+    start = raw_text.find("{")
+    end = raw_text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        return raw_text.strip()
+    return raw_text[start : end + 1].strip()
+
+
+def _escape_control_chars_in_strings(raw_text: str) -> str:
+    """Escapa saltos de linea/tab en strings JSON para tolerar outputs multilinea."""
+    out: list[str] = []
+    in_string = False
+    escaped = False
+
+    for char in raw_text:
+        if in_string:
+            if escaped:
+                out.append(char)
+                escaped = False
+                continue
+
+            if char == "\\":
+                out.append(char)
+                escaped = True
+                continue
+
+            if char == '"':
+                out.append(char)
+                in_string = False
+                continue
+
+            if char == "\n":
+                out.append("\\n")
+                continue
+            if char == "\r":
+                out.append("\\r")
+                continue
+            if char == "\t":
+                out.append("\\t")
+                continue
+
+            out.append(char)
+            continue
+
+        out.append(char)
+        if char == '"':
+            in_string = True
+
+    return "".join(out)
+
+
+def _remove_trailing_commas(raw_text: str) -> str:
+    """Elimina comas finales antes de '}' o ']' en JSON."""
+    return re.sub(r",(\s*[}\]])", r"\1", raw_text)
+
+
+def _parse_provider_json(raw_text: str) -> dict:
+    """Parsea JSON del proveedor con estrategias de recuperacion leves."""
+    base_text = _extract_json_object(_strip_markdown_fences(raw_text))
+
+    candidates = [
+        base_text,
+        _escape_control_chars_in_strings(base_text),
+        _remove_trailing_commas(base_text),
+        _remove_trailing_commas(_escape_control_chars_in_strings(base_text)),
+    ]
+
+    seen: set[str] = set()
+    parse_errors: list[str] = []
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError as exc:
+            parse_errors.append(str(exc))
+            continue
+
+        if not isinstance(parsed, dict):
+            parse_errors.append("La respuesta JSON no es un objeto")
+            continue
+
+        return parsed
+
+    detail = parse_errors[-1] if parse_errors else "respuesta vacia o no parseable"
+    raise ValueError(f"JSON invalido del proveedor: {detail}")
+
+
+def _build_retry_prompt(user_prompt: str) -> str:
+    return f"{user_prompt}{_JSON_RETRY_SUFFIX}"
 
 
 # =============================================================================
@@ -267,27 +386,52 @@ async def generate_question(
         visual_type=visual_type,
     )
 
-    # Llamar al proveedor correspondiente
-    if provider_name == "anthropic":
-        raw_text, token_usage = await _call_anthropic(
-            api_key, model_name, user_prompt, max_tokens, temperature
-        )
-    elif provider_name == "gemini":
-        raw_text, token_usage = await _call_gemini(
-            api_key, model_name, user_prompt, max_tokens, temperature
-        )
-    else:
-        msg = f"Proveedor no implementado: {provider_name}"
-        raise ValueError(msg)
+    retry_prompt = _build_retry_prompt(user_prompt)
+    data: dict | None = None
+    token_usage: dict = {}
+    last_parse_error: ValueError | None = None
 
-    # Limpiar posibles bloques markdown
-    if raw_text.startswith("```"):
-        raw_text = raw_text.split("\n", 1)[1]
-        if raw_text.endswith("```"):
-            raw_text = raw_text[:-3]
-    raw_text = raw_text.strip()
+    for attempt in (1, 2):
+        attempt_prompt = user_prompt if attempt == 1 else retry_prompt
+        attempt_temperature = temperature if attempt == 1 else min(temperature, 0.2)
 
-    data = json.loads(raw_text)
+        if provider_name == "anthropic":
+            raw_text, token_usage = await _call_anthropic(
+                api_key,
+                model_name,
+                attempt_prompt,
+                max_tokens,
+                attempt_temperature,
+            )
+        elif provider_name == "gemini":
+            raw_text, token_usage = await _call_gemini(
+                api_key,
+                model_name,
+                attempt_prompt,
+                max_tokens,
+                attempt_temperature,
+            )
+        else:
+            msg = f"Proveedor no implementado: {provider_name}"
+            raise ValueError(msg)
+
+        try:
+            data = _parse_provider_json(raw_text)
+            break
+        except ValueError as err:
+            last_parse_error = err
+            logger.warning(
+                "Respuesta no parseable de %s/%s en intento %s: %s",
+                provider_name,
+                model_name,
+                attempt,
+                err,
+            )
+
+    if data is None:
+        if last_parse_error is not None:
+            raise last_parse_error
+        raise ValueError("No se pudo parsear la respuesta del proveedor")
 
     # Construir media programática
     media = None

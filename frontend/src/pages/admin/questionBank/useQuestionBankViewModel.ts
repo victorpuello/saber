@@ -44,15 +44,14 @@ function difficultyFromEstimated(d: number | null): Difficulty {
   return "Alta";
 }
 
-function mapQuestionOutToRow(q: QuestionOut, areaLookup: Map<string, AreaSummary>): QuestionRow {
+function mapQuestionOutToRow(q: QuestionOut, areaLookup: Map<string, AreaSummary>, globalIndex: number): QuestionRow {
   const areaSummary = areaLookup.get(q.area_id);
   const areaInfo = areaSummary
     ? (AREA_CODE_MAP[areaSummary.code] ?? { name: areaSummary.name, code: "MAT" as AreaCode })
     : { name: "—", code: "MAT" as AreaCode };
 
   const areaCode = areaSummary?.code ?? "MAT";
-  const seqNum = String(q.times_used || 1).padStart(4, "0");
-  const code = `${areaCode}-${seqNum}`;
+  const code = `${areaCode}-${String(globalIndex).padStart(4, "0")}`;
 
   const isAI = q.source === "AI";
 
@@ -206,7 +205,7 @@ export function useQuestionBankViewModel() {
         return Promise.all(
           res.items.map((s) => getQuestion(authFetch, s.id))
         ).then((fullQuestions) => ({
-          rows: fullQuestions.map((q) => mapQuestionOutToRow(q, areaLookup)),
+          rows: fullQuestions.map((q, idx) => mapQuestionOutToRow(q, areaLookup, (currentPage - 1) * ITEMS_PER_PAGE + idx + 1)),
           total: res.total,
           pages: res.pages,
         }));
@@ -282,7 +281,7 @@ export function useQuestionBankViewModel() {
     })
       .then((res) =>
         Promise.all(res.items.map((s) => getQuestion(authFetch, s.id))).then((full) => ({
-          rows: full.map((q) => mapQuestionOutToRow(q, areaLookup)),
+          rows: full.map((q, idx) => mapQuestionOutToRow(q, areaLookup, (currentPage - 1) * ITEMS_PER_PAGE + idx + 1)),
           total: res.total,
           pages: res.pages,
         })),

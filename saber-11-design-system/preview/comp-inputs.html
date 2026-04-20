@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,420,0,0" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 20px 24px; background: #f7f9fb; font-family: "Inter", sans-serif; display: flex; flex-direction: column; gap: 16px; max-width: 500px; }
+  .label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #737686; margin-bottom: 6px; }
+  .field-group { position: relative; }
+  .icon { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: #737686; font-size: 20px; }
+  input { display: block; width: 100%; box-sizing: border-box; border-radius: 12px; border: 1px solid transparent; background: #e0e3e5; padding: 14px 14px 14px 48px; font-size: 14px; color: #191c1e; font-family: "Inter", sans-serif; outline: none; }
+  input::placeholder { color: #737686; }
+  input.focus { border-color: rgba(0,74,198,0.3); background: white; box-shadow: 0 0 0 3px rgba(0,74,198,0.15); }
+  input.error { border-color: rgba(186,26,26,0.6); background: rgba(255,218,214,0.45); }
+  .error-msg { font-size: 12px; font-weight: 600; color: #ba1a1a; margin-top: 4px; padding: 0 4px; }
+  .helper-msg { font-size: 12px; color: #ba1a1a; font-weight: 600; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="label">Default state</div>
+    <div class="field-group">
+      <span class="material-symbols-outlined icon">person</span>
+      <input type="text" placeholder="nombre.apellido@institucion.edu" value="">
+    </div>
+  </div>
+  <div>
+    <div class="label">Focus state</div>
+    <div class="field-group">
+      <span class="material-symbols-outlined icon" style="color:#004ac6">lock</span>
+      <input class="focus" type="password" placeholder="••••••••••••" value="">
+    </div>
+  </div>
+  <div>
+    <div class="label">Error state</div>
+    <div class="field-group">
+      <span class="material-symbols-outlined icon" style="color:#737686">person</span>
+      <input class="error" type="text" value="a" placeholder="">
+    </div>
+    <div class="error-msg">Usa un identificador válido: letras, números, punto, guion o arroba.</div>
+  </div>
+  <div>
+    <div class="label">Filled state</div>
+    <div class="field-group">
+      <span class="material-symbols-outlined icon">person</span>
+      <input type="text" value="victor.puello@ieplayasdelviento.edu">
+    </div>
+  </div>
+</body>
+</html>

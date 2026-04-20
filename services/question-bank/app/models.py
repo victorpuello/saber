@@ -147,7 +147,7 @@ class Question(Base):
     explanation_d: Mapped[str | None] = mapped_column(Text)
 
     # Metadatos
-    cognitive_process: Mapped[str | None] = mapped_column(String(30))
+    cognitive_process: Mapped[str | None] = mapped_column(Text)
     difficulty_estimated: Mapped[float | None] = mapped_column(
         Numeric(3, 2), CheckConstraint("difficulty_estimated BETWEEN 0 AND 1")
     )

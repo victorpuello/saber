@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 16px; background: #f7f9fb; font-family: "Inter", sans-serif; display: flex; gap: 8px; flex-wrap: wrap; }
+  .swatch { border-radius: 12px; overflow: hidden; flex: 1; min-width: 80px; }
+  .color { height: 80px; }
+  .info { padding: 8px 10px; background: white; }
+  .name { font-size: 10px; font-weight: 700; color: #191c1e; }
+  .hex  { font-size: 10px; color: #737686; margin-top: 2px; font-family: monospace; }
+  .token { font-size: 9px; color: #c3c6d7; margin-top: 2px; }
+</style>
+</head>
+<body>
+  <div class="swatch">
+    <div class="color" style="background:#004ac6"></div>
+    <div class="info"><div class="name">Primary</div><div class="hex">#004ac6</div><div class="token">--color-primary</div></div>
+  </div>
+  <div class="swatch">
+    <div class="color" style="background:#2563eb"></div>
+    <div class="info"><div class="name">Primary Container</div><div class="hex">#2563eb</div><div class="token">--color-primary-container</div></div>
+  </div>
+  <div class="swatch">
+    <div class="color" style="background:linear-gradient(135deg,#004ac6,#2563eb)"></div>
+    <div class="info"><div class="name">Scholar Gradient</div><div class="hex">135deg →</div><div class="token">--gradient-scholar</div></div>
+  </div>
+  <div class="swatch">
+    <div class="color" style="background:#dbe1ff"></div>
+    <div class="info"><div class="name">Primary Fixed</div><div class="hex">#dbe1ff</div><div class="token">--color-primary-fixed</div></div>
+  </div>
+  <div class="swatch">
+    <div class="color" style="background:#00174b"></div>
+    <div class="info"><div class="name">On Primary Fixed</div><div class="hex">#00174b</div><div class="token">--color-on-primary-fixed</div></div>
+  </div>
+  <div class="swatch">
+    <div class="color" style="background:#eeefff"></div>
+    <div class="info"><div class="name">On Primary Cont.</div><div class="hex">#eeefff</div><div class="token">--color-on-primary-container</div></div>
+  </div>
+</body>
+</html>

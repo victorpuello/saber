@@ -34,6 +34,11 @@ async def lifespan(app: FastAPI):
     """Inicializa DB engine y cierra al apagar."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if conn.dialect.name == "postgresql":
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ALTER COLUMN cognitive_process TYPE TEXT"
+            )
     yield
     await engine.dispose()
 

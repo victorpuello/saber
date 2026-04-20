@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AuthFetch } from "../services/dashboard";
+import { isApiError } from "../services/api";
 import type { ExamQuestionSafe, SessionOut } from "../services/examSession";
 import {
   fetchSessionQuestions,
@@ -50,8 +51,10 @@ export function useExamSession(
 
   // Track when each question started (for time_spent_seconds)
   const questionStartRef = useRef<number>(Date.now());
-  // Submitted set to avoid double-posting
+  // submittedRef: successfully posted to backend (or 409 = already there)
   const submittedRef = useRef<Set<string>>(new Set());
+  // submittingRef: in-flight request guard (prevents concurrent double-POSTs)
+  const submittingRef = useRef<Set<string>>(new Set());
   const isFinishingRef = useRef(false);
 
   // ── Boot: start session directly with given examId ──────────────
@@ -117,6 +120,31 @@ export function useExamSession(
     [questions, currentIndex],
   );
 
+  // ── Submit a single question answer to backend ───────────────────
+  const submitOne = useCallback(async (
+    sessionId: string,
+    questionId: string,
+    letter: string,
+    elapsed: number,
+  ) => {
+    if (submittedRef.current.has(questionId)) return;
+    if (submittingRef.current.has(questionId)) return;
+
+    submittingRef.current.add(questionId);
+    try {
+      await submitAnswer(authFetch, sessionId, questionId, letter, elapsed);
+      submittedRef.current.add(questionId);
+    } catch (err: unknown) {
+      // 409 = already in backend (duplicate), treat as success
+      if (isApiError(err) && err.status === 409) {
+        submittedRef.current.add(questionId);
+      }
+      // Other errors: do NOT mark submitted — finish() will retry
+    } finally {
+      submittingRef.current.delete(questionId);
+    }
+  }, [authFetch]);
+
   // ── Submit current answer to backend silently ────────────────────
   const submitCurrent = useCallback(async () => {
     if (!session) return;
@@ -124,17 +152,9 @@ export function useExamSession(
     if (!q) return;
     const letter = answers[q.question_id];
     if (!letter) return;
-    if (submittedRef.current.has(q.question_id)) return;
-
     const elapsed = Math.round((Date.now() - questionStartRef.current) / 1000);
-    submittedRef.current.add(q.question_id);
-
-    try {
-      await submitAnswer(authFetch, session.id, q.question_id, letter, elapsed);
-    } catch {
-      // Already answered (409) or other — keep local state
-    }
-  }, [authFetch, session, questions, currentIndex, answers]);
+    await submitOne(session.id, q.question_id, letter, elapsed);
+  }, [session, questions, currentIndex, answers, submitOne]);
 
   // ── Navigate ─────────────────────────────────────────────────────
   const goNext = useCallback(async () => {
@@ -153,7 +173,12 @@ export function useExamSession(
     if (!session || isFinishingRef.current) return;
     isFinishingRef.current = true;
 
-    await submitCurrent();
+    // Submit ALL locally-answered questions not yet confirmed in backend
+    const pendingSubmits = questions
+      .filter((q) => answers[q.question_id] && !submittedRef.current.has(q.question_id))
+      .map((q) => submitOne(session.id, q.question_id, answers[q.question_id], 0));
+    await Promise.allSettled(pendingSubmits);
+
     try {
       const finished = await finishExamSession(authFetch, session.id);
       setSession(finished);
@@ -165,7 +190,7 @@ export function useExamSession(
       isFinishingRef.current = false;
       setPhase("error");
     }
-  }, [authFetch, session, submitCurrent]);
+  }, [authFetch, session, questions, answers, submitOne]);
 
   return {
     phase,

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,420,1,0" rel="stylesheet">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin: 0; padding: 16px; background: #f7f9fb; font-family: "Inter", sans-serif; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 40px rgba(25,28,30,0.05); }
+  thead tr { background: #f2f4f6; border-bottom: 1px solid rgba(195,198,215,0.1); }
+  th { padding: 10px 16px; text-align: left; font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #505f76; }
+  td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid rgba(195,198,215,0.08); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f7f9fb; }
+  .code-badge { border-radius: 8px; padding: 3px 8px; font-size: 11px; font-weight: 700; }
+  .perf-bar { display: flex; align-items: center; gap: 8px; min-width: 80px; }
+  .bar-track { flex: 1; height: 6px; border-radius: 9999px; background: #e6e8ea; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 9999px; }
+  .avatar { width: 28px; height: 28px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+</style>
+</head>
+<body>
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Área / Competencia</th>
+        <th>Enunciado</th>
+        <th>Autor</th>
+        <th>Estado</th>
+        <th>Desempeño</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="code-badge" style="background:#eff6ff;color:#1d4ed8">MAT-0042</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:6px;height:6px;border-radius:9999px;background:#60a5fa;flex-shrink:0"></div>
+            <div><div style="font-weight:600;color:#191c1e">Matemáticas</div><div style="font-size:11px;color:#505f76">Interpretación</div></div>
+          </div>
+        </td>
+        <td style="max-width:200px"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(25,28,30,0.8)">La siguiente gráfica muestra la producción agrícola de cinco departamentos...</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="avatar" style="background:#ede9fe;color:#6d28d9"><span class="material-symbols-outlined" style="font-size:14px">auto_awesome</span></div>
+            <span style="color:#191c1e">ScholarAI</span>
+          </div>
+        </td>
+        <td><span style="border-radius:9999px;padding:3px 10px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;background:#d1fae5;color:#047857">APROBADO</span></td>
+        <td>
+          <div class="perf-bar">
+            <div class="bar-track"><div class="bar-fill" style="width:78%;background:#34d399"></div></div>
+            <span style="font-size:11px;font-weight:600;color:#505f76">78%</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="code-badge" style="background:#f5f3ff;color:#6d28d9">LC-0119</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:6px;height:6px;border-radius:9999px;background:#a78bfa;flex-shrink:0"></div>
+            <div><div style="font-weight:600;color:#191c1e">Lectura Crítica</div><div style="font-size:11px;color:#505f76">Comprensión</div></div>
+          </div>
+        </td>
+        <td style="max-width:200px"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(25,28,30,0.8)">El siguiente cómic representa una situación de conflicto generacional...</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="avatar" style="background:#dbe1ff;color:#004ac6">VP</div>
+            <span style="color:#191c1e">V. Puello</span>
+          </div>
+        </td>
+        <td><span style="border-radius:9999px;padding:3px 10px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;background:#fef3c7;color:#b45309">PENDIENTE</span></td>
+        <td>
+          <div class="perf-bar">
+            <div class="bar-track"><div class="bar-fill" style="width:43%;background:#fbbf24"></div></div>
+            <span style="font-size:11px;font-weight:600;color:#505f76">43%</span>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="code-badge" style="background:#fff1f2;color:#be123c">SC-0031</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:6px;height:6px;border-radius:9999px;background:#fb7185;flex-shrink:0"></div>
+            <div><div style="font-weight:600;color:#191c1e">Sociales</div><div style="font-size:11px;color:#505f76">Pensamiento sistémico</div></div>
+          </div>
+        </td>
+        <td style="max-width:200px"><span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(25,28,30,0.8)">El mapa temático adjunto muestra la distribución de la población...</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="avatar" style="background:#ede9fe;color:#6d28d9"><span class="material-symbols-outlined" style="font-size:14px">auto_awesome</span></div>
+            <span style="color:#191c1e">ScholarAI</span>
+          </div>
+        </td>
+        <td><span style="border-radius:9999px;padding:3px 10px;font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;background:#f1f5f9;color:#475569">BORRADOR</span></td>
+        <td><span style="font-size:12px;color:rgba(80,95,118,0.5)">—</span></td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>

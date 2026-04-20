@@ -1,5 +1,7 @@
 """Schemas Pydantic para el AI Generator Service."""
 
+import uuid
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -47,6 +49,23 @@ class MediaType(str, Enum):
     state_structure = "state_structure"
     geometric_figure = "geometric_figure"
     probability_diagram = "probability_diagram"
+
+
+class GenerationJobStatus(str, Enum):
+    queued = "QUEUED"
+    running = "RUNNING"
+    completed = "COMPLETED"
+    failed = "FAILED"
+    partial = "PARTIAL"
+    cancelled = "CANCELLED"
+
+
+class GenerationJobItemStatus(str, Enum):
+    queued = "QUEUED"
+    running = "RUNNING"
+    completed = "COMPLETED"
+    failed = "FAILED"
+    cancelled = "CANCELLED"
 
 
 # =============================================================================
@@ -99,6 +118,21 @@ class GenerateBatchRequest(BaseModel):
     visual_type: MediaType | None = None
     competency_code: str | None = None
     cognitive_level: int | None = Field(None, ge=1, le=3)
+    english_section: int | None = Field(None, ge=1, le=7)
+
+
+class CreateGenerationJobRequest(BaseModel):
+    """Solicitud para encolar un job asíncrono de generación."""
+
+    area_code: str
+    provider: AIProvider | None = None
+    model: str | None = None
+    count: int = Field(ge=1, le=20, description="Cantidad de preguntas a generar")
+    include_visual: bool = False
+    visual_type: MediaType | None = None
+    competency_code: str | None = None
+    cognitive_level: int | None = Field(None, ge=1, le=3)
+    english_section: int | None = Field(None, ge=1, le=7)
 
 
 class GeneratedMedia(BaseModel):
@@ -169,7 +203,67 @@ class BatchResponse(BaseModel):
     total_generated: int
     total_valid: int
     questions: list[GenerateResponse]
-    errors: list[str] = []
+    errors: list[str] = Field(default_factory=list)
+
+
+class GenerationJobItemResponse(BaseModel):
+    """Estado de un ítem individual dentro del job."""
+
+    id: uuid.UUID
+    item_index: int
+    status: GenerationJobItemStatus
+    provider: str | None = None
+    model: str | None = None
+    is_valid: bool | None = None
+    error: str | None = None
+    token_input: int | None = None
+    token_output: int | None = None
+    created_question_area_code: str | None = None
+    created_question_competency_code: str | None = None
+    created_question_assertion_code: str | None = None
+    created_question_evidence_code: str | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+
+
+class GenerationJobResponse(BaseModel):
+    """Resumen de estado y progreso de un job asíncrono."""
+
+    id: uuid.UUID
+    status: GenerationJobStatus
+    cancel_requested: bool
+    requested_by_user_id: int
+    requested_by_role: str
+
+    area_code: str
+    provider: str | None = None
+    model: str | None = None
+    competency_code: str | None = None
+    cognitive_level: int | None = None
+    include_visual: bool
+    visual_type: str | None = None
+    english_section: int | None = None
+
+    total_requested: int
+    total_processed: int
+    total_generated: int
+    total_valid: int
+    total_failed: int
+    progress_percent: float
+
+    error_summary: str | None = None
+    retry_of_job_id: uuid.UUID | None = None
+    created_at: datetime
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    updated_at: datetime
+
+
+class GenerationJobDetailResponse(GenerationJobResponse):
+    """Detalle completo de un job asíncrono."""
+
+    items: list[GenerationJobItemResponse] = Field(default_factory=list)
 
 
 class QueueStatus(BaseModel):
@@ -188,8 +282,8 @@ class GenerationStats(BaseModel):
     total_approved: int = 0
     total_rejected: int = 0
     approval_rate: float = 0.0
-    by_area: dict[str, int] = {}
-    by_model: dict[str, int] = {}
+    by_area: dict[str, int] = Field(default_factory=dict)
+    by_model: dict[str, int] = Field(default_factory=dict)
 
 
 # =============================================================================
