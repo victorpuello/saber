@@ -19,6 +19,13 @@ const VALUE_VARIANT_CLASSES: Record<AdminMetricModel["variant"], string> = {
   success: "text-emerald-700",
 };
 
+const BADGE_VARIANT_CLASSES: Record<AdminMetricModel["variant"], string> = {
+  default: "bg-surface-container-high text-secondary",
+  warning: "bg-amber-100 text-amber-700",
+  error: "bg-rose-100 text-rose-700",
+  success: "bg-emerald-100 text-emerald-700",
+};
+
 export default function AdminMetricsGrid({ metrics, loading }: AdminMetricsGridProps) {
   return (
     <section className="grid gap-3.5 sm:grid-cols-2">
@@ -40,11 +47,21 @@ export default function AdminMetricsGrid({ metrics, loading }: AdminMetricsGridP
               {metric.helper && (
                 <p className="mt-1.5 text-[11px] text-on-surface-variant">{metric.helper}</p>
               )}
+              {metric.badge && !loading && (
+                <span className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-[9px] font-bold ${BADGE_VARIANT_CLASSES[metric.variant]}`}>
+                  {metric.badge}
+                </span>
+              )}
             </div>
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] ${VARIANT_CLASSES[metric.variant]}`}
             >
-              <span className="material-symbols-outlined text-[20px]">{metric.icon}</span>
+              <span
+                className="material-symbols-outlined text-[20px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                {metric.icon}
+              </span>
             </div>
           </div>
         </article>

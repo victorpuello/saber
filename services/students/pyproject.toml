@@ -1,0 +1,5 @@
+[project]
+name = "students"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["saber11-shared", "httpx>=0.27"]

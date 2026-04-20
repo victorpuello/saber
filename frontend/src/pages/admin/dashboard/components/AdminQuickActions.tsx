@@ -31,7 +31,12 @@ export default function AdminQuickActions({ actions, loading, onAction }: AdminQ
                     : "bg-primary/8 text-primary"
                 }`}
               >
-                <span className="material-symbols-outlined text-[20px]">{action.icon}</span>
+                <span
+                  className="material-symbols-outlined text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  {action.icon}
+                </span>
               </div>
 
               <div className="min-w-0 flex-1">

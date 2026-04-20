@@ -1,9 +1,11 @@
 import { useAuth } from "../../context/AuthContext";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchTeacherDashboardSummary, type TeacherDashboardSummary } from "../../services/dashboard";
 
 export default function TeacherDashboard() {
+  useDocumentTitle("Panel Docente");
   const { user, logout, authFetch } = useAuth();
   const navigate = useNavigate();
   const [loadingSummary, setLoadingSummary] = useState(true);

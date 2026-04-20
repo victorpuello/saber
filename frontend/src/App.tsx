@@ -10,7 +10,13 @@ import StudentResultsPage from "@/pages/student/Results";
 import TeacherDashboard from "@/pages/teacher/Dashboard";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminQuestionBank from "@/pages/admin/QuestionBank";
+import AdminSettings from "@/pages/admin/Settings";
+import AdminStudents from "@/pages/admin/Students";
+import AdminExams from "@/pages/admin/Exams";
 import AdminLayout from "@/pages/admin/AdminLayout";
+import StudentExams from "@/pages/student/Exams";
+import ExamSession from "@/pages/student/ExamSession";
+import ExamResults from "@/pages/student/ExamResults";
 import Login from "@/pages/Login";
 import ForgotPassword from "@/pages/ForgotPassword";
 import LegalTerms from "@/pages/LegalTerms";
@@ -43,6 +49,9 @@ export default function App() {
             <Route path="diagnostico/iniciar" element={<DiagnosticSession />} />
             <Route path="plan" element={<StudentPlanPage />} />
             <Route path="resultados" element={<StudentResultsPage />} />
+            <Route path="examenes" element={<StudentExams />} />
+            <Route path="examenes/sesion/:examId" element={<ExamSession />} />
+            <Route path="examenes/resultados/:sessionId" element={<ExamResults />} />
           </Route>
 
           {/* Docente */}
@@ -59,6 +68,9 @@ export default function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="preguntas" element={<AdminQuestionBank />} />
+            <Route path="estudiantes" element={<AdminStudents />} />
+            <Route path="configuracion" element={<AdminSettings />} />
+            <Route path="examenes" element={<AdminExams />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />

@@ -45,6 +45,7 @@ services:
       - STUDY_PLANNER_URL=http://study-planner:3005
       - ANALYTICS_URL=http://analytics:3006
       - NOTIFICATIONS_URL=http://notifications:3007
+      - STUDENTS_URL=http://students:3008
     depends_on:
       - redis-saber11
     restart: always
@@ -79,7 +80,9 @@ services:
       context: .
       dockerfile: services/ai-generator/Dockerfile
     environment:
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - QUESTION_BANK_URL=http://question-bank:3001
       - REDIS_URL=redis://redis-saber11:6379/0
       - JWT_SECRET=${JWT_SECRET}
@@ -206,6 +209,29 @@ services:
         limits:
           memory: 128M
 
+  # --- Students ---
+  students:
+    build:
+      context: .
+      dockerfile: services/students/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD}@db-students:5432/saber11_students
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - KAMPUS_API_URL=${KAMPUS_BASE_URL}
+      - KAMPUS_API_TOKEN=${KAMPUS_API_TOKEN:-}
+      - JWT_SECRET=${JWT_SECRET}
+      - SYNC_INTERVAL_MINUTES=${SYNC_INTERVAL_MINUTES:-60}
+    depends_on:
+      db-students:
+        condition: service_healthy
+      redis-saber11:
+        condition: service_started
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   # ==========================================================================
   # Infraestructura
   # ==========================================================================
@@ -305,6 +331,25 @@ services:
         limits:
           memory: 256M
 
+  db-students:
+    image: postgres:15-alpine
+    volumes:
+      - students_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_students
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_students"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   redis-saber11:
     image: redis:7-alpine
     command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
@@ -331,7 +376,7 @@ services:
     entrypoint: /bin/sh -c "
       while true; do
         TIMESTAMP=$$(date +%Y%m%d_%H%M%S);
-        for DB in questions exams profiles analytics notifications; do
+        for DB in questions exams profiles analytics notifications students; do
           pg_dump -h db-$$DB -U saber11 saber11_$$DB | gzip > /backups/$${DB}_$${TIMESTAMP}.sql.gz;
         done;
         find /backups -type f -mtime +7 -delete;
@@ -348,6 +393,8 @@ services:
         condition: service_healthy
       db-notifications:
         condition: service_healthy
+      db-students:
+        condition: service_healthy
     restart: always
 
 volumes:
@@ -356,6 +403,7 @@ volumes:
   profiles_data:
   analytics_data:
   notifications_data:
+  students_data:
   redis_data:
   db_backups:
   certbot_certs:

@@ -9,6 +9,11 @@ from pydantic import BaseModel, Field
 # =============================================================================
 
 
+class AIProvider(str, Enum):
+    anthropic = "anthropic"
+    gemini = "gemini"
+
+
 class ContextType(str, Enum):
     continuous_text = "continuous_text"
     discontinuous_text = "discontinuous_text"
@@ -53,6 +58,12 @@ class GenerateRequest(BaseModel):
     """Solicitud de generación de pregunta IA."""
 
     area_code: str = Field(description="Código del área: LC, MAT, SC, CN, ING")
+    provider: AIProvider | None = Field(
+        None, description="Proveedor IA a usar (anthropic o gemini). Si None, usa el default."
+    )
+    model: str | None = Field(
+        None, description="Modelo específico (ej: claude-sonnet-4-20250514, gemini-2.5-flash). Si None, usa el default del proveedor."
+    )
     competency_code: str | None = Field(
         None, description="Código de competencia específica (opcional)"
     )
@@ -77,6 +88,8 @@ class GenerateBatchRequest(BaseModel):
     """Solicitud de generación en lote."""
 
     area_code: str
+    provider: AIProvider | None = None
+    model: str | None = None
     count: int = Field(ge=1, le=20, description="Cantidad de preguntas a generar")
     include_visual: bool = False
     visual_type: MediaType | None = None
@@ -173,3 +186,43 @@ class GenerationStats(BaseModel):
     approval_rate: float = 0.0
     by_area: dict[str, int] = {}
     by_model: dict[str, int] = {}
+
+
+# =============================================================================
+# Provider management
+# =============================================================================
+
+
+class ProviderInfo(BaseModel):
+    """Información pública de un proveedor (sin API key)."""
+
+    provider: str
+    display_name: str
+    default_model: str
+    is_enabled: bool
+    max_tokens: int
+    temperature: float
+    has_api_key: bool
+
+
+class ProviderSetupRequest(BaseModel):
+    """Solicitud para configurar un proveedor."""
+
+    provider: AIProvider
+    display_name: str | None = None
+    default_model: str | None = None
+    api_key: str = Field(description="API key del proveedor (se cifra en BD)")
+    is_enabled: bool = True
+    max_tokens: int = 4096
+    temperature: float = Field(0.7, ge=0.0, le=2.0)
+
+
+class ProviderUpdateRequest(BaseModel):
+    """Actualización parcial de un proveedor."""
+
+    display_name: str | None = None
+    default_model: str | None = None
+    api_key: str | None = Field(None, description="Nueva API key (se re-cifra)")
+    is_enabled: bool | None = None
+    max_tokens: int | None = None
+    temperature: float | None = Field(None, ge=0.0, le=2.0)

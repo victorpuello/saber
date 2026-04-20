@@ -7,6 +7,7 @@ interface DashboardNavigationProps {
 const NAV_ITEMS = [
   { to: "/student", label: "Dashboard", icon: "dashboard" },
   { to: "/student/diagnostico", label: "Diagnóstico", icon: "analytics" },
+  { to: "/student/examenes", label: "Simulacros", icon: "quiz" },
   { to: "/student/plan", label: "Plan de estudio", icon: "auto_stories" },
   { to: "/student/resultados", label: "Resultados", icon: "military_tech" },
 ];
@@ -15,9 +16,9 @@ export default function DashboardNavigation({ studentName: _studentName }: Dashb
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="fixed left-0 top-0 hidden h-screen w-64 flex-col bg-slate-50 px-4 py-6 md:flex">
-        <div className="mb-9 flex items-center gap-3 px-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary shadow-[0_4px_10px_rgba(0,74,198,0.25)]">
+      <aside className="fixed left-0 top-0 hidden h-screen w-[220px] flex-col bg-slate-50 px-[14px] py-5 md:flex">
+        <div className="mb-7 flex items-center gap-2.5 px-[10px]">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary">
             <span
               className="material-symbols-outlined text-2xl text-white"
               style={{ fontVariationSettings: "'FILL' 1" }}
@@ -26,7 +27,7 @@ export default function DashboardNavigation({ studentName: _studentName }: Dashb
             </span>
           </div>
           <div>
-            <h1 className="font-headline text-xl font-black tracking-tight text-on-surface">Saber 11</h1>
+            <h1 className="font-headline text-[17px] font-black tracking-tight text-on-surface">Saber 11</h1>
             <p className="text-[9px] font-bold uppercase tracking-[0.32em] text-secondary">Simulador</p>
           </div>
         </div>
@@ -38,10 +39,10 @@ export default function DashboardNavigation({ studentName: _studentName }: Dashb
               to={item.to}
               end={item.to === "/student"}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 rounded-none px-3.5 py-[11px] text-sm font-semibold transition-colors border-r-4 ${
+                `flex items-center gap-2.5 rounded-none px-3.5 py-2.5 text-[13px] font-semibold transition-[background] ${
                   isActive
-                    ? "border-primary bg-primary/[0.04] font-bold text-primary"
-                    : "border-transparent text-secondary hover:bg-slate-200/50 hover:text-primary"
+                    ? "border-r-4 border-primary font-bold text-primary"
+                    : "text-secondary hover:bg-slate-200/50"
                 }`
               }
             >
@@ -54,7 +55,7 @@ export default function DashboardNavigation({ studentName: _studentName }: Dashb
         <div className="mt-auto px-1">
           <button
             type="button"
-            className="w-full rounded-xl bg-primary p-[13px] text-sm font-bold text-white shadow-[0_4px_12px_rgba(0,74,198,0.22)] transition-opacity hover:opacity-90 active:scale-95"
+            className="w-full rounded-xl bg-primary p-3 text-sm font-semibold text-white"
           >
             Iniciar práctica
           </button>

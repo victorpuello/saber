@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { SESSION_NOTICE_KEY, useAuth } from "../context/AuthContext";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { getApiErrorMessage } from "../services/api";
 
 const ROLE_HOME: Record<string, string> = {
@@ -41,6 +42,7 @@ function SmartLink({ to, className, children }: SmartLinkProps) {
 }
 
 export default function Login() {
+  useDocumentTitle("Iniciar Sesión");
   const { login, loading, error, user, authReady, clearError } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
@@ -167,10 +169,11 @@ export default function Login() {
         <div className="animate-login-rise-in relative z-10 max-w-xl">
           <div className="mb-12 aspect-video overflow-hidden rounded-3xl shadow-scholar-card">
             <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGZLAF9BxsDJ8Q_o_OxIWBPBQogPTK4SwIfCkzVF370BulMKtMUJ2yZvrqmszP5AXqNNVXMBek0AOD0VbVUWkfQunkv6dmATneAFr8p0K7veiFozlqdr0dUlYmD69TkEw_TofZHGCnCM2b21Ao-n_RqdXzqgluuigcdJc7uG2o1rKgMTbL5ql5Rey2lT22CDOl-_xQAuLj_X0OOBQrxI7OodDupvPThUkkrwVyPBjdt97K_NW_BAFI6QzUxJDF1ZqMq_cW6rf7bLVz"
-              alt="Escritorio académico con cuaderno abierto y portátil en iluminación natural suave"
+              src="https://images.unsplash.com/photo-1588072432836-e10032774350?w=900&auto=format&fit=crop&q=80"
+              alt="Estudiantes realizando prueba con tablet"
               className="h-full w-full object-cover"
               loading="lazy"
+              onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
             />
           </div>
           <h2 className="text-balance mb-6 font-headline text-4xl font-extrabold leading-tight tracking-tight text-on-primary-container">
@@ -183,29 +186,21 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 flex items-center gap-6">
-          <div className="h-px w-14 bg-on-primary-container/30" />
+          <div className="h-px w-12 bg-on-primary-container/30" />
           <span className="text-xs font-semibold tracking-[0.28em] text-on-primary-container/60 uppercase">
             @victorpuellog
           </span>
         </div>
       </section>
 
-      <section className="flex w-full flex-col items-center justify-center bg-surface p-8 md:p-16 lg:w-5/12 lg:px-20 lg:py-24">
-        <div className="w-full max-w-md animate-login-fade-in">
+      <section className="flex w-full flex-col items-center justify-center bg-surface p-12 lg:w-5/12 lg:px-16">
+        <div className="w-full max-w-[400px] animate-login-fade-in">
           <div className="mb-12 flex items-center gap-3 lg:hidden">
             <span className="material-symbols-outlined text-4xl text-primary">auto_stories</span>
-            <h1 className="font-headline text-2xl font-black tracking-tight text-primary">Saber 11 Simulator</h1>
+            <h1 className="font-headline text-2xl font-black tracking-tight text-primary">Saber 11</h1>
           </div>
 
-          <div className="mb-10 space-y-4">
-            <h3 className="font-headline text-3xl font-bold tracking-tight text-on-surface">Iniciar sesión</h3>
-            <div className="flex w-fit items-center gap-2 rounded-full bg-surface-container-high px-3 py-1.5">
-              <span className="material-symbols-outlined text-sm text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                verified_user
-              </span>
-              <span className="text-[11px] font-semibold tracking-[0.14em] text-secondary uppercase">Autenticación Kampus</span>
-            </div>
-          </div>
+          <h3 className="mb-3 font-headline text-[30px] font-bold tracking-tight text-on-surface">Iniciar sesión</h3>
 
           <div role="status" aria-live="polite" className="space-y-3">
             {sessionNotice && (
@@ -222,7 +217,7 @@ export default function Login() {
 
           <form className="mt-6 space-y-6" onSubmit={handleSubmit} noValidate>
             <div className="space-y-2">
-              <label htmlFor="kampus-id" className="px-1 text-xs font-bold tracking-[0.14em] text-on-surface-variant uppercase">
+              <label htmlFor="kampus-id" className="px-1 text-[10px] font-bold tracking-[0.14em] text-on-surface-variant uppercase">
                 Usuario o correo (Kampus ID)
               </label>
               <div className="group relative">
@@ -245,7 +240,7 @@ export default function Login() {
                   autoComplete="username"
                   aria-invalid={fieldErrors.username ? "true" : "false"}
                   aria-describedby={fieldErrors.username ? "kampus-id-error" : undefined}
-                  className={`block w-full rounded-xl border px-12 py-4 text-sm text-on-surface placeholder:text-outline transition-all focus:outline-none focus:ring-3 focus:ring-primary/35 ${
+                  className={`block w-full rounded-xl border py-3.5 pl-12 pr-3.5 text-sm text-on-surface placeholder:text-outline transition-all focus:outline-none focus:ring-3 focus:ring-primary/35 ${
                     fieldErrors.username
                       ? "border-error/60 bg-error-container/45"
                       : "border-transparent bg-surface-container-highest focus:border-primary/30 focus:bg-surface-container-lowest"
@@ -261,7 +256,7 @@ export default function Login() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <label htmlFor="password" className="text-xs font-bold tracking-[0.14em] text-on-surface-variant uppercase">
+                <label htmlFor="password" className="text-[10px] font-bold tracking-[0.14em] text-on-surface-variant uppercase">
                   Contraseña
                 </label>
                 <SmartLink
@@ -292,7 +287,7 @@ export default function Login() {
                   autoComplete="current-password"
                   aria-invalid={fieldErrors.password ? "true" : "false"}
                   aria-describedby={fieldErrors.password ? "password-error" : undefined}
-                  className={`block w-full rounded-xl border px-12 py-4 text-sm text-on-surface placeholder:text-outline transition-all focus:outline-none focus:ring-3 focus:ring-primary/35 ${
+                  className={`block w-full rounded-xl border py-3.5 pl-12 pr-3.5 text-sm text-on-surface placeholder:text-outline transition-all focus:outline-none focus:ring-3 focus:ring-primary/35 ${
                     fieldErrors.password
                       ? "border-error/60 bg-error-container/45"
                       : "border-transparent bg-surface-container-highest focus:border-primary/30 focus:bg-surface-container-lowest"
@@ -309,15 +304,15 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="scholar-gradient flex w-full items-center justify-center gap-3 rounded-xl py-4 text-lg font-bold text-white shadow-scholar-card transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-65"
+              className="scholar-gradient mt-2 mb-8 flex w-full items-center justify-center gap-3 rounded-xl py-4 text-base font-bold text-white shadow-scholar-card transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-65"
             >
               <span>{loading ? "Ingresando..." : "Iniciar sesión"}</span>
               <span className="material-symbols-outlined text-xl">login</span>
             </button>
           </form>
 
-          <div className="mt-10 border-t border-surface-container-high pt-10">
-            <p className="text-center text-sm font-medium leading-relaxed text-secondary">
+          <div className="mt-8 border-t border-surface-container-high pt-8">
+            <p className="text-center text-[13px] font-medium leading-relaxed text-secondary">
               Este simulador utiliza una infraestructura federada. Al iniciar sesión, usted acepta los{" "}
               <SmartLink
                 to={termsUrl}

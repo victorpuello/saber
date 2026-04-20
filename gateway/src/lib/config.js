@@ -27,6 +27,10 @@ const config = Object.freeze({
   studyPlannerUrl: process.env.STUDY_PLANNER_URL || "http://study-planner:3005",
   analyticsUrl: process.env.ANALYTICS_URL || "http://analytics:3006",
   notificationsUrl: process.env.NOTIFICATIONS_URL || "http://notifications:3007",
+  studentsUrl: process.env.STUDENTS_URL || "http://students:3008",
+
+  // Redis (para revocation check)
+  redisUrl: process.env.REDIS_URL || "redis://redis-saber11:6379/0",
 
   // Rate limiting
   rateLimitWindowMs: 60_000,

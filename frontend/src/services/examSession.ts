@@ -101,3 +101,118 @@ export async function finishExamSession(
     method: "POST",
   });
 }
+
+// ── New types ────────────────────────────────────────────────────────
+
+export interface ExamOut {
+  id: string;
+  title: string;
+  description: string | null;
+  exam_type: "DIAGNOSTIC" | "FULL_SIMULATION" | "AREA_PRACTICE" | "CUSTOM";
+  area_code: string | null;
+  total_questions: number;
+  time_limit_minutes: number | null;
+  status: "ACTIVE" | "ARCHIVED";
+  is_adaptive: boolean;
+  created_at: string;
+}
+
+export interface PaginatedExams {
+  items: ExamOut[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+}
+
+export interface CreateExamPayload {
+  title: string;
+  description?: string;
+  exam_type: string;
+  area_code?: string;
+  total_questions: number;
+  time_limit_minutes?: number;
+  is_adaptive?: boolean;
+  question_ids?: string[];
+}
+
+export interface QuestionResultDetail {
+  question_id: string;
+  position: number;
+  stem: string;
+  correct_answer: string;
+  selected_answer: string | null;
+  is_correct: boolean;
+  explanation_correct: string;
+  explanation_selected: string | null;
+  time_spent_seconds: number | null;
+}
+
+export interface SessionResults {
+  session_id: string;
+  exam_title: string;
+  exam_type: string;
+  status: string;
+  started_at: string;
+  finished_at: string | null;
+  total_questions: number;
+  total_answered: number;
+  total_correct: number;
+  score_global: number;
+  time_spent_seconds: number | null;
+  questions: QuestionResultDetail[];
+}
+
+// ── New API calls ────────────────────────────────────────────────────
+
+export async function listExams(
+  authFetch: AuthFetch,
+  params: {
+    exam_type?: string;
+    area_code?: string;
+    status?: string;
+    page?: number;
+    page_size?: number;
+  } = {},
+): Promise<PaginatedExams> {
+  const qs = new URLSearchParams();
+  if (params.exam_type) qs.set("exam_type", params.exam_type);
+  if (params.area_code) qs.set("area_code", params.area_code);
+  if (params.status)    qs.set("status",    params.status);
+  qs.set("page",      String(params.page      ?? 1));
+  qs.set("page_size", String(params.page_size ?? 20));
+  return authFetch<PaginatedExams>(`/api/exams/?${qs.toString()}`);
+}
+
+export async function createExam(
+  authFetch: AuthFetch,
+  data: CreateExamPayload,
+): Promise<ExamOut> {
+  return authFetch<ExamOut>("/api/exams/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function archiveExam(
+  authFetch: AuthFetch,
+  examId: string,
+): Promise<void> {
+  await authFetch<unknown>(`/api/exams/${examId}/archive`, { method: "PATCH" });
+}
+
+export async function getExamQuestionIds(
+  authFetch: AuthFetch,
+  examId: string,
+): Promise<Array<{ question_id: string; position: number }>> {
+  return authFetch<Array<{ question_id: string; position: number }>>(
+    `/api/exams/${examId}/questions`,
+  );
+}
+
+export async function fetchSessionResults(
+  authFetch: AuthFetch,
+  sessionId: string,
+): Promise<SessionResults> {
+  return authFetch<SessionResults>(`/api/sessions/${sessionId}/results`);
+}

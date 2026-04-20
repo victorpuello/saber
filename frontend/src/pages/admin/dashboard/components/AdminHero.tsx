@@ -40,7 +40,7 @@ export default function AdminHero({ model, loading }: AdminHeroProps) {
           <span className="text-[10px] font-bold uppercase tracking-[0.32em] opacity-80">Institución</span>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
+        <div className="mt-5 grid grid-cols-3 gap-4">
           <Stat
             label="Estudiantes"
             value={model.institutionStudents !== null ? String(model.institutionStudents) : "—"}
@@ -51,28 +51,40 @@ export default function AdminHero({ model, loading }: AdminHeroProps) {
         </div>
       </div>
 
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5">
+      <div className="mt-5 flex flex-wrap gap-2.5">
+        <div className="flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1.5">
           <span
             className="material-symbols-outlined text-[14px]"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             quiz
           </span>
-          <span className="text-xs font-bold">
-            {loading ? "..." : `${model.questionBankTotal} preguntas`}
+          <span className="text-[11px] font-bold">
+            {loading ? "..." : `${model.questionBankTotal.toLocaleString()} preguntas`}
           </span>
         </div>
 
         {hasPending && !loading && (
-          <div className="flex items-center gap-1.5 rounded-full bg-amber-400/20 px-3 py-1.5 text-amber-200">
+          <div className="flex items-center gap-1.5 rounded-full bg-amber-400/20 px-3.5 py-1.5 text-amber-200">
             <span
               className="material-symbols-outlined text-[14px]"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               pending_actions
             </span>
-            <span className="text-xs font-bold">{model.pendingCount} pendientes</span>
+            <span className="text-[11px] font-bold">{model.pendingCount} pendientes</span>
+          </div>
+        )}
+
+        {!loading && (
+          <div className="flex items-center gap-1.5 rounded-full bg-emerald-400/20 px-3.5 py-1.5 text-emerald-200">
+            <span
+              className="material-symbols-outlined text-[14px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              trending_up
+            </span>
+            <span className="text-[11px] font-bold">+0% este mes</span>
           </div>
         )}
       </div>

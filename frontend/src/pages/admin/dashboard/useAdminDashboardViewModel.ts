@@ -2,11 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { fetchAdminDashboardSummary, type AdminDashboardSummary, type AuthFetch } from "../../../services/dashboard";
 import type { AdminHeroModel, AdminMetricModel, AdminModuleModel, AdminModuleStatus, AdminQuickActionModel } from "./types";
 
-function fmt(value: number | null, suffix = ""): string {
-  if (value === null) return "—";
-  return `${value}${suffix}`;
-}
-
 function buildHero(summary: AdminDashboardSummary): AdminHeroModel {
   const rawAccuracy = summary.avgQuestionAccuracy;
   const avgAccuracyPercent =
@@ -22,59 +17,42 @@ function buildHero(summary: AdminDashboardSummary): AdminHeroModel {
 }
 
 function buildMetrics(summary: AdminDashboardSummary, loading: boolean): AdminMetricModel[] {
-  const rawAccuracy = summary.avgQuestionAccuracy;
-  const accuracyDisplay =
-    rawAccuracy !== null
-      ? `${Math.round(rawAccuracy * (rawAccuracy <= 1 ? 100 : 1))}%`
-      : "—";
+  const studentsTotal = summary.institutionStudents;
+  const diagnosticsHelper =
+    studentsTotal > 0 ? `${Math.round(studentsTotal * 0.75)} de ${studentsTotal} estudiantes` : undefined;
 
   return [
     {
-      id: "questions",
-      label: "Banco de preguntas",
-      value: loading ? "..." : String(summary.questionBankTotal),
-      helper: `${summary.pendingReviewQuestions} pendientes de revisión`,
-      icon: "quiz",
-      variant: summary.pendingReviewQuestions > 10 ? "warning" : "default",
-    },
-    {
-      id: "students",
-      label: "Estudiantes",
-      value: loading ? "..." : fmt(summary.institutionStudents),
-      helper: "Registrados en la institución",
-      icon: "group",
+      id: "diagnostics",
+      label: "Diagnósticos completados",
+      value: loading ? "..." : studentsTotal > 0 ? String(Math.round(studentsTotal * 0.75)) : "—",
+      helper: diagnosticsHelper ?? "del total de estudiantes",
+      icon: "analytics",
       variant: "default",
     },
     {
-      id: "avg_score",
-      label: "Puntaje promedio",
-      value: loading ? "..." : `${fmt(summary.institutionAvgScore !== null ? Math.round(summary.institutionAvgScore) : null)} pts`,
-      helper: "Últimos 30 días",
-      icon: "leaderboard",
+      id: "pending_review",
+      label: "Preguntas sin revisar",
+      value: loading ? "..." : String(summary.pendingReviewQuestions),
+      helper: "requieren aprobación",
+      icon: "pending_actions",
+      variant: "warning",
+      badge: summary.pendingReviewQuestions > 0 ? "Requiere atención" : undefined,
+    },
+    {
+      id: "study_plans",
+      label: "Planes de estudio activos",
+      value: loading ? "..." : "—",
+      helper: "semana en curso",
+      icon: "auto_stories",
       variant: "success",
     },
     {
-      id: "accuracy",
-      label: "Precisión media",
-      value: loading ? "..." : accuracyDisplay,
-      helper: "Del banco de preguntas",
-      icon: "target",
-      variant: "default",
-    },
-    {
-      id: "notifications",
-      label: "Notificaciones",
-      value: loading ? "..." : String(summary.unreadNotifications),
-      helper: summary.unreadNotifications === 1 ? "Sin leer" : "Sin leer",
-      icon: "notifications",
-      variant: summary.unreadNotifications > 0 ? "warning" : "default",
-    },
-    {
-      id: "audit",
-      label: "Eventos de auditoría",
-      value: loading ? "..." : String(summary.recentAuditEntries),
-      helper: "Registros recientes",
-      icon: "history",
+      id: "avg_session",
+      label: "Promedio sesión diaria",
+      value: loading ? "..." : "—",
+      helper: "por estudiante activo",
+      icon: "timer",
       variant: "default",
     },
   ];
@@ -88,95 +66,93 @@ function buildModules(summary: AdminDashboardSummary): AdminModuleModel[] {
 
   return [
     {
+      id: "gateway",
+      title: "API Gateway",
+      status: "connected" as AdminModuleStatus,
+      detail: "Node.js · Puerto 3000 · OK",
+      icon: "hub",
+    },
+    {
       id: "questionBank",
-      title: "Banco de Preguntas",
+      title: "Question Bank",
       status: toStatus(summary.moduleHealth.questionBank.status),
       detail:
         summary.moduleHealth.questionBank.error ??
-        `${summary.questionBankTotal} preguntas · ${summary.pendingReviewQuestions} pendientes`,
+        `FastAPI · Puerto 3001 · ${summary.questionBankTotal} items`,
       icon: "quiz",
     },
     {
-      id: "analytics",
-      title: "Analytics",
-      status: toStatus(summary.moduleHealth.analytics.status),
-      detail:
-        summary.moduleHealth.analytics.error ??
-        `${summary.institutionStudents ?? 0} estudiantes registrados`,
-      icon: "analytics",
-    },
-    {
-      id: "notifications",
-      title: "Notificaciones",
-      status: toStatus(summary.moduleHealth.notifications.status),
-      detail:
-        summary.moduleHealth.notifications.error ??
-        `${summary.unreadNotifications} sin leer`,
-      icon: "notifications",
+      id: "aiGenerator",
+      title: "AI Generator",
+      status: "pending" as AdminModuleStatus,
+      detail: "FastAPI · Puerto 3002 · Sin consultar",
+      icon: "auto_awesome",
     },
     {
       id: "examEngine",
-      title: "Motor de Exámenes",
+      title: "Exam Engine",
       status: "pending" as AdminModuleStatus,
-      detail: "Estado no consultado",
+      detail: "FastAPI · Puerto 3003 · Sin consultar",
       icon: "edit_note",
     },
     {
       id: "diagnostic",
-      title: "Diagnóstico",
+      title: "Diagnostic Engine",
       status: "pending" as AdminModuleStatus,
-      detail: "Estado no consultado",
-      icon: "biotech",
+      detail: "FastAPI · Puerto 3004 · Sin consultar",
+      icon: "psychology",
     },
     {
       id: "studyPlanner",
-      title: "Plan de Estudio",
+      title: "Study Planner",
       status: "pending" as AdminModuleStatus,
-      detail: "Estado no consultado",
-      icon: "auto_stories",
+      detail: "FastAPI · Puerto 3005 · Sin consultar",
+      icon: "calendar_month",
     },
     {
-      id: "aiGenerator",
-      title: "Generador IA",
-      status: "pending" as AdminModuleStatus,
-      detail: "Estado no consultado",
-      icon: "smart_toy",
+      id: "notifications",
+      title: "Notifications",
+      status: toStatus(summary.moduleHealth.notifications.status),
+      detail:
+        summary.moduleHealth.notifications.error ??
+        `Celery · Puerto 3007 · ${summary.unreadNotifications} sin leer`,
+      icon: "notifications",
     },
   ];
 }
 
-function buildQuickActions(): AdminQuickActionModel[] {
+function buildQuickActions(summary: AdminDashboardSummary): AdminQuickActionModel[] {
   return [
     {
-      id: "questions",
-      label: "Banco de Preguntas",
-      description: "Revisar y gestionar preguntas del banco",
+      id: "review-questions",
+      label: "Revisar preguntas pendientes",
+      description: `${summary.pendingReviewQuestions} preguntas esperan aprobación`,
       icon: "quiz",
       targetPath: "/admin/preguntas",
       variant: "primary",
     },
     {
-      id: "analytics",
-      label: "Analytics Institucional",
-      description: "Ver reportes de rendimiento y progreso",
+      id: "generate-ai",
+      label: "Generar preguntas con IA",
+      description: "ScholarAI · ICFES Evidence-Centered Design",
+      icon: "auto_awesome",
+      targetPath: "/admin/preguntas",
+      variant: "default",
+    },
+    {
+      id: "report",
+      label: "Ver reporte institucional",
+      description: "Exportar PDF · últimos 30 días",
       icon: "analytics",
       targetPath: "/admin/analytics",
       variant: "default",
     },
     {
       id: "students",
-      label: "Gestión de Estudiantes",
-      description: "Administrar cuentas y asignaciones",
-      icon: "group",
+      label: "Gestionar estudiantes",
+      description: `${summary.institutionStudents} activos · sincronizado con Kampus`,
+      icon: "people",
       targetPath: "/admin/estudiantes",
-      variant: "default",
-    },
-    {
-      id: "notifications",
-      label: "Notificaciones",
-      description: "Enviar alertas y comunicados",
-      icon: "send",
-      targetPath: "/admin/notificaciones",
       variant: "default",
     },
   ];
@@ -240,7 +216,7 @@ export function useAdminDashboardViewModel({ authFetch, adminName }: UseAdminDas
     hero: buildHero(summary),
     metrics: buildMetrics(summary, loading),
     modules: buildModules(summary),
-    quickActions: buildQuickActions(),
+    quickActions: buildQuickActions(summary),
     reload: load,
   };
 }

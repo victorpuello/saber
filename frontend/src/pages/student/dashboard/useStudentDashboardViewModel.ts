@@ -84,7 +84,7 @@ function buildHero(summary: StudentDashboardSummary | null, loading: boolean): D
       ? "Avanza con consistencia sobre tu plan activo."
       : "Aun no tienes plan activo. Genera uno para empezar.",
     value: score !== null ? `${score}` : hasActivePlan ? `Semana ${summary?.currentPlanWeek ?? 1}` : "Sin plan",
-    maxValueLabel: score !== null ? "/ 500" : hasActivePlan ? `${summary?.activePlanWeeks ?? 0} semanas` : "",
+    maxValueLabel: score !== null ? "/ 100" : hasActivePlan ? `${summary?.activePlanWeeks ?? 0} semanas` : "",
     progressPercent: progress,
     trendLabel:
       score !== null
@@ -115,7 +115,7 @@ function buildMetrics(summary: StudentDashboardSummary | null, loading: boolean)
       value: loading ? "..." : String(summary?.completedSessions ?? 0),
       helper:
         summary && summary.avgExamScore !== null
-          ? `Promedio: ${summary.avgExamScore}/500${summary.avgAccuracy !== null ? ` · Precision ${summary.avgAccuracy}%` : ""}`
+          ? `Promedio: ${summary.avgExamScore}/100${summary.avgAccuracy !== null ? ` · Precision ${summary.avgAccuracy}%` : ""}`
           : "Historial registrado",
     },
     {
@@ -224,7 +224,7 @@ function buildActivities(summary: StudentDashboardSummary | null, loading: boole
     title: `${exam.exam_type}${exam.area_code ? ` · ${exam.area_code}` : ""}`,
     detail:
       exam.score_global !== null
-        ? `Puntaje registrado: ${Math.round(exam.score_global)}/500${exam.accuracy !== null ? ` · ${Math.round(exam.accuracy)}% de precision` : ""}`
+        ? `Puntaje registrado: ${Math.round(exam.score_global)}/100${exam.accuracy !== null ? ` · ${Math.round(exam.accuracy)}% de precision` : ""}`
         : "Resultado disponible.",
     tone: "success" as const,
   }));
@@ -361,7 +361,7 @@ function buildModules(summary: StudentDashboardSummary | null, loading: boolean)
         summary?.moduleHealth.sessions.status === "degraded"
           ? summary.moduleHealth.sessions.error ?? "El historial de simulacros no pudo consolidarse."
           : (summary?.completedSessions ?? 0) > 0
-            ? `${summary?.completedSessions ?? 0} sesiones en historial${summary && summary.avgExamScore !== null ? ` · promedio ${summary.avgExamScore}/500` : ""}.`
+            ? `${summary?.completedSessions ?? 0} sesiones en historial${summary && summary.avgExamScore !== null ? ` · promedio ${summary.avgExamScore}/100` : ""}.`
             : "Sin sesiones registradas todavia.",
     },
     {

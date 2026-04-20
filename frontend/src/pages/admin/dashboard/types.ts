@@ -15,6 +15,7 @@ export interface AdminMetricModel {
   helper?: string;
   icon: string;
   variant: "default" | "warning" | "error" | "success";
+  badge?: string;
 }
 
 export interface AdminHeroModel {

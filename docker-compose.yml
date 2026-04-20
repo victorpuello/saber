@@ -24,6 +24,8 @@ services:
       - STUDY_PLANNER_URL=http://study-planner:3005
       - ANALYTICS_URL=http://analytics:3006
       - NOTIFICATIONS_URL=http://notifications:3007
+      - STUDENTS_URL=http://students:3008
+      - REDIS_URL=redis://redis-saber11:6379/0
     depends_on:
       - redis-saber11
     restart: unless-stopped
@@ -54,12 +56,18 @@ services:
     ports:
       - "3002:3002"
     environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-ai:5432/saber11_ai
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - QUESTION_BANK_URL=http://question-bank:3001
       - REDIS_URL=redis://redis-saber11:6379/0
       - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
     depends_on:
-      - question-bank
+      db-ai:
+        condition: service_healthy
+      question-bank:
+        condition: service_started
     restart: unless-stopped
 
   # --- Exam Engine Service ---
@@ -165,6 +173,30 @@ services:
     depends_on:
       - gateway
 
+  # --- Students Service ---
+  students:
+    build:
+      context: .
+      dockerfile: services/students/Dockerfile
+    ports:
+      - "3008:3008"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-students:5432/saber11_students
+      - REDIS_URL=redis://redis-saber11:6379/0
+      - KAMPUS_API_URL=${KAMPUS_BASE_URL:-http://host.docker.internal:8000}
+      - KAMPUS_API_TOKEN=${KAMPUS_API_TOKEN:-}
+      - KAMPUS_API_USERNAME=${KAMPUS_API_USERNAME:-}
+      - KAMPUS_API_PASSWORD=${KAMPUS_API_PASSWORD:-}
+      - KAMPUS_AUTH_ENDPOINT=${KAMPUS_AUTH_ENDPOINT:-/api/token/}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
+      - SYNC_INTERVAL_MINUTES=${SYNC_INTERVAL_MINUTES:-60}
+    depends_on:
+      db-students:
+        condition: service_healthy
+      redis-saber11:
+        condition: service_started
+    restart: unless-stopped
+
   # ==========================================================================
   # Infraestructura
   # ==========================================================================
@@ -240,6 +272,34 @@ services:
       timeout: 3s
       retries: 5
 
+  db-ai:
+    image: postgres:15-alpine
+    volumes:
+      - ai_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_ai
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-saber11_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_ai"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  db-students:
+    image: postgres:15-alpine
+    volumes:
+      - students_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_students
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-saber11_dev_password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_students"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   # --- Redis ---
   redis-saber11:
     image: redis:7-alpine
@@ -257,3 +317,5 @@ volumes:
   profiles_data:
   analytics_data:
   notifications_data:
+  ai_data:
+  students_data:

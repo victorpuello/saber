@@ -8,15 +8,15 @@ interface AdminInstitutionStatsProps {
 const AREAS = [
   { code: "MAT", label: "Matemáticas", icon: "calculate" },
   { code: "LC", label: "Lectura Crítica", icon: "menu_book" },
-  { code: "SC", label: "Sociales", icon: "public" },
-  { code: "CN", label: "Ciencias Nat.", icon: "science" },
+  { code: "SC", label: "Sociales y Ciudadanas", icon: "public" },
+  { code: "CN", label: "Ciencias Naturales", icon: "science" },
   { code: "ING", label: "Inglés", icon: "language" },
 ];
 
 export default function AdminInstitutionStats({ model, loading }: AdminInstitutionStatsProps) {
   const scorePercent =
     model.institutionAvgScore !== null
-      ? Math.min(100, Math.round((model.institutionAvgScore / 500) * 100))
+      ? Math.min(100, Math.round((model.institutionAvgScore / 100) * 100))
       : null;
 
   return (
@@ -41,7 +41,7 @@ export default function AdminInstitutionStats({ model, loading }: AdminInstituti
               <span className="text-5xl font-black tracking-tighter text-primary">
                 {model.institutionAvgScore !== null ? model.institutionAvgScore : "—"}
               </span>
-              <span className="text-lg font-medium text-secondary">/ 500 pts</span>
+              <span className="text-lg font-medium text-secondary">/ 100 pts</span>
             </div>
           )}
         </div>
@@ -49,7 +49,7 @@ export default function AdminInstitutionStats({ model, loading }: AdminInstituti
         {scorePercent !== null && !loading && (
           <div className="mb-1 flex-1">
             <div className="mb-1.5 flex justify-between text-xs text-secondary">
-              <span>Progreso hacia 500</span>
+              <span>Progreso hacia 100</span>
               <span className="font-bold">{scorePercent}%</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-surface-container-high">
@@ -85,11 +85,14 @@ export default function AdminInstitutionStats({ model, loading }: AdminInstituti
                   />
                 </div>
               )}
+              <span className="w-8 text-right text-[11px] font-bold text-secondary">
+                {loading ? "" : "—"}
+              </span>
             </li>
           ))}
         </ul>
         <p className="mt-3 text-center text-xs text-on-surface-variant">
-          Datos por área disponibles en Analytics Institucional
+          Datos detallados por grado disponibles en Analytics Institucional
         </p>
       </div>
     </section>

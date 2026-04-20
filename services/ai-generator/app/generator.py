@@ -1,12 +1,15 @@
-"""Cliente de generación IA — Anthropic + resolución de taxonomía DCE."""
+"""Cliente de generación IA multi-proveedor — Anthropic + Gemini + taxonomía DCE."""
 
 import json
 import logging
 import random
 
 import anthropic
+import google.generativeai as genai
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import settings
+from .key_store import get_decrypted_api_key, get_enabled_providers, get_provider_config
 from .prompts import SYSTEM_PROMPT, build_user_prompt
 from .schemas import GeneratedMedia, GeneratedQuestion
 
@@ -18,6 +21,11 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 
 _taxonomy_cache: dict | None = None
+_INTERNAL_HEADERS = {
+    "X-User-Id": "0",
+    "X-User-Role": "ADMIN",
+    "X-Service": "ai-generator",
+}
 
 
 async def _fetch_taxonomy(http_client: anthropic.AsyncAnthropic | None = None) -> dict:
@@ -29,7 +37,10 @@ async def _fetch_taxonomy(http_client: anthropic.AsyncAnthropic | None = None) -
     import httpx
 
     async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(f"{settings.question_bank_url}/api/taxonomy/areas")
+        resp = await client.get(
+            f"{settings.question_bank_url}/api/taxonomy/areas",
+            headers=_INTERNAL_HEADERS,
+        )
         resp.raise_for_status()
         areas = resp.json()
 
@@ -38,7 +49,8 @@ async def _fetch_taxonomy(http_client: anthropic.AsyncAnthropic | None = None) -
         for area in areas:
             area_code = area["code"]
             resp = await client.get(
-                f"{settings.question_bank_url}/api/taxonomy/areas/{area['id']}/competencies"
+                f"{settings.question_bank_url}/api/taxonomy/areas/{area['id']}/competencies",
+                headers=_INTERNAL_HEADERS,
             )
             resp.raise_for_status()
             competencies = resp.json()
@@ -110,30 +122,122 @@ def _resolve_taxonomy_ids(
 
 
 # =============================================================================
-# Generación con Anthropic
+# Generación multi-proveedor
 # =============================================================================
+
+
+async def _call_anthropic(
+    api_key: str, model: str, user_prompt: str, max_tokens: int, temperature: float
+) -> tuple[str, dict]:
+    """Llama a Anthropic Claude y retorna (texto_respuesta, token_usage)."""
+    client = anthropic.AsyncAnthropic(api_key=api_key)
+    response = await client.messages.create(
+        model=model,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        system=SYSTEM_PROMPT,
+        messages=[{"role": "user", "content": user_prompt}],
+    )
+    token_usage = {
+        "input_tokens": response.usage.input_tokens,
+        "output_tokens": response.usage.output_tokens,
+    }
+    return response.content[0].text.strip(), token_usage
+
+
+async def _call_gemini(
+    api_key: str, model: str, user_prompt: str, max_tokens: int, temperature: float
+) -> tuple[str, dict]:
+    """Llama a Google Gemini y retorna (texto_respuesta, token_usage)."""
+    genai.configure(api_key=api_key)
+    gemini_model = genai.GenerativeModel(
+        model_name=model,
+        system_instruction=SYSTEM_PROMPT,
+        generation_config=genai.GenerationConfig(
+            max_output_tokens=max_tokens,
+            temperature=temperature,
+            response_mime_type="application/json",
+        ),
+    )
+    response = await gemini_model.generate_content_async(user_prompt)
+    token_usage = {}
+    if hasattr(response, "usage_metadata") and response.usage_metadata:
+        token_usage = {
+            "input_tokens": getattr(response.usage_metadata, "prompt_token_count", 0),
+            "output_tokens": getattr(response.usage_metadata, "candidates_token_count", 0),
+        }
+    return response.text.strip(), token_usage
 
 
 async def generate_question(
     *,
+    db: AsyncSession,
     area_code: str,
+    provider: str | None = None,
+    model_override: str | None = None,
     competency_code: str | None = None,
     cognitive_level: int | None = None,
     include_visual: bool = False,
     visual_type: str | None = None,
     english_section: int | None = None,
-) -> tuple[GeneratedQuestion, dict]:
-    """Genera una pregunta usando Anthropic Claude.
+) -> tuple[GeneratedQuestion, dict, str, str]:
+    """Genera una pregunta usando el proveedor seleccionado.
 
     Returns:
-        (GeneratedQuestion, token_usage_dict)
+        (GeneratedQuestion, token_usage_dict, provider_name, model_name)
     """
+    # Resolver proveedor.
+    # Si no se especifica, intenta el default y luego cae al primer proveedor habilitado
+    # que tenga API key configurada.
+    provider_name = provider or settings.default_provider
+    provider_config = await get_provider_config(db, provider_name)
+
+    api_key: str | None = None
+    if provider is not None:
+        if not provider_config or not provider_config.is_enabled:
+            msg = f"Proveedor '{provider_name}' no disponible o deshabilitado"
+            raise ValueError(msg)
+        api_key = await get_decrypted_api_key(db, provider_name)
+    else:
+        if provider_config and provider_config.is_enabled:
+            try:
+                api_key = await get_decrypted_api_key(db, provider_name)
+            except ValueError:
+                logger.warning(
+                    "Proveedor default '%s' sin API key válida; se buscará fallback",
+                    provider_name,
+                )
+
+        if api_key is None:
+            enabled_providers = await get_enabled_providers(db)
+            fallback_found = False
+            for candidate in enabled_providers:
+                try:
+                    candidate_key = await get_decrypted_api_key(db, candidate.provider)
+                except ValueError:
+                    continue
+
+                provider_name = candidate.provider
+                provider_config = candidate
+                api_key = candidate_key
+                fallback_found = True
+                logger.info("Usando proveedor fallback para generación: %s", provider_name)
+                break
+
+            if not fallback_found or provider_config is None or api_key is None:
+                msg = "No hay proveedores habilitados con API key configurada"
+                raise ValueError(msg)
+
+    model_name = model_override or provider_config.default_model
+    max_tokens = provider_config.max_tokens
+    temperature = provider_config.temperature
+
+    # Resolver taxonomía
     taxonomy = await _fetch_taxonomy()
     resolved = _resolve_taxonomy_ids(
         taxonomy, area_code, competency_code, cognitive_level
     )
 
-    # Datos para prompt
     comp = resolved["competency"]
     assertion = resolved["assertion"]
     evidence = resolved["evidence"]
@@ -163,23 +267,19 @@ async def generate_question(
         visual_type=visual_type,
     )
 
-    # Llamar a Anthropic
-    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-    response = await client.messages.create(
-        model=settings.anthropic_model,
-        max_tokens=settings.max_tokens,
-        temperature=settings.generation_temperature,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
+    # Llamar al proveedor correspondiente
+    if provider_name == "anthropic":
+        raw_text, token_usage = await _call_anthropic(
+            api_key, model_name, user_prompt, max_tokens, temperature
+        )
+    elif provider_name == "gemini":
+        raw_text, token_usage = await _call_gemini(
+            api_key, model_name, user_prompt, max_tokens, temperature
+        )
+    else:
+        msg = f"Proveedor no implementado: {provider_name}"
+        raise ValueError(msg)
 
-    token_usage = {
-        "input_tokens": response.usage.input_tokens,
-        "output_tokens": response.usage.output_tokens,
-    }
-
-    # Parsear respuesta JSON
-    raw_text = response.content[0].text.strip()
     # Limpiar posibles bloques markdown
     if raw_text.startswith("```"):
         raw_text = raw_text.split("\n", 1)[1]
@@ -230,7 +330,7 @@ async def generate_question(
         media=media,
     )
 
-    return question, token_usage
+    return question, token_usage, provider_name, model_name
 
 
 def invalidate_taxonomy_cache():

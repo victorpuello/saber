@@ -1,5 +1,13 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 10_000);
+const API_AI_GENERATE_TIMEOUT_MS = Number(import.meta.env.VITE_API_AI_GENERATE_TIMEOUT_MS ?? 60_000);
+
+function getRequestTimeoutMs(path: string): number {
+  if (path.startsWith("/api/ai/generate")) {
+    return API_AI_GENERATE_TIMEOUT_MS;
+  }
+  return API_TIMEOUT_MS;
+}
 
 export interface LoginResponse {
   access_token: string;
@@ -92,7 +100,8 @@ async function apiRequest<T>(
   action: AuthAction = "generic",
 ): Promise<T> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const timeoutMs = getRequestTimeoutMs(path);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const headers = new Headers(init.headers);

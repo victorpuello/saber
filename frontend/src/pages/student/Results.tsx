@@ -60,7 +60,7 @@ export default function StudentResultsPage() {
                 <span className="text-xs font-semibold text-secondary">{exam.completed_at.replace("T", " ").slice(0, 16)}</span>
               </div>
               <p className="mt-2 text-sm text-on-surface-variant">
-                {exam.score_global !== null ? `Puntaje ${Math.round(exam.score_global)}/500` : "Puntaje no disponible"}
+                {exam.score_global !== null ? `Puntaje ${Math.round(exam.score_global)}/100` : "Puntaje no disponible"}
                 {exam.accuracy !== null ? ` · ${Math.round(exam.accuracy)}% de precision` : ""}
               </p>
             </article>

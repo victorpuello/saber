@@ -1,5 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { DashboardNavigation } from "./dashboard/components";
 
 const PAGE_TITLES: Record<string, string> = {
@@ -7,6 +8,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/student/diagnostico": "Diagnóstico Inicial",
   "/student/plan": "Plan de Estudio",
   "/student/resultados": "Mis Resultados",
+  "/student/examenes": "Simulacros y Práctica",
 };
 
 export default function StudentLayout() {
@@ -14,7 +16,14 @@ export default function StudentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const pageTitle = PAGE_TITLES[location.pathname] ?? "Saber 11";
+  const pageTitle =
+    PAGE_TITLES[location.pathname] ??
+    (location.pathname.startsWith("/student/examenes/resultados")
+      ? "Resultados del Examen"
+      : location.pathname.startsWith("/student/examenes/sesion")
+        ? "Presentando Examen"
+        : "Saber 11");
+  useDocumentTitle(pageTitle);
 
   function handleLogout() {
     logout();
@@ -29,7 +38,7 @@ export default function StudentLayout() {
       <DashboardNavigation studentName={studentName} />
 
       {/* Fixed top header */}
-      <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between bg-white/82 px-4 shadow-[0_1px_3px_rgba(148,163,184,0.25)] backdrop-blur-xl sm:px-6 md:left-64 md:px-9">
+      <header className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between bg-white/82 px-4 shadow-[0_1px_3px_rgba(148,163,184,0.25)] backdrop-blur-xl sm:px-6 md:left-[220px] md:px-9">
         <span className="font-headline text-[15px] font-bold text-on-surface">{pageTitle}</span>
         <div className="flex items-center gap-5">
           <div className="flex gap-4">
@@ -51,7 +60,7 @@ export default function StudentLayout() {
         </div>
       </header>
 
-      <main className="min-h-screen bg-surface pb-24 pt-16 text-on-surface md:ml-64 md:pb-10">
+      <main className="min-h-screen bg-surface pb-24 pt-16 text-on-surface md:ml-[220px] md:pb-10">
         <div className="mx-auto max-w-[1400px] space-y-6 px-6 py-9 md:px-9">
           <Outlet />
         </div>

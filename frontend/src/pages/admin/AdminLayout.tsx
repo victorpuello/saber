@@ -1,20 +1,23 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 const NAV_ITEMS = [
   { to: "/admin", label: "Dashboard", icon: "dashboard", end: true },
   { to: "/admin/preguntas", label: "Banco de Preguntas", icon: "quiz", end: false },
-  { to: "/admin/analytics", label: "Analytics", icon: "analytics", end: false },
-  { to: "/admin/estudiantes", label: "Estudiantes", icon: "group", end: false },
-  { to: "/admin/notificaciones", label: "Notificaciones", icon: "notifications", end: false },
+  { to: "/admin/examenes", label: "Exámenes", icon: "assignment", end: false },
+  { to: "/admin/estudiantes", label: "Estudiantes", icon: "people", end: false },
+  { to: "/admin/analytics", label: "Reportes", icon: "analytics", end: false },
+  { to: "/admin/configuracion", label: "Configuración", icon: "settings", end: false },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   "/admin": "Panel de Administración",
   "/admin/preguntas": "Banco de Preguntas",
-  "/admin/analytics": "Analytics Institucional",
+  "/admin/examenes": "Gestión de Exámenes",
+  "/admin/analytics": "Reportes",
   "/admin/estudiantes": "Gestión de Estudiantes",
-  "/admin/notificaciones": "Notificaciones",
+  "/admin/configuracion": "Configuración",
 };
 
 export default function AdminLayout() {
@@ -23,6 +26,7 @@ export default function AdminLayout() {
   const location = useLocation();
 
   const pageTitle = PAGE_TITLES[location.pathname] ?? "Administración";
+  useDocumentTitle(pageTitle);
   const adminName = user?.name ?? "Administrador";
   const initial = adminName.trim().slice(0, 1).toUpperCase();
 
@@ -41,12 +45,12 @@ export default function AdminLayout() {
               className="material-symbols-outlined text-2xl text-white"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
-              admin_panel_settings
+              auto_stories
             </span>
           </div>
           <div>
             <h1 className="font-headline text-xl font-black tracking-tight text-on-surface">Saber 11</h1>
-            <p className="text-[9px] font-bold uppercase tracking-[0.32em] text-secondary">Administración</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.32em] text-secondary">Admin</p>
           </div>
         </div>
 
@@ -99,7 +103,7 @@ export default function AdminLayout() {
             notifications
           </span>
           <span className="material-symbols-outlined cursor-pointer text-[22px] text-secondary transition-opacity hover:opacity-70">
-            settings
+            help_outline
           </span>
           <button
             type="button"

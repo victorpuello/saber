@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 const kampusRecoveryUrl =
   import.meta.env.VITE_KAMPUS_FORGOT_PASSWORD_URL || "https://kampus.ieplayasdelviento.edu.co/";
 
 export default function ForgotPassword() {
+  useDocumentTitle("Recuperar Contraseña");
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface px-6 py-12 text-on-surface">
       <section className="glass-panel w-full max-w-2xl rounded-2xl border border-outline-variant p-8 md:p-10">

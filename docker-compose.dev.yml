@@ -72,6 +72,15 @@ services:
       - ./shared/saber11_shared:/shared/saber11_shared
     command: uvicorn app.main:app --host 0.0.0.0 --port 3007 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
 
+  students:
+    environment:
+      - PYTHONPATH=/shared:/app
+      - WATCHFILES_FORCE_POLLING=true
+    volumes:
+      - ./services/students/app:/app/app
+      - ./shared/saber11_shared:/shared/saber11_shared
+    command: uvicorn app.main:app --host 0.0.0.0 --port 3008 --reload --reload-dir /app/app --reload-dir /shared/saber11_shared
+
   frontend:
     build:
       context: ./frontend

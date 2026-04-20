@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 export default function LegalTerms() {
+  useDocumentTitle("Términos de Servicio");
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface px-6 py-12 text-on-surface">
       <article className="glass-panel w-full max-w-3xl rounded-2xl border border-outline-variant p-8 md:p-10">

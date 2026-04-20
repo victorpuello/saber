@@ -2,6 +2,7 @@ import { Router } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import config from "../lib/config.js";
 import { authenticate } from "../middleware/auth.js";
+import { revocationCheck } from "../middleware/revocationCheck.js";
 import { userLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
@@ -17,6 +18,7 @@ const SERVICE_MAP = {
   "/api/plans": config.studyPlannerUrl,
   "/api/analytics": config.analyticsUrl,
   "/api/notifications": config.notificationsUrl,
+  "/api/students": config.studentsUrl,
 };
 
 /**
@@ -53,7 +55,7 @@ function proxyTo(target) {
 
 // Registrar rutas de proxy con autenticación y rate limit
 for (const [path, target] of Object.entries(SERVICE_MAP)) {
-  router.use(path, authenticate, userLimiter, proxyTo(target));
+  router.use(path, authenticate, revocationCheck, userLimiter, proxyTo(target));
 }
 
 export default router;
