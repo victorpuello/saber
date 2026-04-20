@@ -5,6 +5,9 @@
 
 name: CI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   push:
     branches: [master, main, develop]
@@ -117,7 +120,9 @@ jobs:
               if 'node_modules' in str(f) or '.git' in str(f):
                   continue
               try:
-                  ast.parse(f.read_text())
+                  ast.parse(f.read_text(encoding='utf-8'))
+              except UnicodeDecodeError as e:
+                  errors.append(f'{f}: encoding inválido ({e})')
               except SyntaxError as e:
                   errors.append(f'{f}: {e}')
           if errors:
