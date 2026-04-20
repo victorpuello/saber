@@ -62,7 +62,11 @@ class GenerateRequest(BaseModel):
         None, description="Proveedor IA a usar (anthropic o gemini). Si None, usa el default."
     )
     model: str | None = Field(
-        None, description="Modelo específico (ej: claude-sonnet-4-20250514, gemini-2.5-flash). Si None, usa el default del proveedor."
+        None,
+        description=(
+            "Modelo específico (ej: claude-sonnet-4-20250514, gemini-2.5-flash). "
+            "Si None, usa el default del proveedor."
+        ),
     )
     competency_code: str | None = Field(
         None, description="Código de competencia específica (opcional)"

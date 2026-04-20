@@ -1,12 +1,10 @@
 """Modelos de BD del AI Generator — API keys cifradas y configuración de proveedores."""
 
-import secrets
 from datetime import datetime
 
+from saber11_shared.database import Base
 from sqlalchemy import Boolean, DateTime, Float, Integer, LargeBinary, String, func
 from sqlalchemy.orm import Mapped, mapped_column
-
-from saber11_shared.database import Base
 
 
 class AIProviderConfig(Base):

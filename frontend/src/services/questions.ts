@@ -8,6 +8,8 @@ import type {
   QuestionStatusBackend,
 } from "../pages/admin/questionBank/questionFormTypes";
 
+export type { AreaSummary };
+
 type AuthFetch = <T = unknown>(path: string, init?: RequestInit) => Promise<T>;
 
 // --- Tipos de respuesta paginada ---

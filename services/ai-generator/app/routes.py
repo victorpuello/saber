@@ -13,7 +13,6 @@ from .generator import generate_question, invalidate_taxonomy_cache
 from .key_store import (
     encrypt_api_key,
     get_all_providers,
-    get_enabled_providers,
     get_provider_config,
     upsert_provider,
 )
@@ -142,8 +141,8 @@ async def test_provider(
 
     try:
         api_key = decrypt_api_key(config.api_key_encrypted)
-    except Exception:
-        raise HTTPException(500, "Error descifrando la API key almacenada.")
+    except Exception as err:
+        raise HTTPException(500, "Error descifrando la API key almacenada.") from err
 
     try:
         if provider.value == "anthropic":

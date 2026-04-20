@@ -42,7 +42,8 @@ def _get_fernet() -> Fernet:
         if not key:
             msg = (
                 "ENCRYPTION_KEY no configurada. "
-                "Genera una con: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'"
+                "Genera una con: python -c 'from cryptography.fernet "
+                "import Fernet; print(Fernet.generate_key().decode())'"
             )
             raise RuntimeError(msg)
         _fernet = Fernet(key.encode() if isinstance(key, str) else key)
@@ -172,5 +173,8 @@ async def seed_default_providers(db: AsyncSession) -> None:
             env_key = getattr(settings, f"{existing.provider}_api_key", "")
             if env_key and not _is_placeholder_api_key(env_key):
                 existing.api_key_encrypted = encrypt_api_key(env_key)
-                logger.info("Actualizado %s con API key desde variable de entorno", existing.provider)
+                logger.info(
+                    "Actualizado %s con API key desde variable de entorno",
+                    existing.provider,
+                )
     await db.flush()
