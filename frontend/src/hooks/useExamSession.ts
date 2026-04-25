@@ -26,9 +26,11 @@ export interface UseExamSessionResult {
   timeElapsedSeconds: number;
   timeRemainingSeconds: number | null; // null if no time limit
   errorMessage: string | null;
+  errorTitle: string;
   selectAnswer: (letter: string) => void;
   goNext: () => Promise<void>;
   goPrev: () => void;
+  goToIndex: (index: number) => Promise<void>;
   finish: () => Promise<void>;
 }
 
@@ -43,6 +45,7 @@ export function useExamSession(
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorTitle, setErrorTitle] = useState("No se pudo iniciar");
   const [timeElapsedSeconds, setTimeElapsedSeconds] = useState(0);
 
   const timeLimitSeconds = examMeta.time_limit_minutes !== null
@@ -56,6 +59,7 @@ export function useExamSession(
   // submittingRef: in-flight request guard (prevents concurrent double-POSTs)
   const submittingRef = useRef<Set<string>>(new Set());
   const isFinishingRef = useRef(false);
+  const sessionTimedOutRef = useRef(false);
 
   // ── Boot: start session directly with given examId ──────────────
   useEffect(() => {
@@ -75,6 +79,7 @@ export function useExamSession(
         setPhase("active");
       } catch (err) {
         if (!cancelled) {
+          setErrorTitle("No se pudo iniciar");
           setErrorMessage(
             err instanceof Error ? err.message : "No se pudo iniciar el examen.",
           );
@@ -127,6 +132,7 @@ export function useExamSession(
     letter: string,
     elapsed: number,
   ) => {
+    if (sessionTimedOutRef.current) return;
     if (submittedRef.current.has(questionId)) return;
     if (submittingRef.current.has(questionId)) return;
 
@@ -135,8 +141,12 @@ export function useExamSession(
       await submitAnswer(authFetch, sessionId, questionId, letter, elapsed);
       submittedRef.current.add(questionId);
     } catch (err: unknown) {
-      // 409 = already in backend (duplicate), treat as success
       if (isApiError(err) && err.status === 409) {
+        // Duplicate — already in backend, treat as success
+        submittedRef.current.add(questionId);
+      } else if (isApiError(err) && err.status === 410) {
+        // Session timed out server-side — stop retrying all pending answers
+        sessionTimedOutRef.current = true;
         submittedRef.current.add(questionId);
       }
       // Other errors: do NOT mark submitted — finish() will retry
@@ -168,22 +178,35 @@ export function useExamSession(
     questionStartRef.current = Date.now();
   }, []);
 
+  const goToIndex = useCallback(async (index: number) => {
+    const nextIndex = Math.max(0, Math.min(index, questions.length - 1));
+    if (nextIndex === currentIndex) {
+      return;
+    }
+    await submitCurrent();
+    setCurrentIndex(nextIndex);
+    questionStartRef.current = Date.now();
+  }, [currentIndex, questions.length, submitCurrent]);
+
   // ── Finish session ───────────────────────────────────────────────
   const finish = useCallback(async () => {
     if (!session || isFinishingRef.current) return;
     isFinishingRef.current = true;
 
-    // Submit ALL locally-answered questions not yet confirmed in backend
-    const pendingSubmits = questions
-      .filter((q) => answers[q.question_id] && !submittedRef.current.has(q.question_id))
-      .map((q) => submitOne(session.id, q.question_id, answers[q.question_id], 0));
-    await Promise.allSettled(pendingSubmits);
+    // Skip pending submits if session already timed out server-side (all would 410)
+    if (!sessionTimedOutRef.current) {
+      const pendingSubmits = questions
+        .filter((q) => answers[q.question_id] && !submittedRef.current.has(q.question_id))
+        .map((q) => submitOne(session.id, q.question_id, answers[q.question_id], 0));
+      await Promise.allSettled(pendingSubmits);
+    }
 
     try {
       const finished = await finishExamSession(authFetch, session.id);
       setSession(finished);
       setPhase("finished");
     } catch (err) {
+      setErrorTitle("No se pudo finalizar");
       setErrorMessage(
         err instanceof Error ? err.message : "No se pudo finalizar la sesión.",
       );
@@ -201,9 +224,11 @@ export function useExamSession(
     timeElapsedSeconds,
     timeRemainingSeconds,
     errorMessage,
+    errorTitle,
     selectAnswer,
     goNext,
     goPrev,
+    goToIndex,
     finish,
   };
 }

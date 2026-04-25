@@ -26,6 +26,7 @@ class ContextType(str, Enum):
     graphic_notice = "graphic_notice"
     dialogue = "dialogue"
     cloze_text = "cloze_text"
+    react_component = "react_component"
 
 
 class RenderEngine(str, Enum):
@@ -136,14 +137,17 @@ class CreateGenerationJobRequest(BaseModel):
 
 
 class GeneratedMedia(BaseModel):
-    """Media programática generada por IA."""
+    """Media generada por IA — programática o imagen real."""
 
     media_type: str
     render_engine: str
-    visual_data: str  # JSON serializado
+    visual_data: str  # JSON serializado (metadatos / fallback)
     alt_text: str
     alt_text_detailed: str | None = None
     display_mode: str = "ABOVE_STEM"
+    # Si se generó imagen real (bytes), se sube al question-bank como archivo
+    image_bytes: bytes | None = None
+    image_mime_type: str = "image/png"
 
 
 class GeneratedQuestion(BaseModel):
@@ -182,6 +186,8 @@ class GeneratedQuestion(BaseModel):
     # Inglés
     english_section: int | None = None
     mcer_level: str | None = None
+    component_name: str | None = None
+    dce_metadata: dict | None = None
 
     # Visual programático (opcional)
     media: GeneratedMedia | None = None

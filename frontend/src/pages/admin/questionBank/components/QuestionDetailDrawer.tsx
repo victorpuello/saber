@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { QuestionRow, AreaCode, QuestionStatus, Difficulty } from "../types";
+import type { QuestionBlockOut, QuestionMediaOut } from "../questionFormTypes";
 import ConfirmModal from "../../../../components/ConfirmModal";
-import { useState } from "react";
+import QuestionContextMedia from "../../../../components/QuestionContextMedia";
+import QuestionPreviewModal from "./QuestionPreviewModal";
 
 // ── Area color tokens ──────────────────────────────────────────────────────
 const AREA_COLORS: Record<AreaCode, { bg: string; text: string }> = {
@@ -33,15 +35,31 @@ const DIFF_WIDTH: Record<Difficulty, string> = {
 // ── Component ──────────────────────────────────────────────────────────────
 interface QuestionDetailDrawerProps {
   question: QuestionRow | null;
+  block?: QuestionBlockOut | null;
+  media?: QuestionMediaOut[];
+  loading?: boolean;
   onClose: () => void;
-  onEdit?: (questionId: string) => void;
-  onReview?: (questionId: string, action: "APPROVE" | "REJECT", notes?: string) => Promise<void>;
-  onSubmitForReview?: (questionId: string) => Promise<void>;
+  onEdit?: (target: { type: "question" | "block"; id: string }) => void | Promise<void>;
+  onReview?: (target: { type: "question" | "block"; id: string }, action: "APPROVE" | "REJECT", notes?: string) => Promise<void>;
+  onSubmitForReview?: (target: { type: "question" | "block"; id: string }) => Promise<void>;
+  onDelete?: (questionId: string) => Promise<void>;
 }
 
-export default function QuestionDetailDrawer({ question, onClose, onEdit, onReview, onSubmitForReview }: QuestionDetailDrawerProps) {
-  const isOpen = question !== null;
-  const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "submit" | null>(null);
+export default function QuestionDetailDrawer({ question, block = null, media = [], loading = false, onClose, onEdit, onReview, onSubmitForReview, onDelete }: QuestionDetailDrawerProps) {
+  const isOpen = question !== null || block !== null;
+  const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "submit" | "delete" | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const status = question?.status ?? null;
+  const isBlock = block !== null;
+  const canReview = !!status && !loading && status === "PENDIENTE";
+  const canEditDraft = !!status && !loading && status === "BORRADOR";
+  const detailTarget = block
+    ? { type: "block" as const, id: block.block_id }
+    : question
+      ? { type: "question" as const, id: question.id }
+      : null;
 
   // Close on Escape
   useEffect(() => {
@@ -70,7 +88,7 @@ export default function QuestionDetailDrawer({ question, onClose, onEdit, onRevi
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 z-[90] transition-opacity duration-300 ${
+        className={`fixed inset-0 z-90 transition-opacity duration-300 ${
           isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={onClose}
@@ -78,40 +96,58 @@ export default function QuestionDetailDrawer({ question, onClose, onEdit, onRevi
 
       {/* Drawer panel */}
       <aside
-        className={`fixed top-0 right-0 bottom-0 z-[95] flex w-[480px] flex-col overflow-y-auto bg-white shadow-[-20px_0_60px_rgba(0,0,0,0.12)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] ${
+        className={`fixed top-0 right-0 bottom-0 z-95 flex w-120 flex-col overflow-y-auto bg-white shadow-[-20px_0_60px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {question && (
+        {(question || block) && (
           <>
             {/* Header */}
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-surface-container-low bg-white px-6 pb-4 pt-6">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
-                  {question.code}
+                  {question?.code ?? "BLOQUE"}
                 </p>
-                <h2 className="text-base font-bold text-on-surface">Detalle de Pregunta</h2>
+                <h2 className="text-base font-bold text-on-surface">
+                  {isBlock ? "Detalle de Bloque" : "Detalle de Pregunta"}
+                </h2>
               </div>
               <div className="flex gap-2">
-                {question.status === "BORRADOR" && (
+                <button
+                  className="rounded-[10px] bg-surface-container-high px-4 py-2 text-[13px] font-semibold text-on-surface transition hover:bg-surface-container-highest"
+                  onClick={() => setShowPreview(true)}
+                >
+                  <span className="material-symbols-outlined mr-1 align-middle text-[14px]">preview</span>
+                  Vista previa
+                </button>
+                {canEditDraft && (
                   <>
+                    {!isBlock && (
+                      <button
+                        className="rounded-[10px] bg-rose-50 px-3 py-2 text-[13px] font-semibold text-rose-600 transition hover:bg-rose-100"
+                        onClick={() => setConfirmAction("delete")}
+                        title="Eliminar pregunta"
+                      >
+                        <span className="material-symbols-outlined align-middle text-[14px]">delete</span>
+                      </button>
+                    )}
                     <button
                       className="rounded-[10px] bg-surface-container-high px-4 py-2 text-[13px] font-semibold text-on-surface transition hover:bg-surface-container-highest"
-                      onClick={() => onEdit?.(question.id)}
+                      onClick={() => detailTarget && onEdit?.(detailTarget)}
                     >
                       <span className="material-symbols-outlined mr-1 align-middle text-[14px]">edit</span>
-                      Editar
+                      {isBlock ? "Editar bloque" : "Editar"}
                     </button>
                     <button
                       className="rounded-[10px] bg-primary/10 px-4 py-2 text-[13px] font-semibold text-primary"
                       onClick={() => setConfirmAction("submit")}
                     >
                       <span className="material-symbols-outlined mr-1 align-middle text-[14px]">send</span>
-                      Enviar a revisión
+                      {isBlock ? "Enviar bloque a revisión" : "Enviar a revisión"}
                     </button>
                   </>
                 )}
-                {question.status === "PENDIENTE" && (
+                {canReview && (
                   <>
                     <button
                       className="rounded-[10px] bg-amber-100 px-4 py-2 text-[13px] font-semibold text-amber-700"
@@ -132,18 +168,38 @@ export default function QuestionDetailDrawer({ question, onClose, onEdit, onRevi
 
             {/* Body */}
             <div className="flex flex-1 flex-col gap-5 p-6">
+              {loading ? (
+                <div className="flex items-center gap-2 rounded-xl bg-surface-container-low p-4 text-sm text-secondary">
+                  <span className="material-symbols-outlined animate-spin text-[16px] text-primary">
+                    progress_activity
+                  </span>
+                  Cargando detalle...
+                </div>
+              ) : (
+                <>
               {/* Meta badges */}
               <div className="flex flex-wrap gap-2">
-                <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${AREA_COLORS[question.areaCode].bg} ${AREA_COLORS[question.areaCode].text}`}>
-                  {question.area}
-                </span>
-                <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${STATUS_CLASSES[question.status]}`}>
-                  {question.status}
-                </span>
-                <span className="rounded-full bg-surface-container-high px-3 py-1 text-[11px] font-bold text-secondary">
-                  {question.difficulty}
-                </span>
-                {question.authorName === "ScholarAI" && (
+                {question && (
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${AREA_COLORS[question.areaCode].bg} ${AREA_COLORS[question.areaCode].text}`}>
+                    {question.area}
+                  </span>
+                )}
+                {status && question && (
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${STATUS_CLASSES[question.status]}`}>
+                    {question.status}
+                  </span>
+                )}
+                {question && (
+                  <span className="rounded-full bg-surface-container-high px-3 py-1 text-[11px] font-bold text-secondary">
+                    {question.difficulty}
+                  </span>
+                )}
+                {isBlock && block && (
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
+                    Bloque · {block.block_size} preguntas
+                  </span>
+                )}
+                {question?.authorName === "ScholarAI" && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-3 py-1 text-[11px] font-bold text-violet-700">
                     <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                       auto_awesome
@@ -158,50 +214,107 @@ export default function QuestionDetailDrawer({ question, onClose, onEdit, onRevi
                 <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
                   Contexto
                 </h3>
+                {media.length > 0 && (
+                  <div className="mb-3.5">
+                    <QuestionContextMedia media={media} compact />
+                  </div>
+                )}
                 <p className="rounded-xl bg-surface-container-low p-3.5 text-sm leading-relaxed text-on-surface-variant">
-                  {question.context}
+                  {block?.context ?? question?.context}
                 </p>
               </div>
 
-              {/* Enunciado */}
-              <div>
-                <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
-                  Enunciado
-                </h3>
-                <p className="rounded-xl bg-surface-container-low p-3.5 text-sm leading-relaxed text-on-surface-variant">
-                  {question.stem}
-                </p>
-              </div>
-
-              {/* Opciones */}
-              <div>
-                <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
-                  Opciones de Respuesta
-                </h3>
-                <div className="flex flex-col gap-2">
-                  {question.options.map((opt) => (
-                    <div
-                      key={opt.letter}
-                      className={`flex items-start gap-2.5 rounded-xl p-3 ${
-                        opt.correct ? "bg-emerald-100" : "bg-surface-container-low"
-                      }`}
-                    >
-                      <div
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
-                          opt.correct
-                            ? "bg-emerald-700 text-white"
-                            : "bg-white text-on-surface"
-                        }`}
-                      >
-                        {opt.letter}
+              {block ? (
+                <div>
+                  <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
+                    Subpreguntas del bloque
+                  </h3>
+                  <div className="flex flex-col gap-4">
+                    {block.items.map((item, index) => (
+                      <div key={item.id} className="rounded-2xl bg-surface-container-low p-4">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-primary">
+                            Pregunta {index + 1} de {block.block_size}
+                          </span>
+                          <span className="text-[11px] font-semibold text-secondary">
+                            Respuesta correcta: {item.correct_answer}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed text-on-surface">{item.stem}</p>
+                        <div className="mt-3 flex flex-col gap-2">
+                          {[
+                            { letter: "A", text: item.option_a },
+                            { letter: "B", text: item.option_b },
+                            { letter: "C", text: item.option_c },
+                            ...(item.option_d ? [{ letter: "D", text: item.option_d }] : []),
+                          ].map((opt) => (
+                            <div
+                              key={opt.letter}
+                              className={`flex items-start gap-2.5 rounded-xl p-3 ${
+                                item.correct_answer === opt.letter ? "bg-emerald-100" : "bg-white"
+                              }`}
+                            >
+                              <div
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+                                  item.correct_answer === opt.letter
+                                    ? "bg-emerald-700 text-white"
+                                    : "bg-surface-container-high text-on-surface"
+                                }`}
+                              >
+                                {opt.letter}
+                              </div>
+                              <p className="text-[13px] leading-relaxed text-on-surface">{opt.text}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <p className="text-[13px] leading-relaxed text-on-surface">{opt.text}</p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ) : question ? (
+                <>
+                  {/* Enunciado */}
+                  <div>
+                    <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
+                      Enunciado
+                    </h3>
+                    <p className="rounded-xl bg-surface-container-low p-3.5 text-sm leading-relaxed text-on-surface-variant">
+                      {question.stem}
+                    </p>
+                  </div>
+
+                  {/* Opciones */}
+                  <div>
+                    <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
+                      Opciones de Respuesta
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                      {question.options.map((opt) => (
+                        <div
+                          key={opt.letter}
+                          className={`flex items-start gap-2.5 rounded-xl p-3 ${
+                            opt.correct ? "bg-emerald-100" : "bg-surface-container-low"
+                          }`}
+                        >
+                          <div
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+                              opt.correct
+                                ? "bg-emerald-700 text-white"
+                                : "bg-white text-on-surface"
+                            }`}
+                          >
+                            {opt.letter}
+                          </div>
+                          <p className="text-[13px] leading-relaxed text-on-surface">{opt.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
 
               {/* Metadatos */}
+              {question && (
               <div>
                 <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
                   Metadatos
@@ -245,53 +358,116 @@ export default function QuestionDetailDrawer({ question, onClose, onEdit, onRevi
                   </div>
                 </div>
               </div>
+              )}
+                </>
+              )}
             </div>
           </>
         )}
       </aside>
 
       {/* Confirm modals */}
-      {confirmAction === "submit" && question && (
+      {confirmAction === "delete" && question && (
+        <div
+          className="fixed inset-0 z-200 flex items-center justify-center bg-on-surface/45 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget && !deleting) setConfirmAction(null); }}
+        >
+          <div className="w-full max-w-95 rounded-3xl bg-white p-7 text-center shadow-xl shadow-on-surface/15">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-rose-100">
+              <span className="material-symbols-outlined text-[28px] text-rose-600" style={{ fontVariationSettings: "'FILL' 1" }}>
+                delete
+              </span>
+            </div>
+            <h3 className="text-xl font-extrabold tracking-tight text-on-surface">Eliminar pregunta</h3>
+            <p className="mt-2 text-sm leading-relaxed text-secondary">
+              Esta acción es permanente. La pregunta será eliminada del banco y no podrá recuperarse.
+            </p>
+            {deleteError && (
+              <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600">{deleteError}</p>
+            )}
+            <div className="mt-6 flex gap-2.5">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => { setConfirmAction(null); setDeleteError(null); }}
+                className="flex-1 rounded-xl bg-surface-container-high py-3 text-sm font-bold text-on-surface transition hover:bg-surface-container-highest disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={async () => {
+                  setDeleteError(null);
+                  setDeleting(true);
+                  try {
+                    await onDelete?.(question.id);
+                    setConfirmAction(null);
+                    onClose();
+                  } catch (err) {
+                    setDeleteError(err instanceof Error ? err.message : "No se pudo eliminar la pregunta.");
+                  } finally {
+                    setDeleting(false);
+                  }
+                }}
+                className="flex-1 rounded-xl bg-rose-500 py-3 text-sm font-bold text-white transition hover:bg-rose-600 disabled:opacity-60"
+              >
+                {deleting ? "Eliminando…" : "Sí, eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {confirmAction === "submit" && detailTarget && (
         <ConfirmModal
           icon="send"
-          title="Enviar a revisión"
-          message="La pregunta será enviada para revisión por un administrador."
+          title={detailTarget.type === "block" ? "Enviar bloque a revisión" : "Enviar a revisión"}
+          message={detailTarget.type === "block" ? "El bloque completo será enviado para revisión por un administrador." : "La pregunta será enviada para revisión por un administrador."}
           confirmLabel="Sí, enviar"
           onConfirm={async () => {
             setConfirmAction(null);
-            await onSubmitForReview?.(question.id);
+            await onSubmitForReview?.(detailTarget);
             onClose();
           }}
           onCancel={() => setConfirmAction(null)}
         />
       )}
-      {confirmAction === "approve" && question && (
+      {confirmAction === "approve" && detailTarget && (
         <ConfirmModal
           icon="check_circle"
-          title="Aprobar pregunta"
-          message="La pregunta estará disponible en los simulacros. Puedes cambiar el estado manualmente más adelante."
+          title={detailTarget.type === "block" ? "Aprobar bloque" : "Aprobar pregunta"}
+          message={detailTarget.type === "block" ? "Las subpreguntas del bloque quedarán disponibles en los simulacros." : "La pregunta estará disponible en los simulacros. Puedes cambiar el estado manualmente más adelante."}
           confirmLabel="Sí, aprobar"
           onConfirm={async () => {
             setConfirmAction(null);
-            await onReview?.(question.id, "APPROVE");
+            await onReview?.(detailTarget, "APPROVE");
             onClose();
           }}
           onCancel={() => setConfirmAction(null)}
         />
       )}
-      {confirmAction === "reject" && question && (
+      {confirmAction === "reject" && detailTarget && (
         <ConfirmModal
           icon="block"
-          title="Rechazar pregunta"
-          message="La pregunta quedará como pendiente y el autor será notificado."
+          title={detailTarget.type === "block" ? "Rechazar bloque" : "Rechazar pregunta"}
+          message={detailTarget.type === "block" ? "El bloque completo quedará en borrador para ser ajustado." : "La pregunta quedará como pendiente y el autor será notificado."}
           confirmLabel="Rechazar"
           destructive
           onConfirm={async () => {
             setConfirmAction(null);
-            await onReview?.(question.id, "REJECT");
+            await onReview?.(detailTarget, "REJECT");
             onClose();
           }}
           onCancel={() => setConfirmAction(null)}
+        />
+      )}
+
+      {showPreview && (question || block) && (
+        <QuestionPreviewModal
+          question={question}
+          block={block}
+          media={media}
+          onClose={() => setShowPreview(false)}
         />
       )}
     </>

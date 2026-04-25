@@ -22,6 +22,7 @@ MAX_WEEKS = 12
 UNITS_PER_WEEK = 3  # Mínimo por semana
 MAX_UNITS_PER_WEEK = 5
 QUESTIONS_PER_UNIT = 10
+INTERNAL_HEADERS = {"X-User-Id": "0", "X-User-Role": "ADMIN"}
 
 # Peso por clasificación para priorización
 PRIORITY_WEIGHTS: dict[str, tuple[str, int]] = {
@@ -128,6 +129,32 @@ def generate_plan_from_scores(
         "total_weeks": total_weeks,
         "units": units,
     }
+
+
+def apply_english_section_recommendations(plan_data: dict, profile_data: dict) -> dict:
+    """Anota unidades de Ingles con las secciones debiles del diagnostico."""
+    recommendations = profile_data.get("english_recommendations") or []
+    if not recommendations:
+        return plan_data
+
+    english_units = [
+        unit for unit in plan_data.get("units", [])
+        if unit.get("area_code") == "ING"
+    ]
+    if not english_units:
+        return plan_data
+
+    for index, recommendation in enumerate(recommendations):
+        unit = english_units[index % len(english_units)]
+        section = recommendation.get("section")
+        label = recommendation.get("label", "Ingles")
+        priority = recommendation.get("priority", unit.get("priority", "MEDIUM"))
+        unit["title"] = f"Ingles seccion {section}: {label}"[:200]
+        unit["description"] = recommendation.get("message", unit.get("description"))
+        unit["priority"] = priority
+        unit["recommended_questions"] = max(unit.get("recommended_questions", 10), 12)
+
+    return plan_data
 
 
 def _build_unit(score: dict, week: int, position: int, priority: str) -> dict:
@@ -257,13 +284,14 @@ async def fetch_practice_questions(
     params: dict = {
         "competency_id": competency_id,
         "status": "APPROVED",
-        "limit": count,
+        "page_size": count,
     }
 
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
             f"{question_bank_url}/api/questions",
             params=params,
+            headers=INTERNAL_HEADERS,
         )
         if resp.status_code != 200:
             logger.warning("No se pudieron obtener preguntas para %s", competency_id)

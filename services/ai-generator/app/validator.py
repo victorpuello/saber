@@ -36,8 +36,15 @@ VALID_CONTEXT_TYPES: dict[str, set[str]] = {
         "dialogue",
         "discontinuous_text",
         "cloze_text",
+        "react_component",   # Secciones 1 (NoticeSign) y 3 (ChatUI), 5 (EmailWrapper)
     },
 }
+
+# Secciones de inglés que REQUIEREN context_type = react_component
+_ING_REACT_SECTIONS: set[int] = {1, 3}
+
+# Secciones de inglés que REQUIEREN context_type = cloze_text
+_ING_CLOZE_SECTIONS: set[int] = {4, 7}
 
 # Longitudes mínimas de contexto por área
 MIN_CONTEXT_LENGTH: dict[str, int] = {
@@ -148,6 +155,48 @@ def validate_question(
             warnings.append("Falta english_section para pregunta de inglés")
         if not question.mcer_level:
             warnings.append("Falta mcer_level para pregunta de inglés")
+
+        section = question.english_section or 0
+
+        # Secciones 1 y 3 DEBEN usar react_component
+        if section in _ING_REACT_SECTIONS and question.context_type != "react_component":
+            errors.append(
+                f"Sección {section} de inglés debe usar context_type 'react_component' "
+                f"(recibido: '{question.context_type}')"
+            )
+
+        # Secciones 4 y 7 DEBEN usar cloze_text
+        if section in _ING_CLOZE_SECTIONS and question.context_type != "cloze_text":
+            warnings.append(
+                f"Sección {section} de inglés debería usar context_type 'cloze_text' "
+                f"(recibido: '{question.context_type}')"
+            )
+
+        # Secciones 1 y 3 DEBEN tener component_name
+        if section in _ING_REACT_SECTIONS:
+            cn = getattr(question, "component_name", None)
+            if not cn:
+                errors.append(
+                    f"Sección {section} de inglés requiere component_name "
+                    "(NoticeSign o ChatUI)"
+                )
+
+        # Secciones 5-7 (comprensión lectora): contexto suficientemente largo
+        if section in (5, 6) and question.context:
+            word_count = len(question.context.split())
+            if word_count < 120:
+                warnings.append(
+                    f"Sección {section}: contexto corto para comprensión lectora "
+                    f"({word_count} palabras, recomendado ≥ 150)"
+                )
+                score -= 0.1
+
+        # Verificar que dce_metadata existe para inglés
+        dm = getattr(question, "dce_metadata", None)
+        if dm is None:
+            warnings.append("dce_metadata ausente en pregunta de inglés")
+        elif isinstance(dm, dict) and not dm.get("grammar_tags"):
+            warnings.append("dce_metadata.grammar_tags vacío — revisor no podrá filtrar por etiqueta")
 
     # ── 8. Dificultad estimada ────────────────────────────────────────
 

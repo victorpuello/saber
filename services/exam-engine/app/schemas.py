@@ -83,6 +83,11 @@ class ExamQuestionSafe(BaseModel):
     position: int
     context: str
     context_type: str
+    component_name: str | None = None
+    structure_type: str | None = None
+    block_id: uuid.UUID | None = None
+    block_item_order: int | None = None
+    block_size: int | None = None
     stem: str
     option_a: str
     option_b: str
@@ -157,6 +162,10 @@ class AnswerOut(BaseModel):
 class QuestionResult(BaseModel):
     question_id: uuid.UUID
     position: int
+    structure_type: str | None = None
+    block_id: uuid.UUID | None = None
+    block_item_order: int | None = None
+    block_size: int | None = None
     stem: str
     selected_answer: str | None = None
     correct_answer: str

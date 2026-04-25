@@ -54,12 +54,24 @@ async def _periodic_sync() -> None:
         await asyncio.sleep(interval)
 
 
+async def _wait_for_db(retries: int = 10, delay: float = 2.0) -> None:
+    for attempt in range(retries):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            return
+        except Exception as exc:
+            if attempt == retries - 1:
+                raise
+            logger.warning("DB no disponible (intento %d/%d): %s — reintentando...", attempt + 1, retries, exc)
+            await asyncio.sleep(delay)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Inicializa DB, EventBus, consumer y sync; cierra al apagar."""
     global _consumer_task, _sync_task  # noqa: PLW0603
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await _wait_for_db()
 
     _consumer_task = asyncio.create_task(consumer.start())
     _sync_task = asyncio.create_task(_periodic_sync())

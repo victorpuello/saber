@@ -1,10 +1,13 @@
 """Rutas API — Diagnostic Engine: sesiones adaptativas y perfiles."""
 
+import csv
+import io
 import uuid
 from datetime import UTC, datetime
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from saber11_shared.auth import CurrentUser, get_current_user, require_role
 from saber11_shared.events import EventBus
 from sqlalchemy import select
@@ -28,6 +31,8 @@ from .schemas import (
 router = APIRouter(prefix="/api/diagnostic", tags=["diagnostic"])
 
 _event_bus: EventBus | None = None
+
+INTERNAL_QB_HEADERS = {"X-User-Id": "0", "X-User-Role": "ADMIN"}
 
 
 def set_event_bus(bus: EventBus):
@@ -63,7 +68,8 @@ async def _fetch_area_info(area_code: str) -> dict:
     """Obtiene info del área desde Question Bank."""
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
-            f"{settings.question_bank_url}/api/taxonomy/areas/by-code/{area_code}"
+            f"{settings.question_bank_url}/api/taxonomy/areas/by-code/{area_code}",
+            headers=INTERNAL_QB_HEADERS,
         )
         if resp.status_code != 200:
             raise HTTPException(400, f"Área '{area_code}' no encontrada en el banco")
@@ -75,12 +81,43 @@ async def _fetch_area_questions(area_id: str) -> list[dict]:
     async with httpx.AsyncClient(timeout=15) as client:
         resp = await client.get(
             f"{settings.question_bank_url}/api/questions",
-            params={"area_id": area_id, "status": "APPROVED", "limit": 200},
+            params={"area_id": area_id, "status": "APPROVED", "page_size": 200},
+            headers=INTERNAL_QB_HEADERS,
         )
         if resp.status_code != 200:
             raise HTTPException(502, "No se pudieron obtener las preguntas")
         data = resp.json()
-        return data.get("items", data) if isinstance(data, dict) else data
+        items = data.get("items", data) if isinstance(data, dict) else data
+
+        full_questions = []
+        for item in items:
+            question_id = item.get("id")
+            if not question_id:
+                continue
+            full_resp = await client.get(
+                f"{settings.question_bank_url}/api/questions/{question_id}",
+                headers=INTERNAL_QB_HEADERS,
+            )
+            if full_resp.status_code == 200:
+                full_questions.append(full_resp.json())
+        return full_questions
+
+
+def _answer_history(session: DiagnosticSession) -> list[dict]:
+    """Normaliza respuestas previas para el motor CAT."""
+    return [
+        {
+            "is_correct": answer.is_correct,
+            "difficulty": float(answer.irt_difficulty),
+            "discrimination": float(answer.irt_discrimination),
+            "guessing": float(answer.irt_guessing),
+            "english_section": answer.english_section,
+            "mcer_level": answer.mcer_level,
+            "theta_after": float(answer.theta_after),
+            "question_id": str(answer.question_id),
+        }
+        for answer in session.answers
+    ]
 
 
 # ── Iniciar diagnóstico ────────────────────────────────────────
@@ -116,7 +153,11 @@ async def start_diagnostic(
         student_user_id=user.user_id,
         area_id=uuid.UUID(area_info["id"]),
         area_code=body.area_code,
-        max_questions=cat_engine.MAX_QUESTIONS,
+        max_questions=(
+            cat_engine.ENGLISH_MAX_QUESTIONS
+            if body.area_code == "ING"
+            else cat_engine.MAX_QUESTIONS
+        ),
         se_threshold=cat_engine.SE_THRESHOLD,
     )
     db.add(session)
@@ -175,12 +216,20 @@ async def get_next_question(
         comp_counts[cid] = comp_counts.get(cid, 0) + 1
 
     # Seleccionar ítem óptimo
-    item = cat_engine.select_optimal_item(
-        theta=float(session.current_theta),
-        available_items=questions,
-        used_question_ids=used_ids,
-        competency_counts=comp_counts,
-    )
+    if session.area_code == "ING":
+        item = cat_engine.select_english_item(
+            theta=float(session.current_theta),
+            available_items=questions,
+            used_question_ids=used_ids,
+            answer_history=_answer_history(session),
+        )
+    else:
+        item = cat_engine.select_optimal_item(
+            theta=float(session.current_theta),
+            available_items=questions,
+            used_question_ids=used_ids,
+            competency_counts=comp_counts,
+        )
     if not item:
         raise HTTPException(400, "No quedan preguntas disponibles")
 
@@ -191,6 +240,10 @@ async def get_next_question(
         competency_id=uuid.UUID(str(item["competency_id"])),
         stem=item["stem"],
         context=item.get("context"),
+        context_type=item.get("context_type"),
+        component_name=item.get("component_name"),
+        english_section=item.get("english_section"),
+        mcer_level=item.get("mcer_level"),
         option_a=item["option_a"],
         option_b=item["option_b"],
         option_c=item["option_c"],
@@ -236,7 +289,8 @@ async def submit_answer(
     # Obtener datos de la pregunta desde QB
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
-            f"{settings.question_bank_url}/api/questions/{body.question_id}"
+            f"{settings.question_bank_url}/api/questions/{body.question_id}",
+            headers=INTERNAL_QB_HEADERS,
         )
         if resp.status_code != 200:
             raise HTTPException(502, "No se pudo obtener la pregunta")
@@ -283,6 +337,8 @@ async def submit_answer(
         selected_answer=body.selected_answer,
         correct_answer=correct_answer,
         is_correct=is_correct,
+        english_section=question.get("english_section"),
+        mcer_level=question.get("mcer_level"),
         irt_difficulty=difficulty,
         irt_discrimination=discrimination,
         irt_guessing=guessing,
@@ -290,6 +346,7 @@ async def submit_answer(
         se_after=new_se,
     )
     db.add(answer)
+    session.answers.append(answer)
 
     # Actualizar sesión
     session.current_theta = new_theta
@@ -344,6 +401,27 @@ async def _finish_session(
     profile = await db.get(StudentProfile, session.profile_id)
     if not profile:
         return
+
+    english_payload: dict = {}
+    if session.area_code == "ING":
+        history = _answer_history(session)
+        mcer_level, mcer_label = cat_engine.english_mcer_from_theta(
+            float(session.current_theta)
+        )
+        section_errors = cat_engine.summarize_english_sections(history)
+        recommendations = cat_engine.build_english_recommendations(history)
+        profile.english_mcer_level = mcer_level
+        profile.english_mcer_label = mcer_label
+        profile.english_standard_error = float(session.current_se)
+        profile.english_section_errors = section_errors
+        profile.english_recommendations = recommendations
+        english_payload = {
+            "mcer_level": mcer_level,
+            "mcer_label": mcer_label,
+            "standard_error": float(session.current_se),
+            "section_errors": section_errors,
+            "recommendations": recommendations,
+        }
 
     for comp_id_str, responses in comp_responses.items():
         comp_id = uuid.UUID(comp_id_str)
@@ -405,6 +483,7 @@ async def _finish_session(
                 "session_id": str(session.id),
                 "area_code": session.area_code,
                 "theta": float(session.current_theta),
+                "english": english_payload or None,
                 "questions_answered": session.questions_answered,
             },
         )
@@ -450,6 +529,146 @@ async def finish_session(
 
 
 # ── Perfil del estudiante ──────────────────────────────────────
+
+
+# ── Export y calibracion IRT ────────────────────────────────────────────────
+
+
+def _diagnostic_response_rows(
+    pairs: list[tuple[DiagnosticAnswer, DiagnosticSession]],
+) -> list[dict]:
+    rows = []
+    for answer, session in pairs:
+        rows.append({
+            "student_user_id": session.student_user_id,
+            "session_id": str(session.id),
+            "area_code": session.area_code,
+            "question_id": str(answer.question_id),
+            "competency_id": str(answer.competency_id),
+            "position": answer.position,
+            "selected_answer": answer.selected_answer,
+            "correct_answer": answer.correct_answer,
+            "is_correct": answer.is_correct,
+            "english_section": answer.english_section,
+            "mcer_level": answer.mcer_level,
+            "irt_difficulty": float(answer.irt_difficulty),
+            "irt_discrimination": float(answer.irt_discrimination),
+            "irt_guessing": float(answer.irt_guessing),
+            "theta_after": float(answer.theta_after),
+            "se_after": float(answer.se_after),
+            "answered_at": answer.answered_at.isoformat(),
+        })
+    return rows
+
+
+async def _fetch_response_rows(
+    db: AsyncSession,
+    area_code: str,
+) -> list[dict]:
+    result = await db.execute(
+        select(DiagnosticAnswer, DiagnosticSession)
+        .join(DiagnosticSession, DiagnosticAnswer.session_id == DiagnosticSession.id)
+        .where(
+            DiagnosticSession.area_code == area_code,
+            DiagnosticSession.status == "COMPLETED",
+        )
+        .order_by(DiagnosticSession.started_at, DiagnosticAnswer.position)
+    )
+    return _diagnostic_response_rows(list(result.all()))
+
+
+@router.get("/irt/export.csv")
+async def export_irt_response_matrix(
+    area_code: str = Query("ING", pattern=r"^(LC|MAT|SC|CN|ING)$"),
+    db: AsyncSession = Depends(_get_db),
+    user: CurrentUser = Depends(require_role("ADMIN")),
+):
+    """Exporta matriz de respuestas para calibracion TRI externa."""
+    rows = await _fetch_response_rows(db, area_code)
+    output = io.StringIO()
+    fieldnames = [
+        "student_user_id",
+        "session_id",
+        "area_code",
+        "question_id",
+        "competency_id",
+        "position",
+        "selected_answer",
+        "correct_answer",
+        "is_correct",
+        "english_section",
+        "mcer_level",
+        "irt_difficulty",
+        "irt_discrimination",
+        "irt_guessing",
+        "theta_after",
+        "se_after",
+        "answered_at",
+    ]
+    writer = csv.DictWriter(output, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(rows)
+    output.seek(0)
+    filename = f"diagnostic_{area_code.lower()}_responses.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/irt/calibrate")
+async def calibrate_irt_parameters(
+    area_code: str = Query("ING", pattern=r"^(LC|MAT|SC|CN|ING)$"),
+    min_responses: int = Query(5, ge=2, le=500),
+    apply: bool = Query(False),
+    db: AsyncSession = Depends(_get_db),
+    user: CurrentUser = Depends(require_role("ADMIN")),
+):
+    """Calcula parametros IRT aproximados y opcionalmente los aplica en QB."""
+    rows = await _fetch_response_rows(db, area_code)
+    estimates = cat_engine.estimate_item_parameters_from_responses(
+        rows,
+        min_responses=min_responses,
+    )
+    applied = []
+    failed = []
+
+    if apply:
+        async with httpx.AsyncClient(timeout=15) as client:
+            for item in estimates:
+                if not item["ready"]:
+                    continue
+                resp = await client.patch(
+                    f"{settings.question_bank_url}/api/questions/{item['question_id']}/irt",
+                    json={
+                        "irt_difficulty": item["irt_difficulty"],
+                        "irt_discrimination": item["irt_discrimination"],
+                        "irt_guessing": item["irt_guessing"],
+                    },
+                    headers=INTERNAL_QB_HEADERS,
+                )
+                if resp.status_code == 200:
+                    applied.append(item["question_id"])
+                else:
+                    failed.append({
+                        "question_id": item["question_id"],
+                        "status_code": resp.status_code,
+                        "detail": resp.text[:300],
+                    })
+
+    return {
+        "area_code": area_code,
+        "responses": len(rows),
+        "items": len(estimates),
+        "ready_items": sum(1 for item in estimates if item["ready"]),
+        "applied": applied,
+        "failed": failed,
+        "archive_candidates": [
+            item for item in estimates if item["archive_candidate"]
+        ],
+        "estimates": estimates,
+    }
 
 
 @router.get("/profile", response_model=StudentProfileOut)

@@ -14,6 +14,10 @@ class Settings(BaseServiceSettings):
     anthropic_api_key: str = ""
     gemini_api_key: str = ""
 
+    # Modelos Gemini por tipo de contenido
+    gemini_text_model: str = "gemini-3.1-flash-lite-preview"
+    gemini_image_model: str = "gemini-3.1-flash-image-preview"
+
     # Defaults para generación (se sobreescriben con config de BD)
     default_provider: str = "anthropic"
     max_tokens: int = 4096

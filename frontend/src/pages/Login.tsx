@@ -169,7 +169,7 @@ export default function Login() {
         <div className="animate-login-rise-in relative z-10 max-w-xl">
           <div className="mb-12 aspect-video overflow-hidden rounded-3xl shadow-scholar-card">
             <img
-              src="https://images.unsplash.com/photo-1588072432836-e10032774350?w=900&auto=format&fit=crop&q=80"
+              src="https://69e6e4edb30eaee8c8b2ac91.imgix.net/saber/DSC02658.jpg"
               alt="Estudiantes realizando prueba con tablet"
               className="h-full w-full object-cover"
               loading="lazy"

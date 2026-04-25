@@ -15,7 +15,7 @@ import proxyRoutes from "./routes/proxy.js";
 const app = express();
 
 // --- Seguridad ---
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(
   cors({
     origin: config.corsOrigins.split(",").map((o) => o.trim()),

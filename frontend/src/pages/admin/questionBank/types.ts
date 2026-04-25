@@ -25,6 +25,10 @@ export interface QuestionRow {
   code: string;
   area: string;
   areaCode: AreaCode;
+  structureType: "INDIVIDUAL" | "QUESTION_BLOCK";
+  blockId: string | null;
+  blockSize: number | null;
+  blockItemOrder: number | null;
   competencia: string;
   enunciado: string;
   authorName: string;

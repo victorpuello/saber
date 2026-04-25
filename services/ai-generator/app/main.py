@@ -1,6 +1,7 @@
 """Punto de entrada del AI Generator Service."""
 
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -20,17 +21,32 @@ from .models import (  # noqa: F401 — registrar tablas
 )
 from .routes import router as ai_router
 
+logger = logging.getLogger(__name__)
+
 event_bus = EventBus(settings.redis_url)
 job_worker = GenerationJobWorker(event_bus, SessionLocal)
 _worker_task: asyncio.Task | None = None
+
+
+async def _wait_for_db(retries: int = 10, delay: float = 2.0) -> None:
+    """Reintenta la conexión a la DB en caso de race condition al arrancar."""
+    for attempt in range(1, retries + 1):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            return
+        except Exception as exc:
+            if attempt == retries:
+                raise
+            logger.warning("DB no disponible (intento %d/%d): %s", attempt, retries, exc)
+            await asyncio.sleep(delay)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Inicializa DB y seed de proveedores al arrancar."""
     global _worker_task  # noqa: PLW0603
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await _wait_for_db()
     async with SessionLocal() as session:
         await seed_default_providers(session)
         await session.commit()

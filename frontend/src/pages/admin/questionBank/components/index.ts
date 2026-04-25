@@ -5,6 +5,7 @@ export { default as QBTable } from "./QBTable";
 export { default as QBGenerationJobs } from "./QBGenerationJobs";
 export { default as QBJobsStatusBar } from "./QBJobsStatusBar";
 export { default as QBJobsTray } from "./QBJobsTray";
+export { default as EnglishAuditPanel } from "./EnglishAuditPanel";
 export { default as QBRecentActivity } from "./QBRecentActivity";
 export { default as QBScholarAIPromo } from "./QBScholarAIPromo";
 export { default as NewManualQuestionModal } from "./NewManualQuestionModal";

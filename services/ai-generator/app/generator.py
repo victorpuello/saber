@@ -11,10 +11,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import settings
 from .key_store import get_decrypted_api_key, get_enabled_providers, get_provider_config
-from .prompts import SYSTEM_PROMPT, build_user_prompt
+from .prompts import (
+    ING_COMPONENT_MAP,
+    ING_SECTION_COMPETENCE,
+    ING_SECTION_DESCRIPTIONS,
+    SYSTEM_PROMPT,
+    build_user_prompt,
+)
 from .schemas import GeneratedMedia, GeneratedQuestion
 
 logger = logging.getLogger(__name__)
+
+# Visual types that warrant a real generated image instead of programmatic rendering
+_IMAGE_NATIVE_TYPES = {"map", "diagram", "infographic", "comic", "photograph", "public_sign"}
+
+_VALID_MEDIA_TYPES = {
+    "chart", "table", "diagram", "map", "infographic", "comic",
+    "public_sign", "photograph", "timeline", "state_structure",
+    "geometric_figure", "probability_diagram",
+}
+_VALID_RENDER_ENGINES = {"chart_js", "svg_template", "html_template", "map_renderer", "timeline_renderer"}
 
 _JSON_RETRY_SUFFIX = """
 
@@ -288,6 +304,60 @@ async def _call_gemini(
     return response.text.strip(), token_usage
 
 
+async def _call_gemini_image(
+    api_key: str, model: str, prompt: str
+) -> tuple[bytes, str] | None:
+    """Llama a Gemini image model. Retorna (bytes, mime_type) o None si falla."""
+    import base64
+
+    try:
+        genai.configure(api_key=api_key)
+        image_model = genai.GenerativeModel(model_name=model)
+        response = await image_model.generate_content_async(
+            prompt,
+            generation_config=genai.GenerationConfig(
+                response_mime_type="image/png",
+            ),
+        )
+        for candidate in response.candidates:
+            for part in candidate.content.parts:
+                inline = getattr(part, "inline_data", None)
+                if inline:
+                    data = inline.data
+                    if isinstance(data, str):
+                        data = base64.b64decode(data)
+                    return bytes(data), inline.mime_type or "image/png"
+    except Exception as exc:
+        logger.warning("Gemini image generation falló (%s): %s", model, exc)
+    return None
+
+
+def _build_image_prompt(visual_type: str, alt_text: str, visual_data_str: str) -> str:
+    """Construye el prompt de imagen a partir de los metadatos del visual generado."""
+    base = (
+        f"Genera una imagen educativa de tipo '{visual_type}' para un examen colombiano Saber 11. "
+        "Estilo limpio, académico, colores claros, fondo blanco, alta legibilidad, sin texto decorativo."
+    )
+    if alt_text:
+        base += f" La imagen debe mostrar: {alt_text}."
+    try:
+        data = json.loads(visual_data_str)
+        if visual_type == "map":
+            region = data.get("region", "")
+            highlights = data.get("highlights", [])
+            info = data.get("data", {})
+            if region:
+                base += f" Mapa educativo de {region}."
+            if highlights:
+                base += f" Resalta claramente: {', '.join(highlights)}."
+            if info:
+                items = [f"{k}: {v}" for k, v in info.items()]
+                base += f" Leyenda de colores: {'; '.join(items)}."
+    except Exception:
+        pass
+    return base
+
+
 async def generate_question(
     *,
     db: AsyncSession,
@@ -347,7 +417,12 @@ async def generate_question(
                 msg = "No hay proveedores habilitados con API key configurada"
                 raise ValueError(msg)
 
-    model_name = model_override or provider_config.default_model
+    if model_override:
+        model_name = model_override
+    elif provider_name == "gemini":
+        model_name = settings.gemini_image_model if include_visual else settings.gemini_text_model
+    else:
+        model_name = provider_config.default_model
     max_tokens = provider_config.max_tokens
     temperature = provider_config.temperature
 
@@ -362,17 +437,36 @@ async def generate_question(
     evidence = resolved["evidence"]
     content_comp = resolved["content_component"]
 
-    # MCER level para inglés
+    # MCER level y metadatos específicos de inglés
     mcer_level = None
+    component_name: str | None = None
+    dce_metadata: dict | None = None
+
     if area_code == "ING" and english_section:
-        if english_section <= 3:
-            mcer_level = "A-" if english_section == 1 else "A1"
+        if english_section == 1:
+            mcer_level = "A-"
+        elif english_section <= 3:
+            mcer_level = "A1"
         elif english_section <= 5:
             mcer_level = "A2"
         elif english_section == 6:
             mcer_level = "B1"
         else:
             mcer_level = "B+"
+
+        component_name = ING_COMPONENT_MAP.get(english_section)
+
+        dce_metadata = {
+            "competence": ING_SECTION_COMPETENCE.get(english_section, "linguistica"),
+            "assertion": assertion.get("statement", ""),
+            "cognitive_level": (
+                "analisis_sintesis" if english_section in (6, 7)
+                else "comprension_aplicacion" if english_section in (3, 4, 5)
+                else "reconocimiento"
+            ),
+            "grammar_tags": [],
+            "part_description": ING_SECTION_DESCRIPTIONS.get(english_section, ""),
+        }
 
     user_prompt = build_user_prompt(
         area_code=area_code,
@@ -439,14 +533,74 @@ async def generate_question(
         visual_data_raw = data["visual_data"]
         if isinstance(visual_data_raw, dict):
             visual_data_raw = json.dumps(visual_data_raw)
+
+        raw_media_type = data.get("visual_type", visual_type or "chart")
+        safe_media_type = raw_media_type if raw_media_type in _VALID_MEDIA_TYPES else (visual_type or "chart")
+
+        raw_render_engine = data.get("visual_render_engine", "chart_js")
+        safe_render_engine = raw_render_engine if raw_render_engine in _VALID_RENDER_ENGINES else "chart_js"
+
+        alt_text = data.get("visual_alt_text", "") or ""
+        if len(alt_text.strip()) < 5:
+            alt_text = f"Recurso visual de tipo {safe_media_type} para la pregunta"
+
         media = GeneratedMedia(
-            media_type=data.get("visual_type", visual_type or "chart"),
-            render_engine=data.get("visual_render_engine", "chart_js"),
+            media_type=safe_media_type,
+            render_engine=safe_render_engine,
             visual_data=visual_data_raw,
-            alt_text=data.get("visual_alt_text", ""),
+            alt_text=alt_text,
             alt_text_detailed=data.get("visual_alt_text_detailed"),
             display_mode="ABOVE_STEM",
         )
+
+    # Para tipos nativos de imagen, generar imagen con Gemini sin importar el
+    # proveedor que generó el texto (Anthropic no tiene generación de imágenes).
+    if media is not None and (visual_type or media.media_type or "").lower() in _IMAGE_NATIVE_TYPES:
+        try:
+            gemini_key = (
+                api_key
+                if provider_name == "gemini"
+                else await get_decrypted_api_key(db, "gemini")
+            )
+            image_prompt = _build_image_prompt(
+                visual_type or media.media_type,
+                media.alt_text,
+                media.visual_data,
+            )
+            image_result = await _call_gemini_image(gemini_key, settings.gemini_image_model, image_prompt)
+            if image_result:
+                img_bytes, img_mime = image_result
+                media = GeneratedMedia(
+                    media_type=media.media_type,
+                    render_engine=media.render_engine,
+                    visual_data=media.visual_data,
+                    alt_text=media.alt_text,
+                    alt_text_detailed=media.alt_text_detailed,
+                    display_mode=media.display_mode,
+                    image_bytes=img_bytes,
+                    image_mime_type=img_mime,
+                )
+                logger.info("Imagen real generada con %s (%d bytes)", settings.gemini_image_model, len(img_bytes))
+        except Exception as img_exc:
+            logger.warning(
+                "No se pudo generar imagen para tipo '%s' (provider=%s): %s",
+                media.media_type, provider_name, img_exc,
+            )
+
+    # Enriquecer dce_metadata con grammar_tags devueltos por la IA (solo ING)
+    if dce_metadata is not None:
+        ai_grammar_tags = data.get("grammar_tags", [])
+        if isinstance(ai_grammar_tags, list):
+            dce_metadata["grammar_tags"] = ai_grammar_tags
+        ai_l1_note = data.get("l1_distractor_note", "")
+        if ai_l1_note:
+            dce_metadata["l1_distractor_note"] = ai_l1_note
+
+    # component_name puede venir en el JSON de la IA (sección 5 con EmailWrapper)
+    if area_code == "ING" and component_name is None:
+        ai_component = data.get("component_name")
+        if ai_component in ("EmailWrapper", "ChatUI", "NoticeSign"):
+            component_name = ai_component
 
     question = GeneratedQuestion(
         area_code=area_code,
@@ -471,6 +625,8 @@ async def generate_question(
         difficulty_estimated=data.get("difficulty_estimated"),
         english_section=english_section,
         mcer_level=mcer_level,
+        component_name=component_name,
+        dce_metadata=dce_metadata,
         media=media,
     )
 

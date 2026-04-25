@@ -28,6 +28,11 @@ class StudentProfileOut(BaseModel):
     last_diagnostic_at: datetime | None
     overall_estimated_level: int | None
     estimated_score_global: float | None
+    english_mcer_level: str | None = None
+    english_mcer_label: str | None = None
+    english_standard_error: float | None = None
+    english_section_errors: list[dict] | None = None
+    english_recommendations: list[dict] | None = None
     competency_scores: list[CompetencyScoreOut] = []
     created_at: datetime
     updated_at: datetime
@@ -67,6 +72,10 @@ class NextQuestionOut(BaseModel):
     competency_id: uuid.UUID
     stem: str
     context: str | None = None
+    context_type: str | None = None
+    component_name: str | None = None
+    english_section: int | None = None
+    mcer_level: str | None = None
     option_a: str
     option_b: str
     option_c: str
@@ -102,6 +111,8 @@ class DiagnosticAnswerOut(BaseModel):
     selected_answer: str
     correct_answer: str
     is_correct: bool
+    english_section: int | None = None
+    mcer_level: str | None = None
     irt_difficulty: float
     theta_after: float
     se_after: float

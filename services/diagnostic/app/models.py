@@ -15,6 +15,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -38,6 +39,11 @@ class StudentProfile(Base):
         CheckConstraint("overall_estimated_level BETWEEN 1 AND 4"),
     )
     estimated_score_global: Mapped[float | None] = mapped_column(Numeric(5, 2))
+    english_mcer_level: Mapped[str | None] = mapped_column(String(5))
+    english_mcer_label: Mapped[str | None] = mapped_column(String(20))
+    english_standard_error: Mapped[float | None] = mapped_column(Numeric(5, 3))
+    english_section_errors: Mapped[list | None] = mapped_column(JSONB)
+    english_recommendations: Mapped[list | None] = mapped_column(JSONB)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow
@@ -171,6 +177,8 @@ class DiagnosticAnswer(Base):
     selected_answer: Mapped[str] = mapped_column(String(1), nullable=False)
     correct_answer: Mapped[str] = mapped_column(String(1), nullable=False)
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    english_section: Mapped[int | None] = mapped_column(Integer)
+    mcer_level: Mapped[str | None] = mapped_column(String(5))
 
     # TRI params de la pregunta al momento de responder
     irt_difficulty: Mapped[float] = mapped_column(Numeric(5, 3), nullable=False)

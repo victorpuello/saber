@@ -2,17 +2,42 @@ import type { AuthFetch } from "./dashboard";
 
 // ── Types ────────────────────────────────────────────────────────────
 
+export interface ExamQuestionMedia {
+  id: string;
+  question_id: string;
+  media_type: string;
+  source: string;
+  storage_url: string | null;
+  thumbnail_url: string | null;
+  visual_data: string | null;
+  render_engine: string | null;
+  alt_text: string;
+  alt_text_detailed: string | null;
+  is_essential: boolean;
+  position: number;
+  display_mode: string;
+  caption: string | null;
+  width_px: number | null;
+  height_px: number | null;
+  created_at: string;
+}
+
 export interface ExamQuestionSafe {
   question_id: string;
   position: number;
   context: string;
   context_type: string;
+  component_name: string | null;
+  structure_type: "INDIVIDUAL" | "QUESTION_BLOCK" | null;
+  block_id: string | null;
+  block_item_order: number | null;
+  block_size: number | null;
   stem: string;
   option_a: string;
   option_b: string;
   option_c: string;
   option_d: string | null;
-  media: Array<{ url: string; type: string }> | null;
+  media: ExamQuestionMedia[] | null;
 }
 
 export interface ExamSummary {
@@ -139,6 +164,10 @@ export interface CreateExamPayload {
 export interface QuestionResultDetail {
   question_id: string;
   position: number;
+  structure_type: "INDIVIDUAL" | "QUESTION_BLOCK" | null;
+  block_id: string | null;
+  block_item_order: number | null;
+  block_size: number | null;
   stem: string;
   correct_answer: string;
   selected_answer: string | null;

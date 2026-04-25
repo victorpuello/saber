@@ -7,14 +7,16 @@
 services:
   # --- Nginx reverse proxy + SSL ---
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - certbot_certs:/etc/letsencrypt:ro
+      - certbot_certs:/etc/letsencrypt
       - certbot_www:/var/www/certbot:ro
     depends_on:
       - gateway
@@ -80,6 +82,7 @@ services:
       context: .
       dockerfile: services/ai-generator/Dockerfile
     environment:
+      - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD}@db-ai:5432/saber11_ai
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -87,7 +90,10 @@ services:
       - REDIS_URL=redis://redis-saber11:6379/0
       - JWT_SECRET=${JWT_SECRET}
     depends_on:
-      - question-bank
+      db-ai:
+        condition: service_healthy
+      question-bank:
+        condition: service_started
     restart: always
     deploy:
       resources:
@@ -236,6 +242,25 @@ services:
   # Infraestructura
   # ==========================================================================
 
+  db-ai:
+    image: postgres:15-alpine
+    volumes:
+      - ai_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=saber11_ai
+      - POSTGRES_USER=saber11
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saber11 -d saber11_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   db-questions:
     image: postgres:15-alpine
     volumes:
@@ -376,13 +401,15 @@ services:
     entrypoint: /bin/sh -c "
       while true; do
         TIMESTAMP=$$(date +%Y%m%d_%H%M%S);
-        for DB in questions exams profiles analytics notifications students; do
+        for DB in ai questions exams profiles analytics notifications students; do
           pg_dump -h db-$$DB -U saber11 saber11_$$DB | gzip > /backups/$${DB}_$${TIMESTAMP}.sql.gz;
         done;
         find /backups -type f -mtime +7 -delete;
         sleep 86400;
       done"
     depends_on:
+      db-ai:
+        condition: service_healthy
       db-questions:
         condition: service_healthy
       db-exams:
@@ -398,6 +425,7 @@ services:
     restart: always
 
 volumes:
+  ai_data:
   questions_data:
   exams_data:
   profiles_data:

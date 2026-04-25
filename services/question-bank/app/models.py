@@ -15,7 +15,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -124,9 +124,23 @@ class Question(Base):
         CheckConstraint(
             "context_type IN ('continuous_text','discontinuous_text','scientific_scenario',"
             "'math_problem','social_dilemma','philosophical_text','graphic_notice',"
-            "'dialogue','cloze_text')"
+            "'dialogue','cloze_text','react_component')",
+            name="questions_context_type_check",
         ),
         nullable=False,
+    )
+    structure_type: Mapped[str] = mapped_column(
+        String(20),
+        CheckConstraint("structure_type IN ('INDIVIDUAL','QUESTION_BLOCK')"),
+        nullable=False,
+        default="INDIVIDUAL",
+    )
+    block_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    block_item_order: Mapped[int | None] = mapped_column(
+        Integer, CheckConstraint("block_item_order BETWEEN 1 AND 3")
+    )
+    block_size: Mapped[int | None] = mapped_column(
+        Integer, CheckConstraint("block_size BETWEEN 2 AND 3")
     )
     stem: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -179,6 +193,14 @@ class Question(Base):
     )
     mcer_level: Mapped[str | None] = mapped_column(
         String(5), CheckConstraint("mcer_level IN ('A-','A1','A2','B1','B+')")
+    )
+    # Metadatos DCE enriquecidos para inglés (pragmática, lingüística, etc.)
+    # Estructura: {competence, assertion, cognitive_level, grammar_tags[]}
+    dce_metadata: Mapped[dict | None] = mapped_column(JSONB)
+    # Componente React que renderiza el contexto visual (ChatUI, NoticeSign, EmailWrapper)
+    component_name: Mapped[str | None] = mapped_column(
+        String(50),
+        CheckConstraint("component_name IN ('ChatUI','NoticeSign','EmailWrapper')"),
     )
 
     # TRI

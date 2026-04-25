@@ -156,7 +156,7 @@ async def seed_default_providers(db: AsyncSession) -> None:
         {
             "provider": "gemini",
             "display_name": "Google Gemini",
-            "default_model": "gemini-2.5-flash",
+            "default_model": "gemini-3.1-flash-lite-preview",
         },
     ]
     for d in defaults:

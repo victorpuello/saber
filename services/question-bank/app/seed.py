@@ -456,6 +456,8 @@ TAXONOMY_SEED: list[dict] = [
     },
     # =========================================================================
     # INGLÉS (ING) — 55 preguntas
+    # Competencias alineadas al Marco Común Europeo (MCER) y estructura
+    # de las 7 partes del examen ICFES Saber 11.
     # =========================================================================
     {
         "code": "ING",
@@ -463,66 +465,186 @@ TAXONOMY_SEED: list[dict] = [
         "total_questions": 55,
         "description": (
             "Evalúa la competencia comunicativa en inglés según niveles "
-            "del Marco Común Europeo de Referencia (A-, A1, A2, B1, B+)."
+            "del Marco Común Europeo de Referencia (A-, A1, A2, B1, B+). "
+            "Organizado en 7 partes que evalúan competencias pragmática, "
+            "lingüística, sociolingüística y comprensión lectora."
         ),
         "competencies": [
+            # ------------------------------------------------------------------
+            # C1 — Competencia Pragmática (Partes 1 y 3)
+            # Entiende la intención del hablante y el propósito del mensaje
+            # en su contexto material (avisos, diálogos cotidianos).
+            # ------------------------------------------------------------------
             {
                 "code": "ING-C1",
-                "name": "Comprensión de textos escritos",
+                "name": "Competencia Pragmática",
                 "description": (
-                    "Capacidad de comprender textos escritos en inglés "
-                    "de distinta complejidad."
+                    "Capacidad de entender la intención comunicativa y el "
+                    "propósito de un mensaje según su contexto situacional. "
+                    "Evalúa avisos públicos (Parte 1) e interacciones "
+                    "sociales cotidianas (Parte 3)."
                 ),
-                "weight_percentage": 50,
-                "cognitive_level": 1,
+                "weight_percentage": 25,
+                "cognitive_level": 2,
                 "assertions": [
                     {
                         "code": "ING-C1-A1",
                         "statement": (
-                            "El estudiante comprende información explícita "
-                            "e implícita en textos escritos en inglés."
+                            "El estudiante identifica el propósito comunicativo "
+                            "y la situación contextual de textos breves y "
+                            "señales del entorno cotidiano."
                         ),
                         "evidences": [
                             {
                                 "code": "ING-C1-A1-E1",
                                 "observable_behavior": (
-                                    "Identifica información específica en "
-                                    "avisos, correos, instrucciones (A1-A2)."
+                                    "Reconoce el lugar o situación donde puede "
+                                    "encontrarse un aviso, señal o instrucción "
+                                    "pública en inglés (Sección 1 — A1/A2)."
                                 ),
                             },
                             {
                                 "code": "ING-C1-A1-E2",
                                 "observable_behavior": (
-                                    "Comprende ideas principales y secundarias "
-                                    "en artículos y ensayos (B1-B+)."
+                                    "Identifica la respuesta pragmáticamente "
+                                    "adecuada en una interacción social "
+                                    "cotidiana (Sección 3 — A2)."
                                 ),
                             },
                         ],
                     },
                 ],
             },
+            # ------------------------------------------------------------------
+            # C2 — Competencia Lingüística (Partes 2, 4 y 7)
+            # Uso adecuado de vocabulario y gramática en contexto textual.
+            # ------------------------------------------------------------------
             {
                 "code": "ING-C2",
-                "name": "Uso del lenguaje (gramática y vocabulario)",
+                "name": "Competencia Lingüística",
                 "description": (
-                    "Conocimiento y uso de estructuras gramaticales "
-                    "y vocabulario en contexto."
+                    "Conocimiento y uso adecuado de vocabulario (competencia "
+                    "léxica) y estructuras gramaticales (competencia sintáctica) "
+                    "anclados siempre a un texto. Evalúa relación de palabras "
+                    "(Parte 2) y textos incompletos — cloze test (Partes 4 y 7)."
                 ),
-                "weight_percentage": 50,
-                "cognitive_level": 2,
+                "weight_percentage": 35,
+                "cognitive_level": 1,
                 "assertions": [
                     {
                         "code": "ING-C2-A1",
                         "statement": (
                             "El estudiante usa vocabulario y estructuras "
-                            "gramaticales apropiadas según el nivel."
+                            "gramaticales apropiadas al contexto y al "
+                            "nivel MCER requerido."
                         ),
                         "evidences": [
                             {
                                 "code": "ING-C2-A1-E1",
                                 "observable_behavior": (
-                                    "Selecciona la forma gramatical correcta "
-                                    "para completar oraciones y textos."
+                                    "Asocia palabras con sus definiciones "
+                                    "dentro de un campo semántico dado "
+                                    "(Sección 2 — A1/A2)."
+                                ),
+                            },
+                            {
+                                "code": "ING-C2-A1-E2",
+                                "observable_behavior": (
+                                    "Selecciona la forma léxica o gramatical "
+                                    "correcta para completar un texto con "
+                                    "coherencia y cohesión (Secciones 4 y 7 "
+                                    "— A2/B1/B+)."
+                                ),
+                            },
+                        ],
+                    },
+                ],
+            },
+            # ------------------------------------------------------------------
+            # C3 — Competencia Sociolingüística (Parte 3)
+            # Comprensión de normas de cortesía, registro y convenciones
+            # culturales anglófonas.
+            # ------------------------------------------------------------------
+            {
+                "code": "ING-C3",
+                "name": "Competencia Sociolingüística",
+                "description": (
+                    "Comprensión de las normas de cortesía, diferencias de "
+                    "registro (formal vs. informal), modismos y convenciones "
+                    "culturales de los países anglófonos. Se evalúa en "
+                    "diálogos cotidianos (Parte 3 — A2)."
+                ),
+                "weight_percentage": 15,
+                "cognitive_level": 2,
+                "assertions": [
+                    {
+                        "code": "ING-C3-A1",
+                        "statement": (
+                            "El estudiante comprende las normas sociales y de "
+                            "registro lingüístico en interacciones en inglés, "
+                            "distinguiendo contextos formales e informales."
+                        ),
+                        "evidences": [
+                            {
+                                "code": "ING-C3-A1-E1",
+                                "observable_behavior": (
+                                    "Distingue el registro formal e informal "
+                                    "apropiado según la relación entre los "
+                                    "interlocutores (Sección 3 — A2)."
+                                ),
+                            },
+                            {
+                                "code": "ING-C3-A1-E2",
+                                "observable_behavior": (
+                                    "Reconoce expresiones convencionales de "
+                                    "cortesía, disculpa, agradecimiento y "
+                                    "acuerdo propias del inglés (Sección 3 — A2)."
+                                ),
+                            },
+                        ],
+                    },
+                ],
+            },
+            # ------------------------------------------------------------------
+            # C4 — Comprensión Lectora (Partes 5 y 6)
+            # Extracción de información literal e inferencial en textos
+            # continuos de complejidad B1 a B1+.
+            # ------------------------------------------------------------------
+            {
+                "code": "ING-C4",
+                "name": "Comprensión Lectora",
+                "description": (
+                    "Capacidad para extraer información de textos escritos "
+                    "en inglés desde un nivel literal (skimming/scanning) "
+                    "hasta un nivel profundo (inferir tono, propósito del "
+                    "autor, conclusiones). Evalúa comprensión literal "
+                    "(Parte 5) e inferencial (Parte 6)."
+                ),
+                "weight_percentage": 25,
+                "cognitive_level": 3,
+                "assertions": [
+                    {
+                        "code": "ING-C4-A1",
+                        "statement": (
+                            "El estudiante comprende textos escritos en inglés "
+                            "de complejidad A2 a B1+, extrayendo información "
+                            "explícita e implícita según el nivel requerido."
+                        ),
+                        "evidences": [
+                            {
+                                "code": "ING-C4-A1-E1",
+                                "observable_behavior": (
+                                    "Identifica información específica y "
+                                    "explícita en artículos, biografías y "
+                                    "textos informativos (Sección 5 — B1)."
+                                ),
+                            },
+                            {
+                                "code": "ING-C4-A1-E2",
+                                "observable_behavior": (
+                                    "Infiere la intención del autor, el tono "
+                                    "del texto y conclusiones no expresadas "
+                                    "literalmente (Sección 6 — B1/B+)."
                                 ),
                             },
                         ],
@@ -531,9 +653,18 @@ TAXONOMY_SEED: list[dict] = [
             },
         ],
         "content_components": [
-            {"code": "ING-CC1", "name": "Secciones 1-3 (nivel A- a A1)"},
-            {"code": "ING-CC2", "name": "Secciones 4-5 (nivel A2)"},
-            {"code": "ING-CC3", "name": "Secciones 6-7 (nivel B1 a B+)"},
+            {
+                "code": "ING-CC1",
+                "name": "Secciones 1-3: Avisos, Relación de Palabras y Diálogos (A- a A2)",
+            },
+            {
+                "code": "ING-CC2",
+                "name": "Secciones 4-5: Textos Incompletos y Comprensión Lectora Literal (A2 a B1)",
+            },
+            {
+                "code": "ING-CC3",
+                "name": "Secciones 6-7: Comprensión Inferencial y Textos Avanzados (B1 a B1+)",
+            },
         ],
     },
 ]

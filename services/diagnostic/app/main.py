@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from saber11_shared.database import Base, create_db_engine, create_session_factory
 from saber11_shared.events import EventBus
 from saber11_shared.health import create_health_router
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import settings
@@ -16,6 +17,21 @@ from .routes import set_event_bus
 engine = create_db_engine(settings.database_url)
 SessionLocal = create_session_factory(engine)
 event_bus = EventBus(settings.redis_url)
+
+
+async def _ensure_incremental_schema(conn) -> None:
+    """Agrega columnas nuevas cuando la base ya existe."""
+    statements = [
+        "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS english_mcer_level VARCHAR(5)",
+        "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS english_mcer_label VARCHAR(20)",
+        "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS english_standard_error NUMERIC(5, 3)",
+        "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS english_section_errors JSONB",
+        "ALTER TABLE student_profiles ADD COLUMN IF NOT EXISTS english_recommendations JSONB",
+        "ALTER TABLE diagnostic_answers ADD COLUMN IF NOT EXISTS english_section INTEGER",
+        "ALTER TABLE diagnostic_answers ADD COLUMN IF NOT EXISTS mcer_level VARCHAR(5)",
+    ]
+    for statement in statements:
+        await conn.execute(text(statement))
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -34,6 +50,7 @@ async def lifespan(app: FastAPI):
     """Inicializa DB, EventBus y cierra al apagar."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await _ensure_incremental_schema(conn)
     set_event_bus(event_bus)
     yield
     await event_bus.close()

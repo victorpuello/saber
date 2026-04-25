@@ -4,7 +4,7 @@ import os
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 from saber11_shared.auth import CurrentUser, get_current_user, require_role
 from sqlalchemy import select
@@ -60,12 +60,12 @@ def _generate_thumbnail(source_path: Path, thumb_path: Path, size: int = 200):
 async def upload_media(
     question_id: uuid.UUID,
     file: UploadFile,
-    media_type: MediaType,
-    alt_text: str,
-    is_essential: bool = True,
-    position: int = 0,
-    display_mode: DisplayMode = DisplayMode.INLINE,
-    caption: str | None = None,
+    media_type: MediaType = Form(...),
+    alt_text: str = Form(...),
+    is_essential: bool = Form(True),
+    position: int = Form(0),
+    display_mode: DisplayMode = Form(DisplayMode.INLINE),
+    caption: str | None = Form(None),
     db: AsyncSession = Depends(_get_db),
     user: CurrentUser = Depends(require_role("TEACHER", "ADMIN")),
 ):
@@ -76,7 +76,7 @@ async def upload_media(
         raise HTTPException(404, "Pregunta no encontrada")
     if question.status != "DRAFT":
         raise HTTPException(400, "Solo se puede añadir media a preguntas en DRAFT")
-    if user.role == "TEACHER" and question.created_by_user_id != user.id:
+    if user.role == "TEACHER" and question.created_by_user_id != user.user_id:
         raise HTTPException(403, "No puedes modificar esta pregunta")
 
     # Validar alt_text
@@ -134,16 +134,83 @@ async def upload_media(
         source=MediaSource.UPLOAD.value,
         storage_url=storage_url,
         thumbnail_url=thumb_url,
-        original_filename=file.filename,
-        content_type=file.content_type,
-        file_size_bytes=len(content),
-        width_px=width,
-        height_px=height,
         alt_text=alt_text.strip(),
         is_essential=is_essential,
         position=position,
         display_mode=display_mode.value,
         caption=caption,
+    )
+    db.add(media)
+    await db.flush()
+    await db.refresh(media)
+    return media
+
+
+# ── Upload de imagen generada por IA (sin restricción de estado) ──────
+
+
+@router.post(
+    "/{question_id}/media/ai-image",
+    response_model=QuestionMediaOut,
+    status_code=201,
+)
+async def ai_upload_image(
+    question_id: uuid.UUID,
+    file: UploadFile,
+    media_type: MediaType = Form(...),
+    alt_text: str = Form(...),
+    alt_text_detailed: str | None = Form(None),
+    is_essential: bool = Form(True),
+    position: int = Form(0),
+    display_mode: DisplayMode = Form(DisplayMode.ABOVE_STEM),
+    db: AsyncSession = Depends(_get_db),
+    user: CurrentUser = Depends(require_role("ADMIN")),
+):
+    """Sube imagen generada por IA. No requiere estado DRAFT (uso interno)."""
+    question = await db.get(Question, question_id)
+    if not question:
+        raise HTTPException(404, "Pregunta no encontrada")
+
+    if len(alt_text.strip()) < 5:
+        raise HTTPException(422, "alt_text obligatorio (mínimo 5 caracteres)")
+
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(415, f"Tipo no soportado: {file.content_type}")
+
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(413, f"Archivo excede el máximo de {MAX_FILE_SIZE} bytes")
+
+    file_id = uuid.uuid4()
+    ext = Path(file.filename or "image").suffix.lower() or ".png"
+    filename = f"{file_id}{ext}"
+
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    file_path = UPLOAD_DIR / filename
+    file_path.write_bytes(content)
+
+    thumb_url = None
+    THUMBNAIL_DIR.mkdir(parents=True, exist_ok=True)
+    thumb_filename = f"thumb_{file_id}.png"
+    thumb_path = THUMBNAIL_DIR / thumb_filename
+    _generate_thumbnail(file_path, thumb_path)
+    if thumb_path.exists():
+        thumb_url = f"/uploads/thumbnails/{thumb_filename}"
+
+    storage_url = f"/uploads/media/{filename}"
+
+    media = QuestionMedia(
+        id=file_id,
+        question_id=question_id,
+        media_type=media_type.value,
+        source=MediaSource.UPLOAD.value,
+        storage_url=storage_url,
+        thumbnail_url=thumb_url,
+        alt_text=alt_text.strip(),
+        alt_text_detailed=alt_text_detailed,
+        is_essential=is_essential,
+        position=position,
+        display_mode=display_mode.value,
     )
     db.add(media)
     await db.flush()
@@ -192,11 +259,6 @@ async def link_asset_to_question(
         source=MediaSource.ASSET_LIBRARY.value,
         storage_url=asset.storage_url,
         thumbnail_url=asset.thumbnail_url,
-        original_filename=asset.original_filename,
-        content_type=asset.content_type,
-        file_size_bytes=asset.file_size_bytes,
-        width_px=asset.width_px,
-        height_px=asset.height_px,
         alt_text=alt_text.strip(),
         is_essential=is_essential,
         position=position,
@@ -334,7 +396,7 @@ async def delete_media(
         raise HTTPException(404, "Pregunta no encontrada")
     if question.status != "DRAFT":
         raise HTTPException(400, "Solo se puede modificar media en preguntas DRAFT")
-    if user.role == "TEACHER" and question.created_by_user_id != user.id:
+    if user.role == "TEACHER" and question.created_by_user_id != user.user_id:
         raise HTTPException(403, "No puedes modificar esta pregunta")
 
     media = await db.get(QuestionMedia, media_id)

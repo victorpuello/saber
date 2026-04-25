@@ -28,6 +28,7 @@ from .schemas import (
 router = APIRouter(prefix="/api/plans", tags=["plans"])
 
 _event_bus: EventBus | None = None
+INTERNAL_HEADERS = {"X-User-Id": "0", "X-User-Role": "ADMIN"}
 
 
 def set_event_bus(bus: EventBus):
@@ -46,7 +47,8 @@ async def _fetch_profile_scores(student_user_id: int) -> dict:
     """Obtiene perfil y scores del Diagnostic Engine."""
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
-            f"{settings.diagnostic_url}/api/diagnostic/profile/{student_user_id}"
+            f"{settings.diagnostic_url}/api/diagnostic/profile/{student_user_id}",
+            headers=INTERNAL_HEADERS,
         )
         if resp.status_code != 200:
             raise HTTPException(
@@ -60,7 +62,8 @@ async def _fetch_taxonomy_competency(competency_id: str) -> dict | None:
     """Obtiene info de competencia desde Question Bank."""
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
-            f"{settings.question_bank_url}/api/taxonomy/areas"
+            f"{settings.question_bank_url}/api/taxonomy/areas",
+            headers=INTERNAL_HEADERS,
         )
         if resp.status_code != 200:
             return None
@@ -69,7 +72,8 @@ async def _fetch_taxonomy_competency(competency_id: str) -> dict | None:
         for area in areas:
             area_code = area.get("code", "")
             resp2 = await client.get(
-                f"{settings.question_bank_url}/api/taxonomy/areas/{area['id']}/competencies"
+                f"{settings.question_bank_url}/api/taxonomy/areas/{area['id']}/competencies",
+                headers=INTERNAL_HEADERS,
             )
             if resp2.status_code == 200:
                 for comp in resp2.json():
@@ -141,6 +145,7 @@ async def generate_plan(
         competency_scores=enriched_scores,
         total_weeks=body.total_weeks,
     )
+    plan_data = planner.apply_english_section_recommendations(plan_data, profile_data)
 
     # Persistir plan
     plan = StudyPlan(
@@ -336,7 +341,8 @@ async def answer_practice(
     # Obtener respuesta correcta desde QB
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(
-            f"{settings.question_bank_url}/api/questions/{body.question_id}"
+            f"{settings.question_bank_url}/api/questions/{body.question_id}",
+            headers=INTERNAL_HEADERS,
         )
         if resp.status_code != 200:
             raise HTTPException(502, "No se pudo verificar la respuesta")
@@ -493,6 +499,7 @@ async def replace_plan(
         competency_scores=enriched_scores,
         total_weeks=body.total_weeks,
     )
+    plan_data = planner.apply_english_section_recommendations(plan_data, profile_data)
 
     plan = StudyPlan(
         profile_id=uuid.UUID(profile_id),

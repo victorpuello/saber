@@ -34,7 +34,7 @@ function PerformanceBar({ value }: { value: number | null }) {
     value >= 70 ? "bg-emerald-400" : value >= 45 ? "bg-amber-400" : "bg-rose-400";
 
   return (
-    <div className="flex min-w-[60px] items-center gap-2">
+    <div className="flex min-w-15 items-center gap-2">
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-container-high">
         <div
           className={`h-full rounded-full transition-all ${color}`}
@@ -139,7 +139,7 @@ function PageBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-8 min-w-[2rem] items-center justify-center rounded-xl px-2 text-xs font-semibold transition
+      className={`flex h-8 min-w-8 items-center justify-center rounded-xl px-2 text-xs font-semibold transition
         ${active ? "bg-primary text-white shadow-sm" : "text-secondary hover:bg-surface-container-high"}
         ${disabled ? "cursor-not-allowed opacity-30" : ""}
       `}
@@ -194,7 +194,7 @@ export default function QBTable({
     <section className="overflow-hidden rounded-3xl bg-surface-container-lowest shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
       {/* Scrollable table wrapper */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
+        <table className="w-full min-w-180 border-collapse text-sm">
           <thead>
             <tr className="border-b border-outline-variant/10 bg-surface-container-low">
               {COL_HEADERS.map((h) => (
@@ -243,8 +243,15 @@ export default function QBTable({
                   </td>
 
                   {/* Enunciado */}
-                  <td className="max-w-[260px] px-5 py-4">
-                    <p className="truncate text-on-surface/80">{row.enunciado}</p>
+                  <td className="max-w-65 px-5 py-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-on-surface/80">{row.enunciado}</p>
+                      {row.structureType === "QUESTION_BLOCK" && (
+                        <p className="mt-1 text-[11px] font-semibold text-primary">
+                          Bloque · {row.blockSize ?? 0} preguntas
+                        </p>
+                      )}
+                    </div>
                   </td>
 
                   {/* Author */}

@@ -1,4 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+export { API_BASE };
 const API_TIMEOUT_MS = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 10_000);
 const API_AI_GENERATE_TIMEOUT_MS = Number(import.meta.env.VITE_API_AI_GENERATE_TIMEOUT_MS ?? 60_000);
 
@@ -110,7 +111,8 @@ async function apiRequest<T>(
     }
 
     const hasBody = init.body !== undefined && init.body !== null;
-    if (hasBody && !headers.has("Content-Type")) {
+    const isFormDataBody = typeof FormData !== "undefined" && init.body instanceof FormData;
+    if (hasBody && !isFormDataBody && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
 

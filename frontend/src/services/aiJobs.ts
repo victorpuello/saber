@@ -25,6 +25,7 @@ export interface CreateGenerationJobPayload {
   competency_code?: string;
   cognitive_level?: number;
   english_section?: number;
+  additional_context?: string;
 }
 
 export interface GenerationJob {

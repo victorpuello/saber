@@ -121,7 +121,7 @@ async def create_asset(
         tags=tags,
         license_type=license_type.value,
         attribution=attribution,
-        uploaded_by_user_id=user.id,
+        uploaded_by_user_id=user.user_id,
     )
     db.add(asset)
     await db.flush()

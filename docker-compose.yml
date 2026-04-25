@@ -37,6 +37,8 @@ services:
       dockerfile: services/question-bank/Dockerfile
     ports:
       - "3001:3001"
+    volumes:
+      - question_bank_uploads:/data/uploads
     environment:
       - DATABASE_URL=postgresql+asyncpg://saber11:${DB_PASSWORD:-saber11_dev_password}@db-questions:5432/saber11_questions
       - REDIS_URL=redis://redis-saber11:6379/0
@@ -319,3 +321,4 @@ volumes:
   notifications_data:
   ai_data:
   students_data:
+  question_bank_uploads:

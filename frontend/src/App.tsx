@@ -22,6 +22,7 @@ import ForgotPassword from "@/pages/ForgotPassword";
 import LegalTerms from "@/pages/LegalTerms";
 import LegalPrivacy from "@/pages/LegalPrivacy";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import EnglishComponentsPreview from "@/components/english/EnglishComponentsPreview";
 import { AuthProvider } from "@/context/AuthContext";
 
 export default function App() {
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           <Route path="/legal/terms" element={<LegalTerms />} />
           <Route path="/legal/privacy" element={<LegalPrivacy />} />
+          <Route path="/preview/english-components" element={<EnglishComponentsPreview />} />
 
           {/* Estudiante */}
           <Route
@@ -46,13 +48,29 @@ export default function App() {
           >
             <Route index element={<StudentDashboard />} />
             <Route path="diagnostico" element={<StudentDiagnosticPage />} />
-            <Route path="diagnostico/iniciar" element={<DiagnosticSession />} />
             <Route path="plan" element={<StudentPlanPage />} />
             <Route path="resultados" element={<StudentResultsPage />} />
             <Route path="examenes" element={<StudentExams />} />
-            <Route path="examenes/sesion/:examId" element={<ExamSession />} />
             <Route path="examenes/resultados/:sessionId" element={<ExamResults />} />
           </Route>
+
+          {/* Fullscreen experiences — rendered outside StudentLayout */}
+          <Route
+            path="/student/diagnostico/iniciar"
+            element={
+              <ProtectedRoute roles={["STUDENT", "TEACHER", "ADMIN"]}>
+                <DiagnosticSession />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student/examenes/sesion/:examId"
+            element={
+              <ProtectedRoute roles={["STUDENT", "TEACHER", "ADMIN"]}>
+                <ExamSession />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Docente */}
           <Route path="/teacher" element={<ProtectedRoute roles={["TEACHER","ADMIN"]}><TeacherDashboard /></ProtectedRoute>} />

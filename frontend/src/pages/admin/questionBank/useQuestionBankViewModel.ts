@@ -1,15 +1,19 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import type { QBMetric, QuestionRow, QBFiltersState, AreaCode, Difficulty } from "./types";
 import type { QuestionStatusBackend, AreaSummary } from "./questionFormTypes";
-import type { QuestionOut } from "./questionFormTypes";
 import { useAuth } from "../../../context/AuthContext";
 import {
   listQuestions,
-  getQuestion,
   fetchQuestionStats,
   fetchAreas,
   reviewQuestion,
+  reviewQuestionBlock,
   submitForReview,
+  submitBlockForReview,
+  deleteQuestion,
+  fetchEnglishAudit,
+  type EnglishAudit,
+  type QuestionSummary,
   type QuestionStats,
 } from "../../../services/questions";
 
@@ -44,37 +48,51 @@ function difficultyFromEstimated(d: number | null): Difficulty {
   return "Alta";
 }
 
-function mapQuestionOutToRow(q: QuestionOut, areaLookup: Map<string, AreaSummary>, globalIndex: number): QuestionRow {
-  const areaSummary = areaLookup.get(q.area_id);
+function mapQuestionSummaryToRow(
+  question: QuestionSummary,
+  areaLookup: Map<string, AreaSummary>,
+  globalIndex: number,
+): QuestionRow {
+  const areaSummary = areaLookup.get(question.area_id);
   const areaInfo = areaSummary
     ? (AREA_CODE_MAP[areaSummary.code] ?? { name: areaSummary.name, code: "MAT" as AreaCode })
     : { name: "—", code: "MAT" as AreaCode };
 
   const areaCode = areaSummary?.code ?? "MAT";
-  const code = `${areaCode}-${String(globalIndex).padStart(4, "0")}`;
+  const unitPrefix = question.structure_type === "QUESTION_BLOCK" ? "B" : "Q";
+  const code = `${areaCode}-${unitPrefix}${String(globalIndex).padStart(4, "0")}`;
 
-  const isAI = q.source === "AI";
+  const isAI = question.source === "AI";
+  const stem = question.stem;
+  const isBlock = question.structure_type === "QUESTION_BLOCK";
+  const summaryStem = isBlock
+    ? `Bloque de ${question.block_size ?? 0} preguntas · ${stem}`
+    : stem;
 
   return {
-    id: q.id,
+    id: question.id,
     code,
     area: areaInfo.name,
     areaCode: areaInfo.code,
-    competencia: q.cognitive_process ?? "—",
-    enunciado: q.stem.length > 80 ? q.stem.slice(0, 80) + "…" : q.stem,
+    structureType: question.structure_type,
+    blockId: question.block_id,
+    blockSize: question.block_size,
+    blockItemOrder: question.block_item_order,
+    competencia: question.cognitive_process ?? "—",
+    enunciado: summaryStem.length > 96 ? summaryStem.slice(0, 96) + "…" : summaryStem,
     authorName: isAI ? "ScholarAI" : "Manual",
     authorInitial: isAI ? "AI" : "M",
-    status: STATUS_MAP[q.status] ?? "BORRADOR",
-    performance: q.discrimination_index != null ? Math.round(Number(q.discrimination_index) * 100) : null,
-    difficulty: difficultyFromEstimated(q.difficulty_estimated != null ? Number(q.difficulty_estimated) : null),
-    context: q.context,
-    stem: q.stem,
-    options: [
-      { letter: "A", text: q.option_a, correct: q.correct_answer === "A" },
-      { letter: "B", text: q.option_b, correct: q.correct_answer === "B" },
-      { letter: "C", text: q.option_c, correct: q.correct_answer === "C" },
-      ...(q.option_d ? [{ letter: "D", text: q.option_d, correct: q.correct_answer === "D" }] : []),
-    ],
+    status: STATUS_MAP[question.status] ?? "BORRADOR",
+    performance:
+      question.discrimination_index != null
+        ? Math.round(Number(question.discrimination_index) * 100)
+        : null,
+    difficulty: difficultyFromEstimated(
+      question.difficulty_estimated != null ? Number(question.difficulty_estimated) : null,
+    ),
+    context: "",
+    stem,
+    options: [],
   };
 }
 
@@ -152,6 +170,7 @@ export function useQuestionBankViewModel() {
 
   // Stats
   const [stats, setStats] = useState<QuestionStats | null>(null);
+  const [englishAudit, setEnglishAudit] = useState<EnglishAudit | null>(null);
 
   // Filters
   const areaOptions = useMemo(
@@ -174,6 +193,7 @@ export function useQuestionBankViewModel() {
   useEffect(() => {
     fetchAreas(authFetch).then(setAreas).catch(() => {});
     fetchQuestionStats(authFetch).then(setStats).catch(() => {});
+    fetchEnglishAudit(authFetch).then(setEnglishAudit).catch(() => {});
   }, [authFetch]);
 
   // ── Load questions when filters/page change ────────────────────────
@@ -197,23 +217,18 @@ export function useQuestionBankViewModel() {
     listQuestions(authFetch, {
       area_id: selectedArea?.id,
       status: statusBE,
+      group_units: true,
       page: currentPage,
       page_size: ITEMS_PER_PAGE,
     })
       .then((res) => {
-        // For each summary we need full question data; load details concurrently
-        return Promise.all(
-          res.items.map((s) => getQuestion(authFetch, s.id))
-        ).then((fullQuestions) => ({
-          rows: fullQuestions.map((q, idx) => mapQuestionOutToRow(q, areaLookup, (currentPage - 1) * ITEMS_PER_PAGE + idx + 1)),
-          total: res.total,
-          pages: res.pages,
-        }));
-      })
-      .then(({ rows, total, pages }) => {
-        setQuestions(rows);
-        setTotalQuestions(total);
-        setTotalPages(Math.max(1, pages));
+        setQuestions(
+          res.items.map((question, idx) =>
+            mapQuestionSummaryToRow(question, areaLookup, (currentPage - 1) * ITEMS_PER_PAGE + idx + 1),
+          ),
+        );
+        setTotalQuestions(res.total);
+        setTotalPages(Math.max(1, res.pages));
       })
       .catch(() => {
         // API down — keep existing data
@@ -261,6 +276,7 @@ export function useQuestionBankViewModel() {
     // Force re-fetch by toggling a dummy state
     setCurrentPage((p) => p);
     fetchQuestionStats(authFetch).then(setStats).catch(() => {});
+    fetchEnglishAudit(authFetch).then(setEnglishAudit).catch(() => {});
     // Re-trigger question load
     loadingRef.current = false;
     const selectedArea =
@@ -273,23 +289,21 @@ export function useQuestionBankViewModel() {
         : undefined;
 
     setLoading(true);
-    listQuestions(authFetch, {
+    return listQuestions(authFetch, {
       area_id: selectedArea?.id,
       status: statusBE,
+      group_units: true,
       page: currentPage,
       page_size: ITEMS_PER_PAGE,
     })
-      .then((res) =>
-        Promise.all(res.items.map((s) => getQuestion(authFetch, s.id))).then((full) => ({
-          rows: full.map((q, idx) => mapQuestionOutToRow(q, areaLookup, (currentPage - 1) * ITEMS_PER_PAGE + idx + 1)),
-          total: res.total,
-          pages: res.pages,
-        })),
-      )
-      .then(({ rows, total, pages }) => {
-        setQuestions(rows);
-        setTotalQuestions(total);
-        setTotalPages(Math.max(1, pages));
+      .then((res) => {
+        setQuestions(
+          res.items.map((question, idx) =>
+            mapQuestionSummaryToRow(question, areaLookup, (currentPage - 1) * ITEMS_PER_PAGE + idx + 1),
+          ),
+        );
+        setTotalQuestions(res.total);
+        setTotalPages(Math.max(1, res.pages));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -298,7 +312,7 @@ export function useQuestionBankViewModel() {
   const handleReview = useCallback(
     async (questionId: string, action: "APPROVE" | "REJECT", notes?: string) => {
       await reviewQuestion(authFetch, questionId, action, notes);
-      refreshData();
+      await refreshData();
     },
     [authFetch, refreshData],
   );
@@ -306,7 +320,31 @@ export function useQuestionBankViewModel() {
   const handleSubmitForReview = useCallback(
     async (questionId: string) => {
       await submitForReview(authFetch, questionId);
-      refreshData();
+      await refreshData();
+    },
+    [authFetch, refreshData],
+  );
+
+  const handleReviewBlock = useCallback(
+    async (blockId: string, action: "APPROVE" | "REJECT", notes?: string) => {
+      await reviewQuestionBlock(authFetch, blockId, action, notes);
+      await refreshData();
+    },
+    [authFetch, refreshData],
+  );
+
+  const handleSubmitBlockForReview = useCallback(
+    async (blockId: string) => {
+      await submitBlockForReview(authFetch, blockId);
+      await refreshData();
+    },
+    [authFetch, refreshData],
+  );
+
+  const handleDelete = useCallback(
+    async (questionId: string) => {
+      await deleteQuestion(authFetch, questionId);
+      await refreshData();
     },
     [authFetch, refreshData],
   );
@@ -331,7 +369,11 @@ export function useQuestionBankViewModel() {
     searchQuery,
     setSearchQuery,
     refreshData,
+    englishAudit,
     handleReview,
     handleSubmitForReview,
+    handleReviewBlock,
+    handleSubmitBlockForReview,
+    handleDelete,
   };
 }

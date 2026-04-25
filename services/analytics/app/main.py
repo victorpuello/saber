@@ -1,6 +1,7 @@
 """Punto de entrada del Analytics Service."""
 
 import asyncio
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -13,6 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .config import settings
 from .consumer import EventConsumer
 from .routes import router as analytics_router
+
+logger = logging.getLogger(settings.service_name)
 
 engine = create_db_engine(settings.database_url)
 SessionLocal = create_session_factory(engine)
@@ -33,12 +36,24 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
+async def _wait_for_db(retries: int = 10, delay: float = 2.0) -> None:
+    for attempt in range(retries):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            return
+        except Exception as exc:
+            if attempt == retries - 1:
+                raise
+            logger.warning("DB no disponible (intento %d/%d): %s — reintentando...", attempt + 1, retries, exc)
+            await asyncio.sleep(delay)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Inicializa DB, EventBus, consumidor de eventos y cierra al apagar."""
     global _consumer_task  # noqa: PLW0603
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await _wait_for_db()
     _consumer_task = asyncio.create_task(consumer.start())
     yield
     await consumer.stop()

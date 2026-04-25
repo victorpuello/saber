@@ -6,15 +6,29 @@ interface Props {
   studentName: string;
 }
 
-const AREA_META: Record<string, { label: string; icon: string }> = {
-  MAT: { label: "Matemáticas", icon: "functions" },
-  LC:  { label: "Lectura Crítica", icon: "menu_book" },
-  SC:  { label: "Sociales", icon: "public" },
-  CN:  { label: "Naturales", icon: "science" },
-  ING: { label: "Inglés", icon: "translate" },
+interface AreaMeta {
+  label: string;
+  icon: string;
+  color: string;
+  bg: string;
+}
+
+const AREA_META: Record<string, AreaMeta> = {
+  LC:  { label: "Lectura Crítica",      icon: "menu_book",  color: "#6d28d9", bg: "#f5f3ff" },
+  MAT: { label: "Matemáticas",          icon: "calculate",  color: "#1d4ed8", bg: "#eff6ff" },
+  SC:  { label: "Sociales",             icon: "public",     color: "#be123c", bg: "#fff1f2" },
+  CN:  { label: "Ciencias Nat.",        icon: "science",    color: "#047857", bg: "#ecfdf5" },
+  ING: { label: "Inglés",              icon: "translate",  color: "#b45309", bg: "#fffbeb" },
 };
 
 const ORDERED_AREAS = ["MAT", "LC", "SC", "CN", "ING"];
+
+const LEVEL_LABELS: Record<number, { text: string; bg: string; color: string }> = {
+  1: { text: "Insuficiente", bg: "#ffdad6", color: "#93000a" },
+  2: { text: "Mínimo",      bg: "#fef3c7", color: "#b45309" },
+  3: { text: "Satisfactorio", bg: "#ecfdf5", color: "#047857" },
+  4: { text: "Avanzado",    bg: "#ecfdf5", color: "#047857" },
+};
 
 const LEVEL_DESCRIPTIONS: Record<number, string> = {
   1: "Estás comenzando. Con práctica constante puedes mejorar tus resultados significativamente.",
@@ -23,48 +37,48 @@ const LEVEL_DESCRIPTIONS: Record<number, string> = {
   4: "¡Nivel Avanzado! Tienes las herramientas para enfrentar el examen con confianza.",
 };
 
-// Umbrales de score (/ 500) por nivel para calcular puntos al nivel siguiente
 const NEXT_LEVEL_THRESHOLDS: Record<number, number> = { 1: 250, 2: 300, 3: 400 };
+
+function pct(value: number | null | undefined, fallback = 0): number {
+  return value != null ? Math.max(0, Math.min(100, Math.round(value))) : fallback;
+}
+
+function scoreLevel(accuracy: number): number {
+  if (accuracy >= 75) return 4;
+  if (accuracy >= 55) return 3;
+  if (accuracy >= 40) return 2;
+  return 1;
+}
 
 function formatDiagnosticDate(isoString: string | null): string {
   if (!isoString) return "";
   const d = new Date(isoString);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat("es-CO", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(d);
-}
-
-function pct(value: number | null, fallback = 0): number {
-  return value !== null ? Math.max(0, Math.min(100, Math.round(value))) : fallback;
+  return new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric" }).format(d);
 }
 
 export default function DiagnosticResults({ summary, studentName }: Props) {
   const navigate = useNavigate();
 
   const level = summary.overallEstimatedLevel ?? 1;
-  const score = summary.estimatedScoreGlobal ?? null;
+  const globalScore = summary.estimatedScoreGlobal ?? null;
   const dateLabel = formatDiagnosticDate(summary.lastDiagnosticAt);
 
-  // Percentile approximation: derived from global accuracy average
-  const percentile =
+  // Show accuracy as 0-100 score
+  const displayScore =
     summary.avgAccuracy !== null
       ? pct(summary.avgAccuracy)
-      : score !== null
-        ? pct((score / 500) * 100)
+      : globalScore !== null
+        ? pct((globalScore / 500) * 100)
         : null;
 
-  // Points to next level
-  const nextThreshold = NEXT_LEVEL_THRESHOLDS[level];
-  const pointsToNext =
-    nextThreshold && score !== null ? Math.max(0, nextThreshold - score) : null;
+  const percentile = displayScore;
 
-  // Area breakdown mapped and sorted by ORDERED_AREAS
+  const nextThreshold = NEXT_LEVEL_THRESHOLDS[level];
+  const pointsToNext = nextThreshold && globalScore !== null ? Math.max(0, nextThreshold - globalScore) : null;
+
   const areaMap = new Map(summary.areaBreakdown.map((a) => [a.areaCode, a]));
 
-  // Sorted areas by accuracy desc for strengths/opportunities
   const rankedAreas = ORDERED_AREAS
     .map((code) => ({ code, ...areaMap.get(code) }))
     .filter((a) => a.accuracyPercent !== undefined && a.accuracyPercent !== null)
@@ -74,7 +88,6 @@ export default function DiagnosticResults({ summary, studentName }: Props) {
   const secondArea = rankedAreas[1];
   const weakestArea = rankedAreas[rankedAreas.length - 1];
 
-  // Próximos pasos
   const nextUnit = summary.nextRecommendedUnit;
   const steps = [
     nextUnit
@@ -85,42 +98,152 @@ export default function DiagnosticResults({ summary, studentName }: Props) {
     secondArea
       ? `Taller de ${AREA_META[secondArea.code]?.label ?? secondArea.code}`
       : "Revisión de avance semanal",
-    weakestArea && weakestArea.code !== (rankedAreas[rankedAreas.length - 2]?.code)
+    weakestArea && weakestArea.code !== rankedAreas[rankedAreas.length - 2]?.code
       ? `Análisis de ${AREA_META[weakestArea.code]?.label ?? weakestArea.code}`
       : "Análisis de competencias críticas",
   ];
 
   return (
     <div className="space-y-6">
-      {/* ── Header ─────────────────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-            Reporte de Competencias
-          </p>
-          <h1 className="font-headline text-3xl font-black tracking-tight text-on-surface">
-            {studentName}
-          </h1>
-          <p className="max-w-lg text-sm leading-relaxed text-on-surface-variant">
-            Análisis profundo del desempeño diagnóstico
-            {dateLabel ? ` realizado el ${dateLabel}` : ""}. Tu perfil muestra una base
-            sólida con oportunidades de optimización en razonamiento complejo.
-          </p>
+      {/* ── Score Hero ──────────────────────────────────────────── */}
+      <div
+        className="relative overflow-hidden rounded-4xl p-9 text-white"
+        style={{ backgroundColor: "#004ac6" }}
+      >
+        {/* decorative circles */}
+        <div className="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-white/4" />
+        <div className="pointer-events-none absolute -bottom-7.5 right-36 h-30 w-30 rounded-full bg-white/4" />
+
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          {/* Left: name + date + chips */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-white/70">
+              Diagnóstico completado
+            </p>
+            <h1 className="text-[28px] font-black tracking-[-0.03em] text-white">
+              {studentName}
+            </h1>
+            {dateLabel && (
+              <p className="text-[13px] text-white/65">
+                {dateLabel} · {summary.diagnosticCompetencies ?? 0} competencias
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2 pt-1">
+              <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold">
+                <span
+                  className="material-symbols-outlined text-[13px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  check_circle
+                </span>
+                {summary.diagnosticCompetencies ?? 0} respondidas
+              </span>
+              <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold">
+                <span
+                  className="material-symbols-outlined text-[13px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  bolt
+                </span>
+                Algoritmo CAT
+              </span>
+            </div>
+          </div>
+
+          {/* Center: big score */}
+          <div className="text-center">
+            <p className="mb-1 text-sm font-bold uppercase tracking-widest text-white/65">
+              Puntaje estimado
+            </p>
+            <p className="text-[88px] font-black leading-none tracking-[-0.05em]">
+              {displayScore !== null ? displayScore : "--"}
+            </p>
+            <p className="mt-1 text-base text-white/65">de 100 puntos</p>
+          </div>
+
+          {/* Right: level badge + chips */}
+          <div className="flex flex-col items-end gap-3.5">
+            <div className="rounded-[14px] bg-white/15 px-5 py-3 text-center">
+              <p className="text-[32px] font-black leading-none">{level}</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
+                de 4
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-1.5">
+              {percentile !== null && (
+                <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-bold">
+                  <span
+                    className="material-symbols-outlined text-[13px]"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    trending_up
+                  </span>
+                  Percentil {percentile}%
+                </span>
+              )}
+              {weakestArea && (
+                <span
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold"
+                  style={{ backgroundColor: "rgba(245,158,11,0.25)", color: "#fde68a" }}
+                >
+                  <span
+                    className="material-symbols-outlined text-[13px]"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    priority_high
+                  </span>
+                  {weakestArea.code} prioritario
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-xl border border-outline-variant bg-white px-4 py-2.5 text-sm font-semibold text-on-surface shadow-sm transition-opacity hover:opacity-80"
-        >
-          <span className="material-symbols-outlined text-[18px]">download</span>
-          Exportar PDF
-        </button>
       </div>
 
-      {/* ── Top metrics ────────────────────────── */}
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
-        {/* Level card */}
-        <div className="relative overflow-hidden rounded-3xl bg-primary p-7 text-white">
-          {/* watermark icon */}
+      {/* ── Area Cards ─────────────────────────────────────────── */}
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {ORDERED_AREAS.map((code) => {
+          const area = areaMap.get(code);
+          const meta = AREA_META[code];
+          const areaScore = area?.accuracyPercent != null ? pct(area.accuracyPercent) : null;
+          const areaLvl = areaScore !== null ? scoreLevel(areaScore) : null;
+          const lvlMeta = areaLvl !== null ? LEVEL_LABELS[areaLvl] : null;
+          return (
+            <div key={code} className="min-w-32.5 flex-1 rounded-[20px] bg-white p-4.5 shadow-[0_12px_40px_rgba(25,28,30,0.06)]">
+              <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">
+                {meta?.label ?? code}
+              </p>
+              <p
+                className="mt-1.5 text-[32px] font-black tracking-[-0.04em]"
+                style={{ color: meta?.color ?? "#004ac6" }}
+              >
+                {areaScore !== null ? areaScore : "--"}
+                <span className="text-[14px] font-medium text-on-surface-variant/50">/100</span>
+              </p>
+              {lvlMeta && (
+                <span
+                  className="mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                  style={{ backgroundColor: lvlMeta.bg, color: lvlMeta.color }}
+                >
+                  Nivel {areaLvl} — {lvlMeta.text}
+                </span>
+              )}
+              <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high">
+                {areaScore !== null && (
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${areaScore}%`, backgroundColor: meta?.color ?? "#004ac6" }}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Level card + Global score ────────────────────────────── */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="relative overflow-hidden rounded-3xl bg-primary p-7 text-white md:col-span-1">
           <span
             className="material-symbols-outlined pointer-events-none absolute -bottom-4 -right-4 select-none text-[120px] text-white/10"
             style={{ fontVariationSettings: "'FILL' 1" }}
@@ -132,134 +255,63 @@ export default function DiagnosticResults({ summary, studentName }: Props) {
             <span className="font-headline text-8xl font-black leading-none">{level}</span>
             <span className="mb-3 text-2xl font-semibold text-white/60">de 4</span>
           </div>
-          <p className="mt-4 text-sm leading-relaxed text-white/80 text-balance">
+          <p className="mt-4 text-sm leading-relaxed text-white/80">
             {LEVEL_DESCRIPTIONS[level] ?? LEVEL_DESCRIPTIONS[1]}
             {pointsToNext !== null && pointsToNext > 0 && (
               <>
                 {" "}Estás a{" "}
-                <strong className="text-white">{pointsToNext} puntos</strong> del Nivel{" "}
-                {level + 1}.
+                <strong className="text-white">{pointsToNext} pts</strong> del Nivel {level + 1}.
               </>
             )}
           </p>
         </div>
 
-        {/* Percentile */}
         <div className="flex flex-col justify-between rounded-3xl bg-white p-7 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
-            Percentil Nacional
+            Percentil Estimado
           </p>
           <div>
             <p className="font-headline text-5xl font-black text-on-surface">
               {percentile !== null ? `${percentile}%` : "--"}
             </p>
             {percentile !== null && (
-              <div className="mt-3">
-                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
-                  <div
-                    className="h-full rounded-full bg-emerald-500 transition-all"
-                    style={{ width: `${percentile}%` }}
-                  />
-                </div>
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-container-high">
+                <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${percentile}%` }} />
               </div>
             )}
           </div>
         </div>
 
-        {/* Score */}
         <div className="flex flex-col justify-between rounded-3xl bg-white p-7 shadow-sm">
           <p className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">
             Puntaje Estimado
           </p>
           <div className="flex items-end gap-1">
             <span className="font-headline text-5xl font-black text-on-surface">
-              {score !== null ? score : "--"}
+              {globalScore !== null ? globalScore : "--"}
             </span>
             <span className="mb-1.5 text-lg font-semibold text-on-surface-variant">/ 500</span>
           </div>
         </div>
       </div>
 
-      {/* ── Fortaleza principal ─────────────────── */}
-      {strongestArea && (
-        <div className="flex items-center justify-between rounded-2xl bg-white px-6 py-4 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50">
-              <span
-                className="material-symbols-outlined text-2xl text-emerald-600"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                verified
-              </span>
-            </div>
-            <div>
-              <p className="text-sm font-bold text-on-surface">Fortaleza Principal</p>
-              <p className="text-sm text-on-surface-variant">
-                {AREA_META[strongestArea.code]?.label ?? strongestArea.code}
-                {strongestArea.accuracyPercent !== null
-                  ? ` · ${pct(strongestArea.accuracyPercent ?? null)}% de precisión`
-                  : ""}
-              </p>
-            </div>
-          </div>
-          <span className="material-symbols-outlined text-xl text-on-surface-variant">
-            chevron_right
-          </span>
-        </div>
-      )}
-
-      {/* ── Desglose por Áreas ──────────────────── */}
-      <section>
-        <h2 className="mb-4 flex items-center gap-2 font-headline text-lg font-bold text-on-surface">
-          <span
-            className="material-symbols-outlined text-[22px] text-primary"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            bar_chart
-          </span>
-          Desglose por Áreas
-        </h2>
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {ORDERED_AREAS.map((code) => {
-            const area = areaMap.get(code);
-            const score = area?.accuracyPercent !== null ? pct(area?.accuracyPercent ?? null) : null;
-            return (
-              <div
-                key={code}
-                className="min-w-35 flex-1 rounded-2xl bg-white p-5 shadow-sm"
-              >
-                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                  {AREA_META[code]?.label ?? code}
-                </p>
-                <p className="mt-2 font-headline text-3xl font-black text-on-surface">
-                  {score !== null ? score : "--"}
-                </p>
-                <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high">
-                  {score !== null && (
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${score}%` }}
-                    />
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── Fortalezas / Próximos pasos ────────── */}
+      {/* ── Insights + Plan ─────────────────────────────────────── */}
       <div className="grid gap-5 md:grid-cols-2">
         {/* Fortalezas y Oportunidades */}
         <div className="rounded-3xl bg-white p-7 shadow-sm">
-          <h3 className="font-headline text-lg font-bold text-on-surface">
+          <h3 className="mb-5 flex items-center gap-2 text-base font-bold text-on-surface">
+            <span
+              className="material-symbols-outlined text-[20px] text-primary"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              insights
+            </span>
             Fortalezas y Oportunidades
           </h3>
-          <ul className="mt-5 space-y-5">
-            {/* Strength 1 */}
+          <ul className="space-y-5">
             {strongestArea && (
-              <li className="flex gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50">
+              <li className="flex gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-emerald-50">
                   <span
                     className="material-symbols-outlined text-xl text-emerald-600"
                     style={{ fontVariationSettings: "'FILL' 1" }}
@@ -272,54 +324,48 @@ export default function DiagnosticResults({ summary, studentName }: Props) {
                     {AREA_META[strongestArea.code]?.label ?? strongestArea.code} — Nivel destacado
                   </p>
                   <p className="mt-0.5 text-sm leading-relaxed text-on-surface-variant">
-                    Tu desempeño en esta área está por encima del promedio. Sigue consolidando
-                    este diferencial para el examen.
+                    Tu desempeño supera el promedio nacional. Sigue consolidando este diferencial.
                   </p>
                 </div>
               </li>
             )}
-
-            {/* Strength 2 */}
             {secondArea && (
-              <li className="flex gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+              <li className="flex gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-primary/10">
                   <span
                     className="material-symbols-outlined text-xl text-primary"
                     style={{ fontVariationSettings: "'FILL' 1" }}
                   >
-                    psychology
+                    science
                   </span>
                 </div>
                 <div>
                   <p className="text-sm font-bold text-on-surface">
-                    {AREA_META[secondArea.code]?.label ?? secondArea.code} — Pensamiento aplicado
+                    {AREA_META[secondArea.code]?.label ?? secondArea.code} — Base sólida
                   </p>
                   <p className="mt-0.5 text-sm leading-relaxed text-on-surface-variant">
-                    Resolución eficiente de problemas en esta área. Refuerza los temas de mayor
-                    complejidad para escalar al siguiente nivel.
+                    Refuerza los temas de mayor complejidad para escalar al siguiente nivel.
                   </p>
                 </div>
               </li>
             )}
-
-            {/* Opportunity */}
             {weakestArea && (
-              <li className="flex gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-50">
+              <li className="flex gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-red-50">
                   <span
-                    className="material-symbols-outlined text-xl text-red-500"
+                    className="material-symbols-outlined text-xl text-red-600"
                     style={{ fontVariationSettings: "'FILL' 1" }}
                   >
-                    trending_up
+                    flag
                   </span>
                 </div>
                 <div>
                   <p className="text-sm font-bold text-on-surface">
-                    Área de Oportunidad — {AREA_META[weakestArea.code]?.label ?? weakestArea.code}
+                    {AREA_META[weakestArea.code]?.label ?? weakestArea.code} — Atención prioritaria
                   </p>
                   <p className="mt-0.5 text-sm leading-relaxed text-on-surface-variant">
-                    Esta área requiere atención prioritaria. Mejorar aquí tiene el mayor impacto
-                    sobre tu puntaje estimado.
+                    Mejorar esta área tiene el mayor impacto potencial en tu puntaje global. El
+                    plan se enfocará aquí primero.
                   </p>
                 </div>
               </li>
@@ -329,18 +375,30 @@ export default function DiagnosticResults({ summary, studentName }: Props) {
 
         {/* Próximos Pasos */}
         <div className="flex flex-col rounded-3xl bg-white p-7 shadow-sm">
-          <div>
-            <h3 className="font-headline text-lg font-bold text-on-surface">Próximos Pasos</h3>
-            <p className="mt-0.5 text-sm text-on-surface-variant">Ruta de aprendizaje personalizada</p>
-          </div>
-          <ol className="mt-5 flex-1 space-y-3">
+          <h3 className="mb-1 flex items-center gap-2 text-base font-bold text-on-surface">
+            <span
+              className="material-symbols-outlined text-[20px] text-primary"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              route
+            </span>
+            Plan de Estudio Generado
+          </h3>
+          <p className="mb-5 text-sm text-on-surface-variant">Ruta de aprendizaje personalizada</p>
+          <ol className="flex-1 space-y-2.5">
             {steps.map((step, i) => (
               <li
                 key={step}
-                className={`flex items-center gap-4 rounded-2xl px-5 py-4 ${i === 0 ? "bg-primary/5 ring-1 ring-primary/15" : "bg-surface-container-low"}`}
+                className={`flex items-center gap-3 rounded-[13px] px-4 py-3.5 ${
+                  i === 0
+                    ? "bg-primary/5 ring-1 ring-inset ring-primary/15"
+                    : "bg-surface-container-low"
+                }`}
               >
                 <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${i === 0 ? "bg-primary text-white" : "bg-outline/20 text-on-surface-variant"}`}
+                  className={`flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${
+                    i === 0 ? "bg-primary text-white" : "bg-outline/20 text-on-surface-variant"
+                  }`}
                 >
                   {i + 1}
                 </span>
@@ -355,31 +413,35 @@ export default function DiagnosticResults({ summary, studentName }: Props) {
           <button
             type="button"
             onClick={() => void navigate("/student/plan")}
-            className="mt-5 flex w-full items-center justify-between rounded-2xl bg-on-surface px-6 py-4 font-bold text-surface transition-opacity hover:opacity-85 active:scale-95"
+            className="mt-5 flex w-full items-center justify-between rounded-[13px] bg-on-surface px-5 py-3.5 text-sm font-bold text-surface transition-opacity hover:opacity-85"
           >
-            Ver Plan de Estudio Completo
-            <span className="material-symbols-outlined text-xl">arrow_forward</span>
+            Ir al Plan de Estudio Completo
+            <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
           </button>
         </div>
       </div>
 
-      {/* ── CTA banner ─────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-[#0a1a3a] px-8 py-10">
-        {/* gradient overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-[#0a1a3a] via-[#0a1a3a]/80 to-transparent" />
-        <div className="relative z-10 max-w-sm space-y-4">
-          <h3 className="font-headline text-2xl font-black text-white text-balance">
-            ¿Listo para subir al Nivel {Math.min(4, level + 1)}?
-          </h3>
-          <p className="text-sm leading-relaxed text-white/70">
-            Hemos preparado una sesión de refuerzo intensivo basada en tus errores más frecuentes.
-          </p>
+      {/* ── CTA Banner ──────────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-[28px] px-9 py-8" style={{ backgroundColor: "#0a1a3a" }}>
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "linear-gradient(to right,#0a1a3a,rgba(10,26,58,0.7),transparent)" }}
+        />
+        <div className="relative z-10 flex items-center justify-between gap-5">
+          <div className="max-w-xs space-y-2">
+            <h3 className="text-[22px] font-black tracking-[-0.02em] text-white">
+              ¿Listo para subir al Nivel {Math.min(4, level + 1)}?
+            </h3>
+            <p className="text-sm leading-relaxed text-white/60">
+              Hemos preparado tu primer simulacro de práctica basado en tus áreas débiles.
+            </p>
+          </div>
           <button
             type="button"
             onClick={() => void navigate("/student/diagnostico/iniciar")}
-            className="rounded-full bg-white px-6 py-2.5 text-sm font-bold text-on-surface transition-opacity hover:opacity-90"
+            className="shrink-0 rounded-full bg-white px-6 py-2.5 text-sm font-bold text-on-surface transition-opacity hover:opacity-90"
           >
-            Agendar Mentoría
+            Iniciar práctica ahora
           </button>
         </div>
       </div>

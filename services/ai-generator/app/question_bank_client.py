@@ -1,11 +1,42 @@
 """Cliente HTTP para enviar preguntas generadas al Question Bank."""
 
+import asyncio
+import logging
 from typing import Any
 
 import httpx
 
+logger = logging.getLogger(__name__)
+
 from .config import settings
 from .schemas import GeneratedQuestion
+
+
+async def _post_with_404_retry(
+    send_request,
+    *,
+    max_attempts: int = 4,
+    initial_delay_seconds: float = 0.08,
+) -> httpx.Response:
+    """Ejecuta un POST con reintentos cuando hay 404 transitorio.
+
+    En entornos con versiones antiguas de Question Bank, la pregunta puede
+    no ser visible inmediatamente tras el POST de creación. Reintentamos con
+    backoff corto para evitar falsos negativos.
+    """
+    response: httpx.Response | None = None
+    delay = initial_delay_seconds
+
+    for attempt in range(1, max_attempts + 1):
+        response = await send_request()
+        if response.status_code != 404:
+            return response
+
+        if attempt < max_attempts:
+            await asyncio.sleep(delay)
+            delay *= 2
+
+    return response if response is not None else await send_request()
 
 
 async def send_generated_question_to_question_bank(question: GeneratedQuestion) -> dict[str, Any]:
@@ -98,6 +129,8 @@ async def send_generated_question_to_question_bank(question: GeneratedQuestion) 
             "source": "AI",
             "english_section": question.english_section,
             "mcer_level": question.mcer_level,
+            "component_name": question.component_name,
+            "dce_metadata": question.dce_metadata,
         }
 
         resp = await client.post(
@@ -109,22 +142,82 @@ async def send_generated_question_to_question_bank(question: GeneratedQuestion) 
         question_data = resp.json()
 
         if question.media:
-            media_payload = {
-                "media_type": question.media.media_type,
-                "source": "PROGRAMMATIC",
-                "visual_data": question.media.visual_data,
-                "render_engine": question.media.render_engine,
-                "alt_text": question.media.alt_text,
-                "alt_text_detailed": question.media.alt_text_detailed,
-                "display_mode": question.media.display_mode,
-                "is_essential": True,
-                "position": 0,
-            }
-            media_resp = await client.post(
-                f"{settings.question_bank_url}/api/questions/{question_data['id']}/media/programmatic",
-                headers=internal_headers,
-                json=media_payload,
-            )
-            media_resp.raise_for_status()
+            try:
+                if question.media.image_bytes:
+                    import io
+                    ext = ".png" if "png" in question.media.image_mime_type else ".jpg"
+                    mime = question.media.image_mime_type
+                    form_data = {
+                        "media_type": question.media.media_type,
+                        "alt_text": question.media.alt_text,
+                        "is_essential": "true",
+                        "display_mode": question.media.display_mode,
+                        "position": "0",
+                    }
+                    if question.media.alt_text_detailed:
+                        form_data["alt_text_detailed"] = question.media.alt_text_detailed
+
+                    async def _send_ai_image():
+                        return await client.post(
+                            f"{settings.question_bank_url}/api/questions/{question_data['id']}/media/ai-image",
+                            headers=internal_headers,
+                            files={
+                                "file": (
+                                    f"generated{ext}",
+                                    io.BytesIO(question.media.image_bytes),
+                                    mime,
+                                )
+                            },
+                            data=form_data,
+                        )
+
+                    media_resp = await _post_with_404_retry(_send_ai_image)
+                else:
+                    media_payload = {
+                        "media_type": question.media.media_type,
+                        "source": "PROGRAMMATIC",
+                        "visual_data": question.media.visual_data,
+                        "render_engine": question.media.render_engine,
+                        "alt_text": question.media.alt_text,
+                        "alt_text_detailed": question.media.alt_text_detailed,
+                        "display_mode": question.media.display_mode,
+                        "is_essential": True,
+                        "position": 0,
+                    }
+
+                    async def _send_programmatic_media():
+                        return await client.post(
+                            f"{settings.question_bank_url}/api/questions/{question_data['id']}/media/programmatic",
+                            headers=internal_headers,
+                            json=media_payload,
+                        )
+
+                    media_resp = await _post_with_404_retry(_send_programmatic_media)
+                media_resp.raise_for_status()
+            except Exception as media_err:
+                logger.warning(
+                    "Fallo al crear media para pregunta %s, eliminando para evitar preguntas incompletas: %s",
+                    question_data["id"],
+                    media_err,
+                )
+                try:
+                    delete_resp = await client.delete(
+                        f"{settings.question_bank_url}/api/questions/{question_data['id']}",
+                        headers=internal_headers,
+                    )
+                    # Compatibilidad hacia atrás: versiones antiguas de QB no
+                    # exponen DELETE /api/questions/{id}; usar archive.
+                    if delete_resp.status_code == 405:
+                        archive_resp = await client.post(
+                            f"{settings.question_bank_url}/api/questions/{question_data['id']}/archive",
+                            headers=internal_headers,
+                        )
+                        if archive_resp.status_code not in {200, 404}:
+                            archive_resp.raise_for_status()
+                    elif delete_resp.status_code not in {204, 404}:
+                        delete_resp.raise_for_status()
+                except Exception:
+                    pass
+                raise
 
         return question_data

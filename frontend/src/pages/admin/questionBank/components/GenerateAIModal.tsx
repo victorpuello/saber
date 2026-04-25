@@ -10,7 +10,7 @@ import {
   type GenerationJobDetail,
   type GenerationJobStatus,
 } from "../../../../services/aiJobs";
-import type { AreaSummary, CompetencyItem } from "../questionFormTypes";
+import type { AreaSummary, CompetencyItem, MediaType } from "../questionFormTypes";
 import ConfirmModal from "../../../../components/ConfirmModal";
 
 interface GenerateAIModalProps {
@@ -33,6 +33,26 @@ const DIFFICULTIES: { key: Difficulty; label: string }[] = [
   { key: "medium", label: "Media" },
   { key: "high", label: "Alta" },
   { key: "mixed", label: "Mixta" },
+];
+
+interface VisualTypeOption {
+  type: MediaType;
+  label: string;
+  emoji: string;
+  areas?: string[];
+}
+
+const VISUAL_TYPE_OPTIONS: VisualTypeOption[] = [
+  { type: "chart", label: "Gráfica", emoji: "📊" },
+  { type: "table", label: "Tabla", emoji: "📋" },
+  { type: "diagram", label: "Diagrama", emoji: "🔷" },
+  { type: "geometric_figure", label: "Figura geométrica", emoji: "📐", areas: ["MAT"] },
+  { type: "map", label: "Mapa", emoji: "🗺️", areas: ["SC"] },
+  { type: "timeline", label: "Línea de tiempo", emoji: "📅", areas: ["SC", "LC"] },
+  { type: "probability_diagram", label: "Diagrama prob.", emoji: "🎲", areas: ["MAT"] },
+  { type: "infographic", label: "Infografía", emoji: "📰" },
+  { type: "state_structure", label: "Estructura estatal", emoji: "🏛️", areas: ["SC"] },
+  { type: "public_sign", label: "Aviso / señal", emoji: "🪧" },
 ];
 
 const STATUS_META: Record<GenerationJobStatus, { label: string; tone: string }> = {
@@ -63,6 +83,13 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
   const [count, setCount] = useState(5);
   const [additionalContext, setAdditionalContext] = useState("");
 
+  // Visual generation
+  const [includeVisual, setIncludeVisual] = useState(false);
+  const [visualType, setVisualType] = useState<MediaType | "">("");
+
+  // English section (only for ING)
+  const [englishSection, setEnglishSection] = useState<number | "">("");
+
   const [loadingAreas, setLoadingAreas] = useState(false);
   const [loadingComps, setLoadingComps] = useState(false);
   const [creatingJob, setCreatingJob] = useState(false);
@@ -75,20 +102,10 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
     let active = true;
     setLoadingAreas(true);
     fetchAreas(authFetch)
-      .then((data) => {
-        if (active) {
-          setAreas(data);
-        }
-      })
+      .then((data) => { if (active) setAreas(data); })
       .catch(() => {})
-      .finally(() => {
-        if (active) {
-          setLoadingAreas(false);
-        }
-      });
-    return () => {
-      active = false;
-    };
+      .finally(() => { if (active) setLoadingAreas(false); });
+    return () => { active = false; };
   }, [authFetch]);
 
   useEffect(() => {
@@ -96,76 +113,55 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
       setCompetencies([]);
       return;
     }
-
     let active = true;
     setLoadingComps(true);
     setSelectedCompetencyId("");
+    setEnglishSection("");
     fetchAreaDetail(authFetch, selectedAreaId)
-      .then((data) => {
-        if (active) {
-          setCompetencies(data.competencies);
-        }
-      })
+      .then((data) => { if (active) setCompetencies(data.competencies); })
       .catch(() => {})
-      .finally(() => {
-        if (active) {
-          setLoadingComps(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
+      .finally(() => { if (active) setLoadingComps(false); });
+    return () => { active = false; };
   }, [authFetch, selectedAreaId]);
 
   useEffect(() => {
-    if (!trackingJobId) {
-      return;
-    }
-
-    if (jobDetail && isTerminalStatus(jobDetail.status)) {
-      return;
-    }
+    if (!trackingJobId) return;
+    if (jobDetail && isTerminalStatus(jobDetail.status)) return;
 
     let active = true;
     let polling = false;
 
     const pollJob = async () => {
-      if (!active || polling) {
-        return;
-      }
+      if (!active || polling || document.visibilityState !== "visible") return;
       polling = true;
       try {
         const next = await fetchGenerationJob(authFetch, trackingJobId);
-        if (active) {
-          setJobDetail(next);
-        }
+        if (active) setJobDetail(next);
       } catch (err) {
-        if (active) {
-          const msg = err instanceof Error ? err.message : "No se pudo consultar el progreso del job";
-          setError(msg);
-        }
+        if (active) setError(err instanceof Error ? err.message : "No se pudo consultar el progreso del job");
       } finally {
         polling = false;
       }
     };
 
     void pollJob();
-    const interval = window.setInterval(() => {
-      void pollJob();
-    }, 2000);
+    const interval = window.setInterval(() => { void pollJob(); }, 5000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void pollJob();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       active = false;
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [authFetch, jobDetail?.status, trackingJobId]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !creatingJob) {
-        handleClose();
-      }
+      if (e.key === "Escape" && !creatingJob) handleClose();
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -173,12 +169,11 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, []);
 
   const selectedAreaCode = areas.find((a) => a.id === selectedAreaId)?.code ?? "";
+  const isING = selectedAreaCode === "ING";
   const hasRunningJob = jobDetail ? !isTerminalStatus(jobDetail.status) : creatingJob;
   const isTracking = creatingJob || !!jobDetail;
   const isDirty =
@@ -186,12 +181,11 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
     additionalContext !== "" ||
     count !== 5 ||
     difficulty !== "medium" ||
+    includeVisual ||
     hasRunningJob;
 
   const handleClose = useCallback(() => {
-    if (creatingJob) {
-      return;
-    }
+    if (creatingJob) return;
     if (isDirty) {
       setShowDiscardConfirm(true);
       return;
@@ -208,6 +202,10 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
       setError("Selecciona un área del examen.");
       return;
     }
+    if (includeVisual && !visualType) {
+      setError("Selecciona un tipo de visual o desactiva la opción de visual.");
+      return;
+    }
 
     setError("");
     setCreatingJob(true);
@@ -222,53 +220,47 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
       };
       if (selectedCompetencyId) {
         const comp = competencies.find((c) => c.id === selectedCompetencyId);
-        if (comp) {
-          body.competency_code = comp.code;
-        }
+        if (comp) body.competency_code = comp.code;
       }
-      if (cognitiveLevel !== undefined) {
-        body.cognitive_level = cognitiveLevel;
+      if (cognitiveLevel !== undefined) body.cognitive_level = cognitiveLevel;
+      if (includeVisual && visualType) {
+        body.include_visual = true;
+        body.visual_type = visualType;
+      }
+      if (isING && englishSection !== "") {
+        body.english_section = Number(englishSection);
+      }
+      if (additionalContext.trim()) {
+        body.additional_context = additionalContext.trim();
       }
 
       const createdJob = await createGenerationJob(authFetch, body);
       setTrackingJobId(createdJob.id);
       setJobDetail({ ...createdJob, items: [] });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al encolar generación";
-      setError(msg);
+      setError(err instanceof Error ? err.message : "Error al encolar generación");
     } finally {
       setCreatingJob(false);
     }
   }, [
-    authFetch,
-    competencies,
-    count,
-    difficulty,
-    selectedAreaCode,
-    selectedAreaId,
-    selectedCompetencyId,
+    authFetch, competencies, count, difficulty, includeVisual, visualType,
+    isING, englishSection, additionalContext,
+    selectedAreaCode, selectedAreaId, selectedCompetencyId,
   ]);
 
   const handleCancelJob = useCallback(async () => {
-    if (!jobDetail) {
-      return;
-    }
-
+    if (!jobDetail) return;
     setError("");
     try {
       const updated = await cancelGenerationJob(authFetch, jobDetail.id);
       setJobDetail((prev) => (prev ? { ...prev, ...updated } : { ...updated, items: [] }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "No se pudo cancelar el job";
-      setError(msg);
+      setError(err instanceof Error ? err.message : "No se pudo cancelar el job");
     }
   }, [authFetch, jobDetail]);
 
   const handleRetry = useCallback(async () => {
-    if (!jobDetail) {
-      return;
-    }
-
+    if (!jobDetail) return;
     setError("");
     setCreatingJob(true);
     try {
@@ -276,18 +268,14 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
       setTrackingJobId(retryJob.id);
       setJobDetail({ ...retryJob, items: [] });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "No se pudo reintentar el job";
-      setError(msg);
+      setError(err instanceof Error ? err.message : "No se pudo reintentar el job");
     } finally {
       setCreatingJob(false);
     }
   }, [authFetch, jobDetail]);
 
   const handleApplyResults = useCallback(() => {
-    if (!jobDetail) {
-      onSuccess(0);
-      return;
-    }
+    if (!jobDetail) { onSuccess(0); return; }
     const generatedCount = Math.max(jobDetail.total_valid, jobDetail.total_generated, jobDetail.total_processed);
     onSuccess(generatedCount);
   }, [jobDetail, onSuccess]);
@@ -298,17 +286,23 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
   const isTerminal = jobDetail ? isTerminalStatus(jobDetail.status) : false;
   const isSuccessTerminal = jobDetail ? isSuccessfulTerminalStatus(jobDetail.status) : false;
 
+  // Filter visual type options to show relevant ones first based on selected area
+  const sortedVisualOptions = [...VISUAL_TYPE_OPTIONS].sort((a, b) => {
+    const aRelevant = a.areas?.includes(selectedAreaCode) ?? false;
+    const bRelevant = b.areas?.includes(selectedAreaCode) ?? false;
+    if (aRelevant && !bRelevant) return -1;
+    if (!aRelevant && bRelevant) return 1;
+    return 0;
+  });
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 p-5 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          handleClose();
-        }
-      }}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
     >
-      <div className="relative flex max-h-[88vh] w-full max-w-[620px] flex-col overflow-hidden rounded-3xl bg-white shadow-xl shadow-on-surface/15">
-        <header className="flex items-center justify-between px-7 pt-6">
+      <div className="relative flex max-h-[92vh] w-full max-w-165 flex-col overflow-hidden rounded-3xl bg-white shadow-xl shadow-on-surface/15">
+        {/* Header */}
+        <header className="flex items-center justify-between px-7 pt-6 pb-5">
           <div>
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-violet-700">
               <span
@@ -319,7 +313,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </span>
               ScholarAI
             </p>
-            <h2 className="mt-1 text-[22px] font-extrabold tracking-tight text-on-surface">
+            <h2 className="mt-0.5 text-[22px] font-extrabold tracking-tight text-on-surface">
               Generar Preguntas con IA
             </h2>
           </div>
@@ -335,7 +329,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
         </header>
 
         {!isTracking ? (
-          <div className="flex-1 space-y-5 overflow-y-auto px-7 pt-6 pb-7">
+          <div className="flex-1 space-y-5 overflow-y-auto px-7 pb-7 [scrollbar-color:var(--color-surface-container-highest)_transparent] [scrollbar-width:thin]">
             {error && (
               <div className="flex items-center gap-2 rounded-2xl bg-error-container px-4 py-3 text-sm font-semibold text-on-error-container">
                 <span className="material-symbols-outlined text-[18px]">error</span>
@@ -343,15 +337,14 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </div>
             )}
 
+            {/* Área */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
                 Área del examen
               </label>
               {loadingAreas ? (
                 <div className="flex items-center gap-2 py-4 text-sm text-secondary">
-                  <span className="material-symbols-outlined animate-spin text-[16px] text-primary">
-                    progress_activity
-                  </span>
+                  <span className="material-symbols-outlined animate-spin text-[16px] text-primary">progress_activity</span>
                   Cargando áreas…
                 </div>
               ) : (
@@ -381,6 +374,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               )}
             </div>
 
+            {/* Competencia */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
                 Competencia específica
@@ -393,16 +387,10 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
                   className="w-full appearance-none rounded-xl border border-outline-variant/20 bg-surface-container-highest py-3 pl-3.5 pr-9 text-sm font-medium text-on-surface outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
                 >
                   <option value="">
-                    {loadingComps
-                      ? "Cargando…"
-                      : !selectedAreaId
-                        ? "Selecciona un área primero"
-                        : "Todas las competencias"}
+                    {loadingComps ? "Cargando…" : !selectedAreaId ? "Selecciona un área primero" : "Todas las competencias"}
                   </option>
                   {competencies.map((comp) => (
-                    <option key={comp.id} value={comp.id}>
-                      {comp.name}
-                    </option>
+                    <option key={comp.id} value={comp.id}>{comp.name}</option>
                   ))}
                 </select>
                 {loadingComps ? (
@@ -417,6 +405,34 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </div>
             </div>
 
+            {/* Sección inglés (solo ING) */}
+            {isING && (
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
+                  Sección de inglés
+                  <span className="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] text-amber-700">ING</span>
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setEnglishSection(englishSection === n ? "" : n)}
+                      className={`flex h-9 w-9 items-center justify-center rounded-[10px] border-2 text-sm font-bold transition ${
+                        englishSection === n
+                          ? "border-primary bg-primary-fixed text-primary"
+                          : "border-transparent bg-surface-container-high text-secondary hover:bg-surface-container-highest"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                  <span className="self-center text-[11px] text-secondary">Secciones 1–7</span>
+                </div>
+              </div>
+            )}
+
+            {/* Dificultad */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
                 Nivel de dificultad
@@ -442,6 +458,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </div>
             </div>
 
+            {/* Cantidad */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
                 Cantidad de preguntas
@@ -461,9 +478,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
                   value={count}
                   onChange={(e) => {
                     const n = parseInt(e.target.value, 10);
-                    if (!Number.isNaN(n)) {
-                      setCount(Math.max(1, Math.min(20, n)));
-                    }
+                    if (!Number.isNaN(n)) setCount(Math.max(1, Math.min(20, n)));
                   }}
                   className="w-[72px] rounded-xl border border-outline-variant/20 bg-surface-container-highest py-3 text-center text-sm font-medium text-on-surface outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
                 />
@@ -478,6 +493,83 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </div>
             </div>
 
+            {/* Visual generado por IA */}
+            <div className="space-y-3 rounded-2xl border border-outline-variant/15 bg-surface-container-low p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-violet-100">
+                    <span
+                      className="material-symbols-outlined text-[16px] text-violet-700"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      image
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-bold text-on-surface">Visual generado por IA</p>
+                    <p className="text-[11px] text-secondary">La IA crea datos programáticos para el visual</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={includeVisual}
+                  onClick={() => {
+                    setIncludeVisual((v) => !v);
+                    if (includeVisual) setVisualType("");
+                  }}
+                  className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${
+                    includeVisual ? "bg-violet-600" : "bg-surface-container-highest"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200 ${
+                      includeVisual ? "left-5.5" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {includeVisual && (
+                <div className="space-y-2.5 pt-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
+                    Tipo de visual
+                  </p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {sortedVisualOptions.map(({ type, label, emoji, areas: relevantAreas }) => {
+                      const isSelected = visualType === type;
+                      const isRelevant = relevantAreas?.includes(selectedAreaCode);
+                      return (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setVisualType(isSelected ? "" : type)}
+                          className={`relative flex flex-col items-center gap-1 rounded-xl border-2 px-1 py-2.5 text-center transition ${
+                            isSelected
+                              ? "border-violet-500 bg-violet-50"
+                              : "border-transparent bg-white hover:border-violet-200 hover:bg-violet-50/40"
+                          }`}
+                        >
+                          {isRelevant && (
+                            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-violet-500" />
+                          )}
+                          <span className="text-base">{emoji}</span>
+                          <span className={`text-[10px] font-semibold leading-tight ${isSelected ? "text-violet-700" : "text-secondary"}`}>
+                            {label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-secondary">
+                    <span className="mr-1 inline-block h-2 w-2 rounded-full bg-violet-500 align-middle" />
+                    Sugeridos para {selectedAreaCode || "el área seleccionada"}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Contexto adicional */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
                 Contexto adicional (opcional)
@@ -495,7 +587,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
             </div>
           </div>
         ) : (
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-7 pt-6 pb-7">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-7 pt-2 pb-7">
             {error && (
               <div className="flex items-center gap-2 rounded-2xl bg-error-container px-4 py-3 text-sm font-semibold text-on-error-container">
                 <span className="material-symbols-outlined text-[18px]">error</span>
@@ -511,6 +603,23 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </div>
             ) : jobDetail ? (
               <>
+                {/* Job summary chips */}
+                <div className="flex flex-wrap gap-2 py-1">
+                  <span className="rounded-full bg-surface-container-high px-3 py-1 text-[11px] font-semibold text-secondary">
+                    {AREA_META[jobDetail.area_code]?.emoji ?? "📋"} {jobDetail.area_code}
+                  </span>
+                  {jobDetail.include_visual && (
+                    <span className="rounded-full bg-violet-100 px-3 py-1 text-[11px] font-semibold text-violet-700">
+                      🖼 Con visual{jobDetail.visual_type ? ` · ${jobDetail.visual_type}` : ""}
+                    </span>
+                  )}
+                  {jobDetail.cognitive_level && (
+                    <span className="rounded-full bg-surface-container-high px-3 py-1 text-[11px] font-semibold text-secondary">
+                      Nivel cognitivo {jobDetail.cognitive_level}
+                    </span>
+                  )}
+                </div>
+
                 <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -529,7 +638,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
                     </div>
                     <div className="h-2.5 rounded-full bg-surface-container-high">
                       <div
-                        className="h-2.5 rounded-full bg-gradient-to-r from-primary to-secondary transition-all duration-500"
+                        className="h-2.5 rounded-full bg-linear-to-r from-violet-600 to-primary transition-all duration-500"
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
@@ -579,6 +688,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
           </div>
         )}
 
+        {/* Footer */}
         {!isTracking ? (
           <footer className="flex items-center justify-end gap-2.5 border-t border-outline-variant/10 px-7 py-5">
             <button
@@ -591,7 +701,8 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
             <button
               type="button"
               onClick={handleGenerate}
-              className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90"
+              disabled={!selectedAreaId}
+              className="flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90 disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #6d28d9, #7c3aed)" }}
             >
               <span
@@ -616,7 +727,6 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
                 </button>
               )}
             </div>
-
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
@@ -625,22 +735,20 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               >
                 Cerrar
               </button>
-
-              {jobDetail && isTerminalStatus(jobDetail.status) && isSuccessfulTerminalStatus(jobDetail.status) && (
+              {jobDetail && isTerminal && isSuccessTerminal && (
                 <button
                   type="button"
                   onClick={handleApplyResults}
-                  className="rounded-xl bg-gradient-to-r from-primary to-secondary px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90"
+                  className="rounded-xl bg-linear-to-r from-primary to-secondary px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90"
                 >
                   Actualizar banco
                 </button>
               )}
-
-              {jobDetail && isTerminalStatus(jobDetail.status) && !isSuccessfulTerminalStatus(jobDetail.status) && (
+              {jobDetail && isTerminal && !isSuccessTerminal && (
                 <button
                   type="button"
                   onClick={handleRetry}
-                  className="rounded-xl bg-gradient-to-r from-primary to-secondary px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90"
+                  className="rounded-xl bg-linear-to-r from-primary to-secondary px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:opacity-90"
                 >
                   Reintentar job
                 </button>

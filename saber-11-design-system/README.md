@@ -12,6 +12,13 @@ The Simulador Saber 11 is a microservices platform that **integrates with Kampus
 ### Core Purpose
 Prepare students for Colombia's national Saber 11 exam by generating questions that follow the exact ICFES Evidence-Centered Design methodology. The system evaluates analytical and contextual reasoning, not rote memorization.
 
+### Context Components and Structure
+The design system distinguishes between:
+- visual context components
+- pedagogical structure
+
+The visual catalog now includes an explicit `Texto base simple` component for the current text-only case. Separately, the product can group up to 3 subpreguntas under a shared context using the `Bloque de preguntas` structure.
+
 ### Three User Roles
 | Role | Key Flows |
 |---|---|

@@ -53,6 +53,10 @@ function proxyTo(target) {
   });
 }
 
+// Serving de uploads del question-bank. No exige Authorization porque los
+// recursos se consumen desde etiquetas <img> del frontend.
+router.use("/uploads", proxyTo(config.questionBankUrl));
+
 // Registrar rutas de proxy con autenticación y rate limit
 for (const [path, target] of Object.entries(SERVICE_MAP)) {
   router.use(path, authenticate, revocationCheck, userLimiter, proxyTo(target));

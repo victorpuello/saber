@@ -130,6 +130,11 @@ async def get_session_questions(
                 position=eq.position,
                 context=q["context"],
                 context_type=q["context_type"],
+                component_name=q.get("component_name"),
+                structure_type=q.get("structure_type"),
+                block_id=q.get("block_id"),
+                block_item_order=q.get("block_item_order"),
+                block_size=q.get("block_size"),
                 stem=q["stem"],
                 option_a=q["option_a"],
                 option_b=q["option_b"],
@@ -165,17 +170,20 @@ async def submit_answer(
         raise HTTPException(400, "La sesión ya no está en progreso")
 
     # Verificar time limit
-    if session.exam:
-        exam = await db.get(Exam, session.exam_id)
-    else:
-        exam = await db.get(Exam, session.exam_id)
+    exam = await db.get(Exam, session.exam_id)
     if exam and exam.time_limit_minutes:
         elapsed = (datetime.now(UTC) - session.started_at).total_seconds()
         if elapsed > exam.time_limit_minutes * 60:
             session.status = "TIMED_OUT"
             session.finished_at = datetime.now(UTC)
             session.time_spent_seconds = int(elapsed)
+            await _score_session(session, db, exam)
             await db.flush()
+            # Commit before raising so the TIMED_OUT status is persisted.
+            # Without this, the get_db exception handler rolls back the
+            # transaction and the session stays IN_PROGRESS in the DB,
+            # causing finish_session to return 400 "no answers submitted".
+            await db.commit()
             raise HTTPException(
                 410, "Tiempo agotado. La sesión ha sido finalizada."
             )
@@ -232,6 +240,9 @@ async def finish_session(
         raise HTTPException(404, "Sesión no encontrada")
     if session.student_user_id != user.user_id:
         raise HTTPException(403, "Esta sesión no te pertenece")
+    if session.status == "TIMED_OUT":
+        # Already scored when timeout occurred — just return it
+        return session
     if session.status != "IN_PROGRESS":
         raise HTTPException(400, "La sesión ya fue finalizada")
 
@@ -363,6 +374,10 @@ async def get_session_results(
         question_results.append(QuestionResult(
             question_id=uuid.UUID(q_id),
             position=position_map.get(q_id, 0),
+            structure_type=q_data.get("structure_type"),
+            block_id=q_data.get("block_id"),
+            block_item_order=q_data.get("block_item_order"),
+            block_size=q_data.get("block_size"),
             stem=q_data.get("stem", ""),
             selected_answer=selected,
             correct_answer=correct_answer,
@@ -472,6 +487,44 @@ async def get_student_history_by_id(
 
 
 # =============================================================================
+# Helpers internos
+# =============================================================================
+
+
+async def _score_session(session: ExamSession, db: AsyncSession, exam: Exam) -> None:
+    """Califica las respuestas ya enviadas y actualiza totales en session."""
+    from sqlalchemy import select as _select
+    answers_result = await db.execute(
+        _select(StudentAnswer).where(StudentAnswer.session_id == session.id)
+    )
+    answers = answers_result.scalars().all()
+    if not answers:
+        session.total_correct = 0
+        session.total_answered = 0
+        session.score_global = 0.0
+        return
+
+    question_ids = [str(a.question_id) for a in answers]
+    correct_map = await _fetch_correct_answers(question_ids)
+
+    total_correct = 0
+    for answer in answers:
+        correct = correct_map.get(str(answer.question_id))
+        if correct:
+            answer.is_correct = answer.selected_answer == correct
+            if answer.is_correct:
+                total_correct += 1
+
+    total_answered = len(answers)
+    total_questions = exam.total_questions if exam else total_answered
+    score = round((total_correct / total_questions) * 100, 2) if total_questions > 0 else 0.0
+
+    session.total_correct = total_correct
+    session.total_answered = total_answered
+    session.score_global = score
+
+
+# =============================================================================
 # Helpers: comunicación con Question Bank
 # =============================================================================
 
@@ -482,7 +535,7 @@ async def _fetch_questions_safe(question_ids: list[str]) -> list[dict]:
         return []
     async with httpx.AsyncClient(timeout=10) as client:
         results = await asyncio.gather(
-            *[_fetch_one_question(client, q_id) for q_id in question_ids]
+            *[_fetch_one_question_safe(client, q_id) for q_id in question_ids]
         )
     questions = []
     for data in results:
@@ -496,6 +549,18 @@ async def _fetch_questions_safe(question_ids: list[str]) -> list[dict]:
             data.pop("explanation_d", None)
             questions.append(data)
     return questions
+
+
+async def _fetch_one_question_safe(client: httpx.AsyncClient, q_id: str) -> dict | None:
+        """Fetches a single safe question plus its context media from QB."""
+        data, media = await asyncio.gather(
+                _fetch_one_question(client, q_id),
+                _fetch_question_media(client, q_id),
+        )
+        if data is None:
+            return None
+        data["media"] = media
+        return data
 
 
 async def _fetch_one_question(client: httpx.AsyncClient, q_id: str) -> dict | None:
@@ -512,6 +577,23 @@ async def _fetch_one_question(client: httpx.AsyncClient, q_id: str) -> dict | No
     except Exception as exc:
         logger.error("QB request failed for question %s: %s", q_id, exc)
         return None
+
+
+async def _fetch_question_media(client: httpx.AsyncClient, q_id: str) -> list[dict]:
+    """Fetches context media for a question from QB. Returns [] on failure."""
+    try:
+        resp = await client.get(
+            f"{settings.question_bank_url}/api/questions/{q_id}/media",
+            headers={"X-User-Id": "0", "X-User-Role": "ADMIN"},
+        )
+        if resp.status_code == 200:
+            payload = resp.json()
+            return payload if isinstance(payload, list) else []
+        logger.warning("QB media returned %s for question %s", resp.status_code, q_id)
+        return []
+    except Exception as exc:
+        logger.error("QB media request failed for question %s: %s", q_id, exc)
+        return []
 
 
 async def _fetch_correct_answers(question_ids: list[str]) -> dict[str, str]:

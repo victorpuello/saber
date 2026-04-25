@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tipos de Preguntas — Componentes · Saber 11</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+/* ══ RESET ══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ══ DESIGN TOKENS ══════════════════════════════════════════ */
+:root {
+  --primary: #004ac6; --primary-c: #2563eb; --primary-fixed: #dbe1ff;
+  --on-pf: #00174b; --secondary: #505f76; --surface: #f7f9fb;
+  --on-surface: #191c1e; --on-sv: #434655;
+  --sc-lowest: #ffffff; --sc-low: #f2f4f6; --sc: #eceef0;
+  --sc-high: #e6e8ea; --sc-highest: #e0e3e5; --outline: #737686; --ov: #c3c6d7;
+  --error: #ba1a1a; --error-c: #ffdad6; --on-ec: #93000a;
+  --progress-green: #006242;
+  --shadow-card: 0 12px 40px rgba(25,28,30,0.05);
+  --gradient: linear-gradient(135deg,#004ac6,#2563eb);
+  --gradient-br: linear-gradient(to bottom right,#004ac6,#2563eb);
+}
+
+body { font-family:"Inter",sans-serif; background:var(--surface); color:var(--on-surface); -webkit-font-smoothing:antialiased; }
+.ms { font-family:"Material Symbols Outlined"; font-weight:normal; font-style:normal; font-variation-settings:"FILL" 0,"wght" 420,"GRAD" 0,"opsz" 24; line-height:1; display:inline-block; white-space:nowrap; }
+.msf { font-variation-settings:"FILL" 1,"wght" 420,"GRAD" 0,"opsz" 24; }
+button { cursor:pointer; border:none; font-family:"Inter",sans-serif; }
+
+/* ══ PAGE HEADER ════════════════════════════════════════════ */
+.page-header {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(195,198,215,0.2);
+  padding: 0 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+.ph-brand { display:flex; align-items:center; gap:12px; }
+.ph-brand-icon { width:36px; height:36px; border-radius:10px; background:var(--gradient-br); display:flex; align-items:center; justify-content:center; }
+.ph-brand-title { font-size:15px; font-weight:800; letter-spacing:-0.02em; }
+.ph-brand-sub { font-size:9px; font-weight:700; letter-spacing:0.3em; text-transform:uppercase; color:var(--secondary); }
+.ph-nav { display:flex; gap:4px; }
+.ph-nav-btn {
+  width:34px; height:34px; border-radius:9px; background:transparent; font-size:12px; font-weight:800;
+  color:var(--secondary); transition:all 0.15s; border:1.5px solid transparent;
+}
+.ph-nav-btn:hover { background:var(--sc-low); color:var(--on-surface); }
+.ph-nav-btn.active { background:var(--primary); color:white; border-color:var(--primary); }
+.ph-back { display:flex; align-items:center; gap:6px; background:var(--sc-high); border-radius:10px; padding:7px 14px; font-size:13px; font-weight:600; color:var(--on-surface); transition:background 0.1s; }
+.ph-back:hover { background:var(--sc-highest); }
+
+/* ══ HERO ═══════════════════════════════════════════════════ */
+.hero {
+  background: var(--gradient-br);
+  color: white;
+  padding: 52px 40px 44px;
+  position: relative; overflow:hidden;
+}
+.hero::before { content:""; position:absolute; width:400px; height:400px; border-radius:9999px; background:rgba(255,255,255,0.04); top:-120px; right:-80px; pointer-events:none; }
+.hero-eyebrow { display:flex; align-items:center; gap:6px; font-size:10px; font-weight:700; letter-spacing:0.3em; text-transform:uppercase; opacity:0.7; margin-bottom:12px; }
+.hero h1 { font-size:38px; font-weight:900; letter-spacing:-0.04em; line-height:1.08; }
+.hero p { font-size:15px; font-weight:300; opacity:0.8; margin-top:10px; max-width:580px; line-height:1.7; }
+.hero-pills { display:flex; gap:8px; flex-wrap:wrap; margin-top:20px; }
+.hero-pill { padding:5px 14px; border-radius:9999px; font-size:11px; font-weight:700; background:rgba(255,255,255,0.15); }
+
+/* ══ COMPONENT TYPE NAV STRIP ═══════════════════════════════ */
+.type-strip {
+  background: white;
+  border-bottom: 1px solid rgba(195,198,215,0.18);
+  padding: 0 40px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.type-strip::-webkit-scrollbar { display:none; }
+.type-tab {
+  display:flex; align-items:center; gap:8px;
+  padding: 14px 20px;
+  font-size: 13px; font-weight: 600; color: var(--secondary);
+  cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.type-tab:hover { color:var(--on-surface); }
+.type-tab.active { color:var(--primary); border-bottom-color:var(--primary); }
+.type-tab .ms { font-size:18px; }
+.type-tab .type-num {
+  width:20px; height:20px; border-radius:9999px;
+  background:var(--sc-high); color:var(--secondary);
+  font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+.type-tab.active .type-num { background:var(--primary-fixed); color:var(--on-pf); }
+
+/* ══ MAIN LAYOUT ════════════════════════════════════════════ */
+.main { padding: 36px 40px; display:flex; flex-direction:column; gap:48px; max-width:1400px; }
+
+/* ══ COMPONENT SECTION ══════════════════════════════════════ */
+.comp-section { display:flex; flex-direction:column; gap:24px; scroll-margin-top:100px; }
+.comp-header { display:flex; align-items:flex-start; gap:20px; }
+.comp-number {
+  width:52px; height:52px; border-radius:16px; background:var(--primary);
+  color:white; font-size:22px; font-weight:900; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; letter-spacing:-0.04em;
+}
+.comp-title { font-size:24px; font-weight:900; letter-spacing:-0.03em; margin-bottom:6px; }
+.comp-desc { font-size:14px; color:var(--on-sv); line-height:1.65; max-width:620px; }
+.comp-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.area-tag { padding:3px 10px; border-radius:9999px; font-size:10px; font-weight:700; }
+.tag-mat { background:#eff6ff; color:#1d4ed8; }
+.tag-lc  { background:#f5f3ff; color:#6d28d9; }
+.tag-sc  { background:#fff1f2; color:#be123c; }
+.tag-cn  { background:#ecfdf5; color:#047857; }
+.tag-ing { background:#fffbeb; color:#b45309; }
+.tag-factory { background:var(--primary-fixed); color:var(--on-pf); }
+
+/* ══ EXAM PREVIEW ═══════════════════════════════════════════ */
+.preview-wrap {
+  display: flex;
+  gap: 16px;
+  height: 480px;
+  background: var(--surface);
+  border-radius: 24px;
+  border: 1px solid rgba(195,198,215,0.2);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+/* Context pane (left) */
+.ctx-pane { flex:1; border-radius:0; background:var(--sc-low); display:flex; flex-direction:column; overflow:hidden; }
+.ctx-header { padding:18px 24px 12px; display:flex; align-items:flex-end; justify-content:space-between; flex-shrink:0; }
+.ctx-badge { background:var(--primary-fixed); color:#003ea8; border-radius:9999px; padding:3px 12px; font-size:9px; font-weight:900; letter-spacing:0.28em; text-transform:uppercase; display:inline-block; margin-bottom:6px; }
+.ctx-title { font-size:15px; font-weight:700; }
+.ctx-tools { display:flex; gap:6px; }
+.ctx-tool { width:34px; height:34px; border-radius:10px; background:white; border:none; display:flex; align-items:center; justify-content:center; color:var(--secondary); cursor:pointer; }
+.ctx-tool:hover { color:var(--primary); }
+.ctx-scroll { flex:1; overflow-y:auto; padding:4px 28px 28px; scrollbar-width:thin; scrollbar-color:var(--sc-highest) transparent; }
+
+/* Context type styles */
+.ctx-prose { font-size:15px; line-height:1.85; color:var(--on-sv); }
+.ctx-prose p + p { margin-top:14px; }
+.ctx-prose .author { margin-top:12px; font-size:11px; color:var(--outline); font-style:italic; }
+
+.ctx-table { width:100%; border-collapse:collapse; font-size:13px; background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.ctx-table thead tr { background:var(--sc); }
+.ctx-table th { padding:9px 14px; text-align:left; font-size:10px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--secondary); }
+.ctx-table td { padding:10px 14px; border-bottom:1px solid var(--sc-low); }
+.ctx-table tr:last-child td { border-bottom:none; }
+.ctx-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.ctx-table td.hi { font-weight:700; color:var(--primary); }
+
+.ctx-sign { background:white; border-radius:16px; padding:22px; margin-top:8px; max-width:360px; box-shadow:0 4px 16px rgba(0,0,0,0.07); border:2px solid var(--sc-high); }
+.ctx-sign-header { text-align:center; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:0.06em; color:var(--on-surface); margin-bottom:14px; padding-bottom:12px; border-bottom:2px solid var(--sc-high); }
+.ctx-sign-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--sc-low); font-size:13px; }
+.ctx-sign-row:last-child { border-bottom:none; }
+.ctx-sign-day { font-weight:600; }
+.ctx-sign-hours { color:var(--secondary); }
+.ctx-sign-footer { margin-top:12px; font-size:11px; color:var(--secondary); text-align:center; font-style:italic; }
+
+.ctx-dialogue { display:flex; flex-direction:column; gap:14px; padding-top:8px; }
+.dlg-line { display:flex; gap:10px; align-items:flex-start; }
+.dlg-line.right { flex-direction:row-reverse; }
+.dlg-speaker { width:32px; height:32px; border-radius:9999px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; margin-top:2px; }
+.dlg-bubble { border-radius:14px; padding:10px 14px; font-size:13px; line-height:1.55; max-width:280px; }
+.dlg-line:not(.right) .dlg-bubble { background:white; border-radius:4px 14px 14px 14px; }
+.dlg-line.right .dlg-bubble { background:var(--primary-fixed); border-radius:14px 4px 14px 14px; }
+.dlg-name { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--secondary); margin-bottom:3px; }
+
+.ctx-chart { background:white; border-radius:16px; padding:18px; margin-top:4px; }
+.ctx-chart-title { font-size:12px; font-weight:700; text-align:center; color:var(--on-surface); margin-bottom:14px; }
+.bar-chart { display:flex; align-items:flex-end; gap:8px; }
+.bar-col { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; }
+.bar-label { font-size:10px; font-weight:600; color:var(--secondary); }
+.chart-legend { display:flex; gap:16px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--secondary); }
+.legend-dot { width:8px; height:8px; border-radius:2px; }
+
+.ctx-geo { background:white; border-radius:16px; padding:20px; display:flex; justify-content:center; margin-top:4px; }
+
+/* Question pane (right) */
+.q-pane { width:400px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; padding:16px 16px 16px 0; overflow:hidden; }
+.q-card { flex:1; overflow-y:auto; border-radius:24px; background:white; padding:22px; box-shadow:0 12px 40px rgba(25,28,30,0.04); scrollbar-width:thin; scrollbar-color:var(--sc-highest) transparent; min-height:0; }
+.q-num-badge { width:36px; height:36px; border-radius:9999px; background:#d0e1fb; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:900; color:#54647a; flex-shrink:0; }
+.q-header { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.q-header-label { font-size:11px; font-weight:700; letter-spacing:0.28em; text-transform:uppercase; color:var(--secondary); }
+.q-stem { font-size:15px; font-weight:500; line-height:1.65; color:var(--on-surface); margin-bottom:18px; }
+.q-stem-cloze { font-size:15px; line-height:1.9; color:var(--on-surface); margin-bottom:18px; }
+.options { display:flex; flex-direction:column; gap:8px; }
+.option { display:flex; align-items:flex-start; gap:12px; padding:11px 14px; border-radius:12px; background:var(--sc-low); cursor:pointer; transition:all 0.15s; border:2px solid transparent; }
+.option:hover { background:white; border-color:rgba(0,74,198,0.15); }
+.option.selected { background:#d0e1fb; border-color:rgba(0,74,198,0.2); }
+.option.correct { background:#d1fae5; border-color:rgba(4,120,87,0.3); }
+.option.wrong { background:#ffdad6; border-color:rgba(186,26,26,0.25); }
+.opt-letter { width:28px; height:28px; border-radius:8px; border:1px solid rgba(195,198,215,0.35); background:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; transition:background 0.15s,color 0.15s; }
+.option.selected .opt-letter { background:var(--primary); color:white; border-color:var(--primary); }
+.option.correct .opt-letter { background:#047857; color:white; border-color:#047857; }
+.option.wrong .opt-letter { background:var(--error); color:white; border-color:var(--error); }
+.opt-text { font-size:13px; line-height:1.5; color:var(--on-sv); }
+.option.selected .opt-text { font-weight:500; color:var(--on-surface); }
+.option.correct .opt-text { font-weight:600; color:#047857; }
+.option.wrong .opt-text { color:var(--error); }
+
+.explanation-box { margin-top:12px; background:#ecfdf5; border-radius:12px; padding:12px 14px; border-left:3px solid #047857; display:none; }
+.explanation-box.show { display:block; }
+.explanation-box.wrong-exp { background:#fff1f2; border-color:var(--error); }
+.exp-title { font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#047857; margin-bottom:5px; }
+.wrong-exp .exp-title { color:var(--error); }
+.exp-text { font-size:12px; line-height:1.6; color:var(--on-sv); }
+
+.q-nav { display:flex; gap:10px; }
+.q-nav-btn { flex:1; height:48px; border-radius:12px; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px; }
+.q-nav-prev { background:var(--sc-high); color:var(--on-surface); }
+.q-nav-prev:hover { background:var(--sc-highest); }
+.q-nav-next { background:var(--gradient-br); color:white; box-shadow:0 6px 18px rgba(0,74,198,0.22); }
+.q-nav-next:hover { opacity:0.92; }
+
+/* ══ CONFIG REFERENCE ═══════════════════════════════════════ */
+.config-block {
+  background:white;
+  border-radius:20px;
+  border:1px solid rgba(195,198,215,0.18);
+  overflow:hidden;
+}
+.config-header {
+  padding:14px 20px;
+  background:var(--sc-low);
+  border-bottom:1px solid rgba(195,198,215,0.18);
+  display:flex; align-items:center; gap:10px;
+  font-size:12px; font-weight:700; color:var(--secondary);
+  letter-spacing:0.1em; text-transform:uppercase;
+}
+.config-body { padding:20px 24px; display:flex; gap:24px; flex-wrap:wrap; }
+.config-param { display:flex; flex-direction:column; gap:4px; min-width:200px; }
+.config-param-name { font-size:12px; font-weight:700; color:var(--primary); font-family:monospace; }
+.config-param-type { font-size:11px; color:var(--outline); font-family:monospace; }
+.config-param-desc { font-size:12px; color:var(--on-sv); line-height:1.5; }
+.config-required { display:inline-block; background:#fff1f2; color:#be123c; font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border-radius:4px; padding:1px 6px; margin-left:4px; }
+.config-optional { display:inline-block; background:var(--sc-low); color:var(--secondary); font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border-radius:4px; padding:1px 6px; margin-left:4px; }
+.config-factory {
+  background: #0a1a3a;
+  color: #e2e8f0;
+  border-radius: 0 0 20px 20px;
+  padding: 16px 20px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+.config-factory .kw { color: #60a5fa; }
+.config-factory .fn { color: #34d399; }
+.config-factory .str { color: #fbbf24; }
+.config-factory .cm { color: #64748b; }
+.config-factory .num { color: #fb7185; color:#f0abfc; }
+
+/* ══ DIVIDER ════════════════════════════════════════════════ */
+.section-divider { height:1px; background:rgba(195,198,215,0.2); }
+
+/* ══ QUICK REF GRID ════════════════════════════════════════ */
+.qref-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+.qref-card {
+  background:white; border-radius:18px; padding:18px 20px;
+  border:1.5px solid transparent;
+  box-shadow:var(--shadow-card);
+  cursor:pointer; transition:all 0.15s;
+  display:flex; flex-direction:column; gap:8px;
+}
+.qref-card:hover { border-color:rgba(0,74,198,0.25); transform:translateY(-2px); box-shadow:0 16px 40px rgba(0,74,198,0.1); }
+.qref-card.current { border-color:var(--primary); background:rgba(0,74,198,0.02); }
+.qref-num { font-size:28px; font-weight:900; color:var(--sc-highest); letter-spacing:-0.05em; line-height:1; }
+.qref-name { font-size:14px; font-weight:700; letter-spacing:-0.01em; }
+.qref-fn { font-size:11px; color:var(--primary); font-family:monospace; font-weight:600; }
+.qref-desc { font-size:12px; color:var(--on-sv); line-height:1.5; }
+
+/* ══ SECTION TITLE ══════════════════════════════════════════ */
+.sec-title { font-size:11px; font-weight:700; letter-spacing:0.25em; text-transform:uppercase; color:var(--secondary); margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+.sec-title::after { content:""; flex:1; height:1px; background:rgba(195,198,215,0.3); }
+.sec-heading { font-size:26px; font-weight:900; letter-spacing:-0.03em; margin-bottom:6px; }
+.sec-sub { font-size:14px; color:var(--on-sv); line-height:1.6; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+  STICKY HEADER
+════════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="ph-brand">
+    <div class="ph-brand-icon"><span class="ms msf" style="font-size:20px;color:white">layers</span></div>
+    <div>
+      <div class="ph-brand-title">Tipos de Preguntas</div>
+      <div class="ph-brand-sub">Componentes Reutilizables</div>
+    </div>
+  </div>
+  <nav class="ph-nav" aria-label="Tipo">
+    <button class="ph-nav-btn active" onclick="scrollToType(1,this)">1</button>
+    <button class="ph-nav-btn" onclick="scrollToType(2,this)">2</button>
+    <button class="ph-nav-btn" onclick="scrollToType(3,this)">3</button>
+    <button class="ph-nav-btn" onclick="scrollToType(4,this)">4</button>
+    <button class="ph-nav-btn" onclick="scrollToType(5,this)">5</button>
+    <button class="ph-nav-btn" onclick="scrollToType(6,this)">6</button>
+    <button class="ph-nav-btn" onclick="scrollToType(7,this)">7</button>
+    <button class="ph-nav-btn" onclick="scrollToType(8,this)">8</button>
+  </nav>
+  <a href="ExamSession.html" class="ph-back" style="text-decoration:none">
+    <span class="ms" style="font-size:17px">open_in_new</span>ExamSession
+  </a>
+</header>
+
+<!-- ════════════════════════════════════════════
+  HERO
+════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-eyebrow">
+    <span class="ms msf" style="font-size:13px">widgets</span>
+    Saber 11 Simulador — Design System
+  </div>
+  <h1>8 Tipos de Contexto<br>como Componentes</h1>
+  <p>Cada tipo de pregunta del ICFES está encapsulado como una función de fábrica en <code style="font-size:13px;background:rgba(255,255,255,0.15);padding:1px 6px;border-radius:4px">question-components.js</code>. Úsalos para construir cualquier sesión de examen sin reescribir markup.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">Texto base</span>
+    <span class="hero-pill">MAT</span>
+    <span class="hero-pill">LC</span>
+    <span class="hero-pill">SC</span>
+    <span class="hero-pill">CN</span>
+    <span class="hero-pill">ING Parte 1</span>
+    <span class="hero-pill">ING Parte 3</span>
+    <span class="hero-pill">ING Parte 4</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  TYPE NAVIGATION STRIP
+════════════════════════════════════════════ -->
+<div class="type-strip">
+  <div class="type-tab active" onclick="scrollToType(1,this)" data-tab="1">
+    <span class="type-num">1</span><span class="ms">article</span>Texto Base
+  </div>
+  <div class="type-tab" onclick="scrollToType(2,this)" data-tab="2">
+    <span class="type-num">2</span><span class="ms">menu_book</span>Texto + Tabla
+  </div>
+  <div class="type-tab" onclick="scrollToType(3,this)" data-tab="3">
+    <span class="type-num">3</span><span class="ms">bar_chart</span>Gráfica de Barras
+  </div>
+  <div class="type-tab" onclick="scrollToType(4,this)" data-tab="4">
+    <span class="type-num">4</span><span class="ms">campaign</span>Aviso Público
+  </div>
+  <div class="type-tab" onclick="scrollToType(5,this)" data-tab="5">
+    <span class="type-num">5</span><span class="ms">chat</span>Diálogo
+  </div>
+  <div class="type-tab" onclick="scrollToType(6,this)" data-tab="6">
+    <span class="type-num">6</span><span class="ms">spellcheck</span>Cloze
+  </div>
+  <div class="type-tab" onclick="scrollToType(7,this)" data-tab="7">
+    <span class="type-num">7</span><span class="ms">pentagon</span>Figura SVG
+  </div>
+  <div class="type-tab" onclick="scrollToType(8,this)" data-tab="8">
+    <span class="type-num">8</span><span class="ms">science</span>Tabla Científica
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+  MAIN CONTENT
+════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- ── Quick Reference Grid ─────────────────── -->
+  <div>
+    <div class="sec-title"><span class="ms msf" style="font-size:14px">grid_view</span>Referencia rápida</div>
+    <div class="sec-sub" style="margin-bottom:20px">Haz clic en cualquier tarjeta para ir a su documentación completa.</div>
+    <div class="qref-grid" id="qref-grid">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <!-- ══════════════════════════════════════
+    TIPO 1 — TEXTO BASE SIMPLE
+  ══════════════════════════════════════ -->
+  <section class="comp-section" id="type-1">
+    <div class="comp-header">
+      <div class="comp-number" style="background:linear-gradient(135deg,#0f172a,#334155)">01</div>
+      <div>
+        <div class="comp-title">Texto base simple</div>
+        <div class="comp-desc">Un contexto únicamente textual, sin tabla, gráfico ni layout especializado. Es el caso base del producto actual y sirve tanto para preguntas individuales como para bloques de preguntas.</div>
+        <div class="comp-tags">
+          <span class="area-tag tag-lc">LC</span>
+          <span class="area-tag tag-sc">SC</span>
+          <span class="area-tag tag-lc">LC</span>
+          <span class="area-tag tag-cn">CN</span>
+          <span class="area-tag tag-factory">QC.textOnly()</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="ctx-pane">
+        <div class="ctx-header">
+          <div>
+            <div class="ctx-badge" id="b1"></div>
+            <div class="ctx-title">Material de lectura base</div>
+          </div>
+          <div class="ctx-tools">
+            <button class="ctx-tool"><span class="ms">zoom_in</span></button>
+            <button class="ctx-tool"><span class="ms">format_size</span></button>
+          </div>
+        </div>
+        <div class="ctx-scroll" id="ctx1"></div>
+      </div>
+      <div class="q-pane">
+        <div class="q-card">
+          <div class="q-header">
+            <div class="q-num-badge">4</div>
+            <div class="q-header-label">Enunciado</div>
+          </div>
+          <div id="stem1"></div>
+          <div id="opts1"></div>
+          <div class="explanation-box show">
+            <div class="exp-title">Respuesta correcta</div>
+            <div class="exp-text">La región Andina concentra el 72.1% de la población pero solo el 12% del territorio, lo que evidencia alta densidad poblacional en contraste con su extensión. Las demás opciones contradicen los datos de la tabla.</div>
+          </div>
+        </div>
+        <div class="q-nav">
+          <button class="q-nav-btn q-nav-prev"><span class="ms">chevron_left</span>Anterior</button>
+          <button class="q-nav-btn q-nav-next">Siguiente<span class="ms">chevron_right</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="config-header"><span class="ms msf" style="font-size:16px">code</span>API — <code>QC.textOnly(config)</code></div>
+      <div class="config-body">
+        <div class="config-param">
+          <div class="config-param-name">paragraphs <span class="config-required">required</span></div>
+          <div class="config-param-type">string[]</div>
+          <div class="config-param-desc">Párrafos de texto renderizados en orden. Cada elemento se imprime como un &lt;p&gt;.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">instruction <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Instrucción breve en cursiva sobre el material de lectura.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">footer <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Nota de cierre o fuente bajo el texto.</div>
+        </div>
+      </div>
+      <div class="config-factory">
+<span class="kw">const</span> { badge, contextHTML } = <span class="fn">QC.textOnly</span>({
+  instruction: <span class="str">"Lee el siguiente texto y responde la pregunta."</span>,
+  paragraphs: [
+    <span class="str">"Durante la última década, varias instituciones educativas rurales han reorganizado sus horarios para integrar proyectos de lectura, huertas escolares y trabajo colaborativo."</span>,
+    <span class="str">"Aunque el tiempo destinado a cada actividad es menor que en el modelo tradicional, los docentes reportan una mayor participación estudiantil y mejor transferencia entre áreas."</span>
+  ],
+  footer: <span class="str">"Fuente: Informe institucional reelaborado con fines académicos."</span>
+});
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+    TIPO 2 — TEXTO CONTINUO + TABLA
+  ══════════════════════════════════════ -->
+  <section class="comp-section" id="type-2">
+    <div class="comp-header">
+      <div class="comp-number" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6)">02</div>
+      <div>
+        <div class="comp-title">Texto continuo + tabla de datos</div>
+        <div class="comp-desc">Un pasaje de lectura continuo acompañado de una tabla estadística o comparativa. El estudiante debe integrar la información del texto con los datos de la tabla para responder.</div>
+        <div class="comp-tags">
+          <span class="area-tag tag-mat">MAT</span>
+          <span class="area-tag tag-lc">LC</span>
+          <span class="area-tag tag-sc">SC</span>
+          <span class="area-tag tag-cn">CN</span>
+          <span class="area-tag tag-factory">QC.proseTable()</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="ctx-pane">
+        <div class="ctx-header">
+          <div>
+            <div class="ctx-badge" id="b2"></div>
+            <div class="ctx-title">Distribución poblacional colombiana</div>
+          </div>
+          <div class="ctx-tools">
+            <button class="ctx-tool"><span class="ms">zoom_in</span></button>
+          </div>
+        </div>
+        <div class="ctx-scroll" id="ctx2"></div>
+      </div>
+      <div class="q-pane">
+        <div class="q-card">
+          <div class="q-header">
+            <div class="q-num-badge">7</div>
+            <div class="q-header-label">Enunciado</div>
+          </div>
+          <div id="stem2"></div>
+          <div id="opts2"></div>
+          <div class="explanation-box show">
+            <div class="exp-title">Respuesta correcta</div>
+            <div class="exp-text">El sonido viaja 1.531 m/s en agua de mar. En 2 s recorre 3.062 m (ida+vuelta), por lo que la distancia al obstáculo es 3.062 ÷ 2 = <strong>1.531 m</strong>.</div>
+          </div>
+        </div>
+        <div class="q-nav">
+          <button class="q-nav-btn q-nav-prev"><span class="ms">chevron_left</span>Anterior</button>
+          <button class="q-nav-btn q-nav-next">Siguiente<span class="ms">chevron_right</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="config-header"><span class="ms msf" style="font-size:16px">code</span>API — <code>QC.proseTable(config)</code></div>
+      <div class="config-body">
+        <div class="config-param">
+          <div class="config-param-name">intro <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Párrafo de contexto (qué está investigando el estudiante).</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">headers <span class="config-required">required</span></div>
+          <div class="config-param-type">{ text, num? }[]</div>
+          <div class="config-param-desc">Encabezados de columna.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">rows <span class="config-required">required</span></div>
+          <div class="config-param-type">{ cells: { text, num?, hi?, bold? }[] }[]</div>
+          <div class="config-param-desc"><code>bold:true</code> para la columna de nombre del elemento.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">source <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Nota de fuente en cursiva bajo la tabla.</div>
+        </div>
+      </div>
+      <div class="config-factory">
+<span class="kw">const</span> { badge, contextHTML } = <span class="fn">QC.scientificTable</span>({
+  intro: <span class="str">"Un estudiante investiga la propagación del sonido..."</span>,
+  headers: [
+    { text:<span class="str">"Medio"</span> }, { text:<span class="str">"Estado"</span> },
+    { text:<span class="str">"Velocidad (m/s)"</span>, num:<span class="kw">true</span> }, { text:<span class="str">"Temp. (°C)"</span>, num:<span class="kw">true</span> }
+  ],
+  rows: [
+    { cells:[{ text:<span class="str">"Vacío"</span>, bold:<span class="kw">true</span> }, { text:<span class="str">"—"</span> }, { text:<span class="str">"0"</span>, num:<span class="kw">true</span> }, { text:<span class="str">"—"</span> }] },
+    { cells:[{ text:<span class="str">"Aire"</span>, bold:<span class="kw">true</span> }, { text:<span class="str">"Gaseoso"</span> }, { text:<span class="str">"343"</span>, num:<span class="kw">true</span> }, { text:<span class="str">"20"</span> }] }
+    <span class="cm">// ...more rows</span>
+  ],
+  source: <span class="str">"Fuente: Datos de laboratorio reelaborados con fines académicos."</span>
+});
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+    TIPO 3 — GRÁFICA DE BARRAS
+  ══════════════════════════════════════ -->
+  <section class="comp-section" id="type-3">
+    <div class="comp-header">
+      <div class="comp-number" style="background:linear-gradient(135deg,#6d28d9,#7c3aed)">03</div>
+      <div>
+        <div class="comp-title">Gráfica de barras</div>
+        <div class="comp-desc">Una gráfica de barras agrupadas construida en CSS puro (sin canvas ni librería externa). Permite comparar valores entre categorías en uno o más períodos de tiempo.</div>
+        <div class="comp-tags">
+          <span class="area-tag tag-mat">MAT</span>
+          <span class="area-tag tag-sc">SC</span>
+          <span class="area-tag tag-cn">CN</span>
+          <span class="area-tag tag-factory">QC.barChart()</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="ctx-pane">
+        <div class="ctx-header">
+          <div>
+            <div class="ctx-badge" id="b3"></div>
+            <div class="ctx-title">Producción agrícola por departamento</div>
+          </div>
+          <div class="ctx-tools">
+            <button class="ctx-tool"><span class="ms">zoom_in</span></button>
+          </div>
+        </div>
+        <div class="ctx-scroll" id="ctx3"></div>
+      </div>
+      <div class="q-pane">
+        <div class="q-card">
+          <div class="q-header">
+            <div class="q-num-badge">9</div>
+            <div class="q-header-label">Enunciado</div>
+          </div>
+          <div id="stem3"></div>
+          <div id="opts3"></div>
+          <div class="explanation-box show">
+            <div class="exp-title">Respuesta correcta</div>
+            <div class="exp-text">Nariño: (190−100)/100 = 90%. Boyacá: ≈69%. Antioquia: ≈46%. Aunque Antioquia creció más en términos absolutos, el mayor crecimiento porcentual es de <strong>Nariño (90%)</strong>.</div>
+          </div>
+        </div>
+        <div class="q-nav">
+          <button class="q-nav-btn q-nav-prev"><span class="ms">chevron_left</span>Anterior</button>
+          <button class="q-nav-btn q-nav-next">Siguiente<span class="ms">chevron_right</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="config-header"><span class="ms msf" style="font-size:16px">code</span>API — <code>QC.barChart(config)</code></div>
+      <div class="config-body">
+        <div class="config-param">
+          <div class="config-param-name">groups <span class="config-required">required</span></div>
+          <div class="config-param-type">{ label, bars: { value, color, label? }[] }[]</div>
+          <div class="config-param-desc">Cada grupo es un clúster de barras (posición horizontal). <code>bars</code> contiene las barras del clúster (por ej. año 2018 y 2024).</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">maxVal <span class="config-required">required</span></div>
+          <div class="config-param-type">number</div>
+          <div class="config-param-desc">Valor máximo del eje Y (usado para escalar la altura de barras). Usa el valor más alto de los datos + ~10%.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">legend <span class="config-required">required</span></div>
+          <div class="config-param-type">{ color, label }[]</div>
+          <div class="config-param-desc">Leyenda mostrada bajo las barras. Debe coincidir con el orden de <code>bars</code>.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">height <span class="config-optional">optional</span></div>
+          <div class="config-param-type">number (default: 100)</div>
+          <div class="config-param-desc">Altura en px del área de barras. Aumenta si los valores necesitan más resolución visual.</div>
+        </div>
+      </div>
+      <div class="config-factory">
+<span class="kw">const</span> { badge, contextHTML } = <span class="fn">QC.barChart</span>({
+  title: <span class="str">"Producción agrícola por departamento (miles de toneladas)"</span>,
+  maxVal: <span class="num">430</span>,
+  groups: [
+    { label:<span class="str">"Antioquia"</span>, bars:[{ value:<span class="num">280</span>, color:<span class="str">"#1d4ed8"</span> },{ value:<span class="num">410</span>, color:<span class="str">"#60a5fa"</span> }] },
+    { label:<span class="str">"Valle"</span>,     bars:[{ value:<span class="num">240</span>, color:<span class="str">"#1d4ed8"</span> },{ value:<span class="num">350</span>, color:<span class="str">"#60a5fa"</span> }] },
+    <span class="cm">// ...more groups</span>
+  ],
+  legend: [{ color:<span class="str">"#1d4ed8"</span>, label:<span class="str">"2018"</span> },{ color:<span class="str">"#60a5fa"</span>, label:<span class="str">"2024"</span> }]
+});
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+    TIPO 4 — AVISO PÚBLICO
+  ══════════════════════════════════════ -->
+  <section class="comp-section" id="type-4">
+    <div class="comp-header">
+      <div class="comp-number" style="background:linear-gradient(135deg,#b45309,#d97706)">04</div>
+      <div>
+        <div class="comp-title">Aviso público institucional</div>
+        <div class="comp-desc">Texto no continuo que replica avisos, letreros, horarios o reglamentos institucionales. Evalúa comprensión pragmática a nivel A1/A2 en Inglés (Part 1). También válido para LC (textos discontinuos).</div>
+        <div class="comp-tags">
+          <span class="area-tag tag-ing">ING · Parte 1</span>
+          <span class="area-tag tag-lc">LC</span>
+          <span class="area-tag tag-factory">QC.publicNotice()</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="ctx-pane">
+        <div class="ctx-header">
+          <div>
+            <div class="ctx-badge" id="b4"></div>
+            <div class="ctx-title">Institutional sign comprehension</div>
+          </div>
+          <div class="ctx-tools">
+            <button class="ctx-tool"><span class="ms">zoom_in</span></button>
+          </div>
+        </div>
+        <div class="ctx-scroll" id="ctx4"></div>
+      </div>
+      <div class="q-pane">
+        <div class="q-card">
+          <div class="q-header">
+            <div class="q-num-badge">2</div>
+            <div class="q-header-label">Question</div>
+          </div>
+          <div id="stem4"></div>
+          <div id="opts4"></div>
+          <div class="explanation-box show">
+            <div class="exp-title">Correct answer</div>
+            <div class="exp-text">The notice shows Saturday hours (9 a.m.–1 p.m.) and states CLOSED on Sundays. Only option B correctly reflects this.</div>
+          </div>
+        </div>
+        <div class="q-nav">
+          <button class="q-nav-btn q-nav-prev"><span class="ms">chevron_left</span>Previous</button>
+          <button class="q-nav-btn q-nav-next">Next<span class="ms">chevron_right</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="config-header"><span class="ms msf" style="font-size:16px">code</span>API — <code>QC.publicNotice(config)</code></div>
+      <div class="config-body">
+        <div class="config-param">
+          <div class="config-param-name">lang <span class="config-optional">optional</span></div>
+          <div class="config-param-type">'es' | 'en' (default: 'es')</div>
+          <div class="config-param-desc">Controla el badge: 'Public Notice · Part 1' en inglés o 'Aviso Público' en español.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">header <span class="config-required">required</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Título/nombre del aviso (ej. nombre de la institución). Admite HTML (emojis, strong).</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">rows <span class="config-required">required</span></div>
+          <div class="config-param-type">{ label, value }[]</div>
+          <div class="config-param-desc">Filas de información del aviso. label: etiqueta izquierda; value: dato derecho.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">note <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Nota destacada en recuadro verde (ej. "Free Wi-Fi"). Admite HTML.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">instruction <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Instrucción en cursiva sobre el aviso (ej. "Read the following notice…").</div>
+        </div>
+      </div>
+      <div class="config-factory">
+<span class="kw">const</span> { badge, contextHTML } = <span class="fn">QC.publicNotice</span>({
+  lang: <span class="str">"en"</span>,
+  instruction: <span class="str">"Read the following public notice and answer the question."</span>,
+  header: <span class="str">"🏛️ Riverside Public Library"</span>,
+  rows: [
+    { label:<span class="str">"Monday – Friday"</span>, value:<span class="str">"8:00 a.m. – 6:00 p.m."</span> },
+    { label:<span class="str">"Saturday"</span>,       value:<span class="str">"9:00 a.m. – 1:00 p.m."</span> },
+    { label:<span class="str">"Sunday &amp; holidays"</span>, value:<span class="str">"CLOSED"</span> }
+  ],
+  note:   <span class="str">"📶 Free Wi-Fi available for all registered members"</span>,
+  footer: <span class="str">"Membership is free — register at the front desk"</span>
+});
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+    TIPO 5 — DIÁLOGO CONVERSACIONAL
+  ══════════════════════════════════════ -->
+  <section class="comp-section" id="type-5">
+    <div class="comp-header">
+      <div class="comp-number" style="background:linear-gradient(135deg,#0891b2,#06b6d4)">05</div>
+      <div>
+        <div class="comp-title">Diálogo conversacional con burbujas</div>
+        <div class="comp-desc">Una conversación entre dos o más personajes, renderizada con burbujas de chat estilo mensajería. Evalúa comprensión de diálogos en inglés (ING Part 3) o de textos dramáticos en LC.</div>
+        <div class="comp-tags">
+          <span class="area-tag tag-ing">ING · Parte 3</span>
+          <span class="area-tag tag-lc">LC</span>
+          <span class="area-tag tag-factory">QC.dialogue()</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="ctx-pane">
+        <div class="ctx-header">
+          <div>
+            <div class="ctx-badge" id="b5"></div>
+            <div class="ctx-title">Conversational English completion</div>
+          </div>
+          <div class="ctx-tools">
+            <button class="ctx-tool"><span class="ms">zoom_in</span></button>
+          </div>
+        </div>
+        <div class="ctx-scroll" id="ctx5"></div>
+      </div>
+      <div class="q-pane">
+        <div class="q-card">
+          <div class="q-header">
+            <div class="q-num-badge">14</div>
+            <div class="q-header-label">Question</div>
+          </div>
+          <div id="stem5"></div>
+          <div id="opts5"></div>
+          <div class="explanation-box show">
+            <div class="exp-title">Correct answer</div>
+            <div class="exp-text">Marco says "My team is presenting a project about solar energy." Option A describes Ana's role (robotics), and option B is not mentioned in the dialogue.</div>
+          </div>
+        </div>
+        <div class="q-nav">
+          <button class="q-nav-btn q-nav-prev"><span class="ms">chevron_left</span>Previous</button>
+          <button class="q-nav-btn q-nav-next">Next<span class="ms">chevron_right</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="config-header"><span class="ms msf" style="font-size:16px">code</span>API — <code>QC.dialogue(config)</code></div>
+      <div class="config-body">
+        <div class="config-param">
+          <div class="config-param-name">speakers <span class="config-required">required</span></div>
+          <div class="config-param-type">{ [key]: { name, initials, bg, color } }</div>
+          <div class="config-param-desc">Mapa de hablantes. key es el identificador usado en <code>lines[].speaker</code>. bg/color son para el círculo avatar.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">lines <span class="config-required">required</span></div>
+          <div class="config-param-type">{ speaker, side: 'left'|'right', text }[]</div>
+          <div class="config-param-desc">Lista ordenada de turnos. <code>side:'right'</code> alinea la burbuja a la derecha (interlocutor secundario).</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">lang <span class="config-optional">optional</span></div>
+          <div class="config-param-type">'es' | 'en'</div>
+          <div class="config-param-desc">Afecta el badge: 'Dialogue · Part 3' o 'Diálogo'.</div>
+        </div>
+      </div>
+      <div class="config-factory">
+<span class="kw">const</span> { badge, contextHTML } = <span class="fn">QC.dialogue</span>({
+  lang: <span class="str">"en"</span>,
+  instruction: <span class="str">"Read the conversation and answer the question."</span>,
+  speakers: {
+    ana:   { name:<span class="str">"Ana"</span>,   initials:<span class="str">"A"</span>, bg:<span class="str">"#dbe1ff"</span>, color:<span class="str">"#004ac6"</span> },
+    marco: { name:<span class="str">"Marco"</span>, initials:<span class="str">"M"</span>, bg:<span class="str">"#ecfdf5"</span>, color:<span class="str">"#047857"</span> }
+  },
+  lines: [
+    { speaker:<span class="str">"ana"</span>,   side:<span class="str">"left"</span>,  text:<span class="str">"Are you going to the science fair?"</span> },
+    { speaker:<span class="str">"marco"</span>, side:<span class="str">"right"</span>, text:<span class="str">"Yes! My team is presenting solar energy."</span> }
+    <span class="cm">// ...more lines</span>
+  ]
+});
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+    TIPO 6 — CLOZE GRAMATICAL
+  ══════════════════════════════════════ -->
+  <section class="comp-section" id="type-6">
+    <div class="comp-header">
+      <div class="comp-number" style="background:linear-gradient(135deg,#be123c,#e11d48)">06</div>
+      <div>
+        <div class="comp-title">Cloze gramatical (fill-in-the-blank)</div>
+        <div class="comp-desc">Un texto con huecos numerados donde el estudiante elige la opción gramaticalmente correcta para cada espacio. El hueco activo (que se está respondiendo) se resalta en azul.</div>
+        <div class="comp-tags">
+          <span class="area-tag tag-ing">ING · Parte 4</span>
+          <span class="area-tag tag-factory">QC.cloze()</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="ctx-pane">
+        <div class="ctx-header">
+          <div>
+            <div class="ctx-badge" id="b6"></div>
+            <div class="ctx-title">Grammar in context — Past tenses</div>
+          </div>
+          <div class="ctx-tools">
+            <button class="ctx-tool"><span class="ms">zoom_in</span></button>
+          </div>
+        </div>
+        <div class="ctx-scroll" id="ctx6"></div>
+      </div>
+      <div class="q-pane">
+        <div class="q-card">
+          <div class="q-header">
+            <div class="q-num-badge">23</div>
+            <div class="q-header-label">Question</div>
+          </div>
+          <div id="stem6"></div>
+          <div id="opts6"></div>
+          <div class="explanation-box show">
+            <div class="exp-title">Correct answer</div>
+            <div class="exp-text">"Last summer" is a specific past time marker → Simple Past. "Joined" is correct. "Has joined" (Present Perfect) requires no specific time reference. "Was joining" (Past Continuous) doesn't fit the narrative context.</div>
+          </div>
+        </div>
+        <div class="q-nav">
+          <button class="q-nav-btn q-nav-prev"><span class="ms">chevron_left</span>Previous</button>
+          <button class="q-nav-btn q-nav-next">Next<span class="ms">chevron_right</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="config-header"><span class="ms msf" style="font-size:16px">code</span>API — <code>QC.cloze(config)</code></div>
+      <div class="config-body">
+        <div class="config-param">
+          <div class="config-param-name">segments <span class="config-required">required</span></div>
+          <div class="config-param-type">({ type:'text', text } | { type:'blank', n })[]</div>
+          <div class="config-param-desc">Alterna segmentos de texto y huecos numerados. El párrafo completo se reconstruye concatenando estos segmentos.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">activeBlank <span class="config-required">required</span></div>
+          <div class="config-param-type">number</div>
+          <div class="config-param-desc">Número del hueco (1-based) que se está contestando actualmente. Se resalta en azul.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">footer <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Nota aclaratoria bajo el texto (ej. "Answer blank (1) only — the correct form of <em>join</em>").</div>
+        </div>
+      </div>
+      <div class="config-factory">
+<span class="kw">const</span> { badge, contextHTML } = <span class="fn">QC.cloze</span>({
+  lang: <span class="str">"en"</span>,
+  instruction: <span class="str">"Read the text. Choose the best option for each blank."</span>,
+  activeBlank: <span class="num">1</span>,
+  segments: [
+    { type:<span class="str">"text"</span>,  text:<span class="str">"Last summer, Maria "</span> },
+    { type:<span class="str">"blank"</span>, n:<span class="num">1</span> },
+    { type:<span class="str">"text"</span>,  text:<span class="str">" a volunteer program. Every morning, she "</span> },
+    { type:<span class="str">"blank"</span>, n:<span class="num">2</span> },
+    { type:<span class="str">"text"</span>,  text:<span class="str">" to the beach."</span> }
+  ],
+  footer: <span class="str">"Answer blank (1) only — the correct form of the verb &lt;em&gt;join&lt;/em&gt;."</span>
+});
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+    TIPO 7 — FIGURA GEOMÉTRICA SVG
+  ══════════════════════════════════════ -->
+  <section class="comp-section" id="type-7">
+    <div class="comp-header">
+      <div class="comp-number" style="background:linear-gradient(135deg,#004ac6,#2563eb)">07</div>
+      <div>
+        <div class="comp-title">Figura geométrica SVG</div>
+        <div class="comp-desc">Una figura vectorial (triángulo, círculo, gráfico de fuerza, diagrama de circuito, etc.) incrustada como SVG inline. Permite mostrar medidas etiquetadas, ángulos y relaciones geométricas directamente en el contexto.</div>
+        <div class="comp-tags">
+          <span class="area-tag tag-mat">MAT — Geometría</span>
+          <span class="area-tag tag-cn">CN — Física/Diagramas</span>
+          <span class="area-tag tag-factory">QC.geometry()</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="ctx-pane">
+        <div class="ctx-header">
+          <div>
+            <div class="ctx-badge" id="b7"></div>
+            <div class="ctx-title">Triángulo rectángulo — Razones trigonométricas</div>
+          </div>
+          <div class="ctx-tools">
+            <button class="ctx-tool"><span class="ms">zoom_in</span></button>
+          </div>
+        </div>
+        <div class="ctx-scroll" id="ctx7"></div>
+      </div>
+      <div class="q-pane">
+        <div class="q-card">
+          <div class="q-header">
+            <div class="q-num-badge">16</div>
+            <div class="q-header-label">Enunciado</div>
+          </div>
+          <div id="stem7"></div>
+          <div id="opts7"></div>
+          <div class="explanation-box show">
+            <div class="exp-title">Respuesta correcta</div>
+            <div class="exp-text">Teorema de Pitágoras: AC² = AB² + BC² = 144 + 25 = 169. Por lo tanto <strong>AC = √169 = 13 cm</strong>. Las opciones B, C y D aplican operaciones incorrectas sobre los catetos.</div>
+          </div>
+        </div>
+        <div class="q-nav">
+          <button class="q-nav-btn q-nav-prev"><span class="ms">chevron_left</span>Anterior</button>
+          <button class="q-nav-btn q-nav-next">Finalizar<span class="ms">check</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="config-header"><span class="ms msf" style="font-size:16px">code</span>API — <code>QC.geometry(config)</code></div>
+      <div class="config-body">
+        <div class="config-param">
+          <div class="config-param-name">svgContent <span class="config-required">required</span></div>
+          <div class="config-param-type">string (raw SVG markup)</div>
+          <div class="config-param-desc">El tag &lt;svg&gt; completo incluyendo viewBox, width y height. Usa <code>font-family="Inter"</code> para las etiquetas de texto.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">intro <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Instrucción antes de la figura (ej. "Observe el siguiente triángulo y responda…").</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">caption <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Nota descriptiva debajo de la figura (ej. "El ángulo recto está en B. AB = 12 cm, BC = 5 cm").</div>
+        </div>
+      </div>
+      <div class="config-factory">
+<span class="kw">const</span> { badge, contextHTML } = <span class="fn">QC.geometry</span>({
+  intro: <span class="str">"Observe el siguiente triángulo rectángulo y responda."</span>,
+  svgContent: <span class="str">`
+    &lt;svg width="320" height="220" viewBox="0 0 320 220"&gt;
+      &lt;polygon points="40,180 280,180 280,40" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2.5"/&gt;
+      &lt;rect x="263" y="163" width="17" height="17" fill="none" stroke="#1d4ed8" stroke-width="2"/&gt;
+      &lt;text x="145" y="200" font-family="Inter" font-size="13" fill="#505f76"&gt;AB = 12 cm&lt;/text&gt;
+      &lt;text x="287" y="118" font-family="Inter" font-size="13" fill="#505f76"&gt;BC = 5 cm&lt;/text&gt;
+      &lt;text x="130" y="100" font-family="Inter" font-size="13" fill="#004ac6" font-weight="600"
+            transform="rotate(-22,130,100)"&gt;AC = ?&lt;/text&gt;
+    &lt;/svg&gt;`</span>,
+  caption: <span class="str">"El ángulo recto está en B. Catetos: AB = 12 cm, BC = 5 cm."</span>
+});
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+    TIPO 8 — TABLA CIENTÍFICA
+  ══════════════════════════════════════ -->
+  <section class="comp-section" id="type-8">
+    <div class="comp-header">
+      <div class="comp-number" style="background:linear-gradient(135deg,#047857,#10b981)">08</div>
+      <div>
+        <div class="comp-title">Tabla científica</div>
+        <div class="comp-desc">Datos experimentales o de referencia presentados en una tabla estructurada con contexto científico. El estudiante usa los datos para calcular, comparar o inferir propiedades.</div>
+        <div class="comp-tags">
+          <span class="area-tag tag-cn">CN</span>
+          <span class="area-tag tag-mat">MAT</span>
+          <span class="area-tag tag-factory">QC.scientificTable()</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <div class="ctx-pane">
+        <div class="ctx-header">
+          <div>
+            <div class="ctx-badge" id="b8"></div>
+            <div class="ctx-title">Velocidad del sonido en distintos medios</div>
+          </div>
+          <div class="ctx-tools">
+            <button class="ctx-tool"><span class="ms">zoom_in</span></button>
+          </div>
+        </div>
+        <div class="ctx-scroll" id="ctx8"></div>
+      </div>
+      <div class="q-pane">
+        <div class="q-card">
+          <div class="q-header">
+            <div class="q-num-badge">19</div>
+            <div class="q-header-label">Enunciado</div>
+          </div>
+          <div id="stem8"></div>
+          <div id="opts8"></div>
+          <div class="explanation-box show">
+            <div class="exp-title">Respuesta correcta</div>
+            <div class="exp-text">El sonido viaja 1.531 m/s en agua de mar. En 2 segundos recorre el doble de la distancia al obstáculo, por eso la distancia correcta es 1.531 m.</div>
+          </div>
+        </div>
+        <div class="q-nav">
+          <button class="q-nav-btn q-nav-prev"><span class="ms">chevron_left</span>Anterior</button>
+          <button class="q-nav-btn q-nav-next">Finalizar<span class="ms">check</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-block">
+      <div class="config-header"><span class="ms msf" style="font-size:16px">code</span>API — <code>QC.scientificTable(config)</code></div>
+      <div class="config-body">
+        <div class="config-param">
+          <div class="config-param-name">intro <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Párrafo de contexto previo a la tabla experimental.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">headers <span class="config-required">required</span></div>
+          <div class="config-param-type">{ text, num? }[]</div>
+          <div class="config-param-desc">Encabezados de columna.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">rows <span class="config-required">required</span></div>
+          <div class="config-param-type">{ cells: { text, num?, hi?, bold? }[] }[]</div>
+          <div class="config-param-desc">Filas del experimento o comparación científica.</div>
+        </div>
+        <div class="config-param">
+          <div class="config-param-name">source <span class="config-optional">optional</span></div>
+          <div class="config-param-type">string</div>
+          <div class="config-param-desc">Nota de fuente en cursiva.</div>
+        </div>
+      </div>
+      <div class="config-factory">
+<span class="kw">const</span> { badge, contextHTML } = <span class="fn">QC.scientificTable</span>({
+  intro: <span class="str">"Un estudiante investiga la propagación del sonido..."</span>,
+  headers: [
+    { text:<span class="str">"Medio"</span> }, { text:<span class="str">"Estado"</span> },
+    { text:<span class="str">"Velocidad (m/s)"</span>, num:<span class="kw">true</span> }, { text:<span class="str">"Temp. (°C)"</span>, num:<span class="kw">true</span> }
+  ],
+  rows: [
+    { cells:[{ text:<span class="str">"Aire"</span>, bold:<span class="kw">true</span> }, { text:<span class="str">"Gaseoso"</span> }, { text:<span class="str">"343"</span>, num:<span class="kw">true</span> }, { text:<span class="str">"20"</span>, num:<span class="kw">true</span> }] },
+    { cells:[{ text:<span class="str">"Agua de mar"</span>, bold:<span class="kw">true</span> }, { text:<span class="str">"Líquido"</span> }, { text:<span class="str">"1.531"</span>, num:<span class="kw">true</span> }, { text:<span class="str">"20"</span>, num:<span class="kw">true</span> }] }
+  ],
+  source: <span class="str">"Fuente: Datos de laboratorio reelaborados con fines académicos."</span>
+});
+      </div>
+    </div>
+  </section>
+
+  <!-- footer -->
+  <div style="text-align:center;padding:32px 0 16px;font-size:11px;color:var(--outline)">
+    Versión 1.1.0 · Saber 11 Design System · © 2026 Víctor Puello · Todos los derechos reservados.
+  </div>
+
+</div><!-- /main -->
+
+<!-- ════════════════════════════════════════════
+  SCRIPTS
+════════════════════════════════════════════ -->
+<script src="components/question-components.js"></script>
+<script>
+
+// ── Demo data ─────────────────────────────────────────────────
+
+// Type 1: textOnly
+const d1 = QC.textOnly({
+  instruction: 'Lee el siguiente material de lectura y responde la pregunta.',
+  paragraphs: [
+    'Durante la última década, varias instituciones educativas rurales han reorganizado sus horarios para integrar proyectos de lectura, huertas escolares y trabajo colaborativo.',
+    'Aunque el tiempo destinado a cada actividad es menor que en el modelo tradicional, los docentes reportan una mayor participación estudiantil y mejor transferencia entre áreas.'
+  ],
+  footer: 'Fuente: Informe institucional reelaborado con fines académicos.'
+});
+
+// Type 2: proseTable
+const d2 = QC.proseTable({
+  intro: [
+    'La siguiente tabla muestra la distribución porcentual de la población colombiana por región natural, según el Censo Nacional de Población realizado por el DANE en 2018.',
+    'Estas cifras contrastan con la distribución territorial: la región Amazónica ocupa el 35% del territorio nacional, mientras la región Andina, con mayor densidad, representa únicamente el 12% del área total.'
+  ],
+  headers: [
+    { text:'Región Natural' }, { text:'Departamentos incluidos' },
+    { text:'% Pob.', num:true }, { text:'Hab. aprox.', num:true }
+  ],
+  rows: [
+    { cells:[{text:'Andina'},{text:'Cundinamarca, Antioquia, Valle...'},{text:'72.1%',num:true,hi:true},{text:'35,8M',num:true}] },
+    { cells:[{text:'Caribe'},{text:'Bolívar, Atlántico, Córdoba...'},{text:'20.7%',num:true},{text:'10,3M',num:true}] },
+    { cells:[{text:'Pacífica'},{text:'Chocó, Nariño (costa)...'},{text:'3.1%',num:true},{text:'1,5M',num:true}] },
+    { cells:[{text:'Orinoquía'},{text:'Meta, Vichada, Casanare...'},{text:'2.6%',num:true},{text:'1,3M',num:true}] },
+    { cells:[{text:'Amazónica'},{text:'Amazonas, Vaupés, Guainía...'},{text:'1.5%',num:true},{text:'0,7M',num:true}] },
+  ],
+  tableCaption: 'Fuente: DANE, Censo Nacional de Población y Vivienda, 2018 (datos reelaborados con fines académicos).'
+});
+
+// Type 8: scientificTable
+const d8 = QC.scientificTable({
+  intro: 'Un estudiante investiga la propagación del sonido en diferentes medios materiales. Consulta la siguiente tabla de velocidades de propagación:',
+  headers: [
+    {text:'Medio'},{text:'Estado'},{text:'Velocidad (m/s)',num:true},{text:'Temp. (°C)',num:true}
+  ],
+  rows: [
+    {cells:[{text:'Vacío',bold:true},{text:'—'},{text:'0',num:true},{text:'—',num:true}]},
+    {cells:[{text:'Aire',bold:true},{text:'Gaseoso'},{text:'343',num:true},{text:'20',num:true}]},
+    {cells:[{text:'Agua dulce',bold:true},{text:'Líquido'},{text:'1.482',num:true,hi:true},{text:'20',num:true}]},
+    {cells:[{text:'Agua de mar',bold:true},{text:'Líquido'},{text:'1.531',num:true},{text:'20',num:true}]},
+    {cells:[{text:'Madera (roble)',bold:true},{text:'Sólido'},{text:'3.850',num:true},{text:'20',num:true}]},
+    {cells:[{text:'Acero',bold:true},{text:'Sólido'},{text:'5.100',num:true},{text:'20',num:true}]},
+  ],
+  source: 'Fuente: Datos de laboratorio reelaborados con fines académicos.'
+});
+
+// Type 3: barChart
+const d3 = QC.barChart({
+  intro: 'La siguiente gráfica compara la producción agrícola (en miles de toneladas) de cinco departamentos de Colombia en los años 2018 y 2024.',
+  title: 'Producción agrícola por departamento (miles de toneladas)',
+  maxVal: 430,
+  groups: [
+    {label:'Antioquia', bars:[{value:280,color:'#1d4ed8'},{value:410,color:'#60a5fa'}]},
+    {label:'Valle',     bars:[{value:240,color:'#1d4ed8'},{value:350,color:'#60a5fa'}]},
+    {label:'Cund.',     bars:[{value:210,color:'#1d4ed8'},{value:180,color:'#60a5fa'}]},
+    {label:'Boyacá',    bars:[{value:130,color:'#1d4ed8'},{value:220,color:'#60a5fa'}]},
+    {label:'Nariño',    bars:[{value:100,color:'#1d4ed8'},{value:190,color:'#60a5fa'}]},
+  ],
+  legend: [{color:'#1d4ed8',label:'2018'},{color:'#60a5fa',label:'2024'}],
+  source: 'Fuente: Datos ficticios elaborados con fines pedagógicos.'
+});
+
+// Type 4: publicNotice
+const d4 = QC.publicNotice({
+  lang: 'en',
+  instruction: 'Read the following public notice and answer the question.',
+  header: '🏛️ Riverside Public Library',
+  rows: [
+    {label:'Monday – Friday',     value:'8:00 a.m. – 6:00 p.m.'},
+    {label:'Saturday',            value:'9:00 a.m. – 1:00 p.m.'},
+    {label:'Sunday & holidays',   value:'CLOSED'},
+  ],
+  note:   '📶 Free Wi-Fi available for all registered members',
+  footer: 'Membership is free — register at the front desk'
+});
+
+// Type 5: dialogue
+const d5 = QC.dialogue({
+  lang: 'en',
+  instruction: 'Read the following conversation and answer the question.',
+  speakers: {
+    ana:   {name:'Ana',   initials:'A', bg:'#dbe1ff', color:'#004ac6'},
+    marco: {name:'Marco', initials:'M', bg:'#ecfdf5', color:'#047857'},
+  },
+  lines: [
+    {speaker:'ana',   side:'left',  text:'Hi Marco! Are you going to the school science fair this Saturday?'},
+    {speaker:'marco', side:'right', text:'Yes! My team is presenting a project about solar energy. What about you?'},
+    {speaker:'ana',   side:'left',  text:"I'm helping with the robotics display. It starts at 10 a.m. — don't be late!"},
+    {speaker:'marco', side:'right', text:"Don't worry. My dad is driving us there. See you at the entrance!"},
+  ]
+});
+
+// Type 6: cloze
+const d6 = QC.cloze({
+  lang: 'en',
+  instruction: 'Read the text. Choose the option that best fits each blank. Answer for blank (1).',
+  activeBlank: 1,
+  segments: [
+    {type:'text',  text:'Last summer, Maria '},
+    {type:'blank', n:1},
+    {type:'text',  text:' a volunteer program in a small coastal town. Every morning, she '},
+    {type:'blank', n:2},
+    {type:'text',  text:' to the beach to collect plastic waste. The experience completely changed her perspective on environmental issues. By the time she returned home, she '},
+    {type:'blank', n:3},
+    {type:'text',  text:' more than 50 kg of recyclable materials.'},
+  ],
+  footer: 'Answer blank (1) only — the correct form of the verb <em>join</em>.'
+});
+
+// Type 7: geometry
+const d7 = QC.geometry({
+  intro: 'Observe el siguiente triángulo rectángulo y responda la pregunta basándose únicamente en la figura.',
+  svgContent: `<svg width="320" height="220" viewBox="0 0 320 220">
+    <polygon points="40,180 280,180 280,40" fill="#eff6ff" stroke="#1d4ed8" stroke-width="2.5"/>
+    <rect x="263" y="163" width="17" height="17" fill="none" stroke="#1d4ed8" stroke-width="2"/>
+    <text x="22" y="185" font-family="Inter" font-size="15" font-weight="700" fill="#191c1e">A</text>
+    <text x="286" y="185" font-family="Inter" font-size="15" font-weight="700" fill="#191c1e">B</text>
+    <text x="286" y="38" font-family="Inter" font-size="15" font-weight="700" fill="#191c1e">C</text>
+    <text x="145" y="200" font-family="Inter" font-size="13" fill="#505f76">AB = 12 cm</text>
+    <text x="287" y="118" font-family="Inter" font-size="13" fill="#505f76">BC = 5 cm</text>
+    <text x="130" y="100" font-family="Inter" font-size="13" fill="#004ac6" font-weight="600" transform="rotate(-22,130,100)">AC = ?</text>
+    <path d="M 60,180 A 20,20 0 0,1 57,162" stroke="#047857" stroke-width="2" fill="none"/>
+    <text x="62" y="174" font-family="Inter" font-size="12" fill="#047857" font-weight="700">α</text>
+  </svg>`,
+  caption: 'El ángulo recto está en B. Los catetos miden AB = 12 cm y BC = 5 cm.'
+});
+
+// ── Render all components ─────────────────────────────────────
+const demos = [d1, d2, d3, d4, d5, d6, d7, d8];
+
+demos.forEach((d, i) => {
+  const n = i + 1;
+  document.getElementById(`b${n}`).textContent = d.badge;
+  document.getElementById(`ctx${n}`).innerHTML = d.contextHTML;
+});
+
+// ── Stems and options ─────────────────────────────────────────
+const qdata = [
+  {
+    stem: 'Con base en el texto, ¿qué conclusión resume mejor el efecto del nuevo modelo de organización escolar?',
+    opts:[
+      {l:'A',t:'Que reducir el tiempo por actividad impide cualquier aprendizaje articulado.'},
+      {l:'B',t:'Que integrar proyectos diversos puede fortalecer la participación y la transferencia entre áreas.'},
+      {l:'C',t:'Que el modelo tradicional garantiza siempre mejores resultados en todas las instituciones.'},
+      {l:'D',t:'Que las huertas escolares reemplazan por completo las actividades de lectura.'},
+    ], correct:'B'
+  },
+  {
+    stem: 'Con base en la tabla, ¿qué afirmación describe correctamente la relación entre extensión territorial y concentración poblacional en Colombia?',
+    opts:[
+      {l:'A',t:'Las regiones con mayor extensión territorial tienen mayor concentración de población.'},
+      {l:'B',t:'La región Andina concentra la mayor población a pesar de no ser la región más extensa.'},
+      {l:'C',t:'La región Amazónica y la Orinoquía juntas superan el 20% de la población total.'},
+      {l:'D',t:'La distribución territorial y poblacional es proporcional en todas las regiones.'},
+    ], correct:'B'
+  },
+  {
+    stem: 'Un submarino que emite una señal de sonar en agua de mar recibe el eco tras 2 segundos. ¿Qué distancia aproximada hay entre el submarino y el obstáculo?',
+    opts:[{l:'A',t:'764 m'},{l:'B',t:'1.531 m'},{l:'C',t:'3.062 m'},{l:'D',t:'3.800 m'}], correct:'B'
+  },
+  {
+    stem: '¿Cuál departamento presentó el mayor porcentaje de crecimiento en su producción agrícola entre 2018 y 2024?',
+    opts:[
+      {l:'A',t:'Antioquia, al registrar el mayor incremento absoluto (130 mil toneladas).'},
+      {l:'B',t:'Boyacá, con un crecimiento del 69% aproximadamente.'},
+      {l:'C',t:'Nariño, al pasar de 100 a 190 mil toneladas (90% de crecimiento).'},
+      {l:'D',t:'Cundinamarca, por ser el único departamento que modificó su producción.'},
+    ], correct:'C'
+  },
+  {
+    stem: 'According to the notice, when can visitors use the library on weekends?',
+    opts:[
+      {l:'A',t:'On both Saturday and Sunday.'},
+      {l:'B',t:'Only on Saturday, from 9:00 a.m. to 1:00 p.m.'},
+      {l:'C',t:'Every day of the week.'},
+    ], correct:'B'
+  },
+  {
+    stem: "What is Marco's role in the science fair?",
+    opts:[
+      {l:'A',t:'He is helping with the robotics display.'},
+      {l:'B',t:'He is organizing the event with his teacher.'},
+      {l:'C',t:'He is presenting a solar energy project with his team.'},
+    ], correct:'C'
+  },
+  {
+    stem: 'Choose the correct option for blank (1):',
+    stemType: 'cloze',
+    opts:[{l:'A',t:'joins'},{l:'B',t:'joined'},{l:'C',t:'has joined'},{l:'D',t:'was joining'}], correct:'B'
+  },
+  {
+    stem: 'Según la figura, ¿cuánto mide la hipotenusa AC del triángulo rectángulo?',
+    opts:[
+      {l:'A',t:'13 cm — usando el teorema de Pitágoras: √(12² + 5²) = √169'},
+      {l:'B',t:'17 cm — sumando los catetos: 12 + 5'},
+      {l:'C',t:'10,9 cm — promediando los catetos: (12 + 5) / √2'},
+      {l:'D',t:'7 cm — restando los catetos: 12 − 5'},
+    ], correct:'A'
+  },
+  {
+    stem: 'Un submarino que emite una señal de sonar en agua de mar recibe el eco tras 2 segundos. ¿Qué distancia aproximada hay entre el submarino y el obstáculo?',
+    opts:[{l:'A',t:'764 m'},{l:'B',t:'1.531 m'},{l:'C',t:'3.062 m'},{l:'D',t:'3.800 m'}], correct:'B'
+  },
+];
+
+qdata.forEach((q, i) => {
+  const n = i + 1;
+  document.getElementById(`stem${n}`).innerHTML = QC.stem({ text: q.stem, type: q.stemType || 'normal' });
+  const optsHtml = q.opts.map(o => {
+    const isCorrect = o.l === q.correct;
+    return `<div class="option ${isCorrect ? 'correct' : ''}" data-value="${o.l}">
+      <div class="opt-letter">${o.l}</div>
+      <div class="opt-text">${o.t}</div>
+    </div>`;
+  }).join('');
+  document.getElementById(`opts${n}`).innerHTML = `<div class="options">${optsHtml}</div>`;
+});
+
+// ── Quick Reference Grid ──────────────────────────────────────
+const qrefMeta = [
+  { num:'01', name:'Texto base simple',      fn:'QC.textOnly()',        desc:'Material de lectura únicamente textual. Caso base del producto.', colors:'linear-gradient(135deg,#0f172a,#334155)' },
+  { num:'02', name:'Texto continuo + tabla', fn:'QC.proseTable()',      desc:'Pasaje de lectura + tabla estadística o comparativa.', colors:'linear-gradient(135deg,#1d4ed8,#3b82f6)' },
+  { num:'03', name:'Gráfica de barras',      fn:'QC.barChart()',        desc:'Barras agrupadas en CSS puro. Comparación entre períodos o categorías.', colors:'linear-gradient(135deg,#6d28d9,#7c3aed)' },
+  { num:'04', name:'Aviso público',          fn:'QC.publicNotice()',    desc:'Letrero/horario institucional. ING Part 1 o LC textos discontinuos.', colors:'linear-gradient(135deg,#b45309,#d97706)' },
+  { num:'05', name:'Diálogo conversacional', fn:'QC.dialogue()',        desc:'Chat con burbujas. ING Part 3 o textos dramáticos en LC.', colors:'linear-gradient(135deg,#0891b2,#06b6d4)' },
+  { num:'06', name:'Cloze gramatical',       fn:'QC.cloze()',           desc:'Fill-in-the-blank con huecos numerados. ING Part 4.', colors:'linear-gradient(135deg,#be123c,#e11d48)' },
+  { num:'07', name:'Figura geométrica SVG',  fn:'QC.geometry()',        desc:'SVG inline de triángulos, vectores y diagramas.', colors:'linear-gradient(135deg,#004ac6,#2563eb)' },
+  { num:'08', name:'Tabla científica',       fn:'QC.scientificTable()', desc:'Datos experimentales o de propiedades físicas/químicas.', colors:'linear-gradient(135deg,#047857,#10b981)' },
+];
+
+const grid = document.getElementById('qref-grid');
+grid.innerHTML = qrefMeta.map((m, i) => `
+  <div class="qref-card" onclick="scrollToType(${i+1})">
+    <div class="qref-num" style="background:${m.colors};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${m.num}</div>
+    <div class="qref-name">${m.name}</div>
+    <div class="qref-fn">${m.fn}</div>
+    <div class="qref-desc">${m.desc}</div>
+  </div>`).join('');
+
+// ── Navigation ────────────────────────────────────────────────
+function scrollToType(n, tabEl) {
+  const section = document.getElementById(`type-${n}`);
+  if (section) section.scrollIntoView({ behavior:'smooth', block:'start' });
+
+  // Update header buttons
+  document.querySelectorAll('.ph-nav-btn').forEach((b, i) => b.classList.toggle('active', i+1 === n));
+  // Update strip tabs
+  document.querySelectorAll('.type-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.tab) === n));
+}
+
+// Highlight active section on scroll
+const sections = [1,2,3,4,5,6,7,8].map(n => document.getElementById(`type-${n}`));
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const idx = sections.indexOf(entry.target);
+      if (idx >= 0) {
+        document.querySelectorAll('.ph-nav-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+        document.querySelectorAll('.type-tab').forEach(t => t.classList.toggle('active', parseInt(t.dataset.tab) === idx+1));
+      }
+    }
+  });
+}, { threshold: 0.2, rootMargin: '-80px 0px 0px 0px' });
+sections.forEach(s => observer.observe(s));
+
+</script>
+</body>
+</html>

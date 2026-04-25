@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico Inicial — Saber 11</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --primary: #004ac6; --primary-c: #2563eb; --pf: #dbe1ff; --on-pf: #00174b;
+  --secondary: #505f76; --surface: #f7f9fb; --on-surface: #191c1e; --on-sv: #434655;
+  --sc-lowest: #ffffff; --sc-low: #f2f4f6; --sc: #eceef0; --sc-high: #e6e8ea; --sc-highest: #e0e3e5;
+  --outline: #737686; --ov: #c3c6d7;
+  --error: #ba1a1a; --error-c: #ffdad6; --on-ec: #93000a;
+  --progress-green: #006242;
+  --shadow: 0 12px 40px rgba(25,28,30,0.06);
+  --shadow-blue: 0 24px 55px -30px rgb(0 74 198 / 35%);
+  --g: linear-gradient(135deg,#004ac6,#2563eb);
+  --gbr: linear-gradient(to bottom right,#004ac6,#2563eb);
+}
+body { font-family:"Inter",sans-serif; background:var(--surface); color:var(--on-surface); -webkit-font-smoothing:antialiased; min-height:100vh; }
+.ms { font-family:"Material Symbols Outlined"; font-weight:normal; font-style:normal; font-variation-settings:"FILL" 0,"wght" 420,"GRAD" 0,"opsz" 24; line-height:1; display:inline-block; white-space:nowrap; }
+.msf { font-variation-settings:"FILL" 1,"wght" 420,"GRAD" 0,"opsz" 24; }
+button,a { cursor:pointer; border:none; font-family:"Inter",sans-serif; }
+a { text-decoration:none; color:inherit; }
+
+/* ── Transitions ── */
+.view { display:none; min-height:100vh; }
+.view.active { display:flex; }
+.view.anim-in { animation:fadeUp 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+/* ══════════════════════════════════════════
+   S1 — LANDING
+══════════════════════════════════════════ */
+#s-landing { flex-direction:column; background:var(--surface); }
+
+.landing-nav { display:flex; align-items:center; justify-content:space-between; padding:20px 40px; background:rgba(255,255,255,0.88); backdrop-filter:blur(20px); border-bottom:1px solid rgba(195,198,215,0.12); position:sticky; top:0; z-index:10; }
+.landing-logo { display:flex; align-items:center; gap:12px; cursor:pointer; }
+.logo-icon { width:40px; height:40px; border-radius:12px; background:var(--primary); display:flex; align-items:center; justify-content:center; }
+.logo-title { font-size:18px; font-weight:900; letter-spacing:-0.025em; }
+.logo-sub { font-size:8px; font-weight:700; letter-spacing:0.32em; text-transform:uppercase; color:var(--secondary); }
+.nav-back { display:flex; align-items:center; gap:6px; background:var(--sc-high); border-radius:10px; padding:8px 16px; font-size:13px; font-weight:600; color:var(--on-surface); transition:background 0.1s; }
+.nav-back:hover { background:var(--sc-highest); }
+
+.landing-body { flex:1; display:flex; flex-direction:column; }
+
+/* Hero section */
+.landing-hero { padding:56px 40px 48px; }
+.landing-badge { display:inline-flex; align-items:center; gap:6px; background:#ecfdf5; border-radius:9999px; padding:6px 14px; font-size:11px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:#047857; margin-bottom:20px; }
+.landing-h1 { font-size:48px; font-weight:900; letter-spacing:-0.04em; line-height:1.05; }
+.landing-h1 span { color:var(--primary); }
+.landing-sub { font-size:17px; color:var(--on-sv); margin-top:14px; max-width:540px; line-height:1.7; font-weight:400; }
+
+/* Cards row */
+.landing-cards { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:0 40px 40px; }
+
+.info-card-white { background:white; border-radius:28px; padding:32px; box-shadow:var(--shadow); position:relative; overflow:hidden; }
+.info-card-white::before { content:""; position:absolute; width:180px; height:180px; border-radius:9999px; background:var(--sc-low); top:-60px; right:-60px; pointer-events:none; }
+.card-icon-wrap { width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center; margin-bottom:16px; position:relative; z-index:1; }
+.card-h3 { font-size:20px; font-weight:800; letter-spacing:-0.02em; position:relative; z-index:1; }
+.card-desc { font-size:14px; color:var(--on-sv); margin-top:8px; line-height:1.65; position:relative; z-index:1; }
+.card-list { list-style:none; margin-top:16px; display:flex; flex-direction:column; gap:10px; position:relative; z-index:1; }
+.card-list li { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500; }
+.card-list li .ms { font-size:18px; color:#047857; }
+
+.info-card-blue { background:var(--primary); border-radius:28px; padding:32px; color:white; display:flex; flex-direction:column; justify-content:space-between; }
+.blue-tag { font-size:20px; font-weight:800; letter-spacing:-0.02em; margin-top:12px; }
+.blue-desc { font-size:14px; opacity:0.75; margin-top:8px; line-height:1.6; }
+.blue-time { display:flex; align-items:flex-end; gap:6px; margin-top:auto; padding-top:24px; }
+.blue-num { font-size:80px; font-weight:900; letter-spacing:-0.05em; line-height:1; }
+.blue-unit { font-size:24px; font-weight:500; opacity:0.65; margin-bottom:10px; }
+
+/* CTA section */
+.landing-cta-section { background:white; padding:32px 40px; display:grid; grid-template-columns:1fr auto; gap:32px; align-items:center; border-top:1px solid var(--sc-low); }
+.cta-subjects { display:flex; flex-direction:column; gap:14px; }
+.subj-row { display:flex; align-items:center; gap:14px; }
+.subj-num { font-size:12px; font-weight:900; color:rgba(115,118,134,0.4); font-variant-numeric:tabular-nums; width:20px; }
+.subj-dot { width:8px; height:8px; border-radius:9999px; flex-shrink:0; }
+.subj-name { font-size:14px; font-weight:700; }
+.subj-sub { font-size:12px; color:var(--secondary); }
+.cta-right { display:flex; flex-direction:column; gap:16px; align-items:flex-end; }
+.cta-text h4 { font-size:18px; font-weight:800; letter-spacing:-0.02em; text-align:right; }
+.cta-text p { font-size:13px; color:var(--secondary); margin-top:4px; max-width:280px; line-height:1.5; text-align:right; }
+.btn-start-diag { background:var(--g); color:white; border-radius:16px; padding:16px 28px; font-size:15px; font-weight:700; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow-blue); transition:transform 0.15s,opacity 0.15s; }
+.btn-start-diag:hover { transform:scale(1.02); opacity:0.95; }
+
+/* ══════════════════════════════════════════
+   S2 — PREFLIGHT CHECK
+══════════════════════════════════════════ */
+#s-preflight { flex-direction:column; align-items:center; justify-content:center; background:var(--surface); padding:40px 20px; }
+.preflight-card { background:white; border-radius:32px; max-width:560px; width:100%; padding:40px; box-shadow:var(--shadow); }
+.pf-icon { width:64px; height:64px; border-radius:20px; background:rgba(0,74,198,0.08); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; }
+.pf-title { font-size:26px; font-weight:900; letter-spacing:-0.03em; text-align:center; }
+.pf-sub { font-size:14px; color:var(--secondary); text-align:center; margin-top:8px; line-height:1.6; }
+.pf-list { display:flex; flex-direction:column; gap:12px; margin-top:28px; }
+.pf-item { display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:16px; background:var(--sc-low); cursor:pointer; transition:background 0.1s; user-select:none; }
+.pf-item:hover { background:var(--sc); }
+.pf-item.checked { background:rgba(219,225,255,0.4); }
+.pf-check { width:24px; height:24px; border-radius:8px; border:2px solid var(--ov); background:white; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; }
+.pf-item.checked .pf-check { background:var(--primary); border-color:var(--primary); }
+.pf-check .ms { font-size:15px; color:white; opacity:0; transition:opacity 0.15s; }
+.pf-item.checked .pf-check .ms { opacity:1; }
+.pf-item-text { font-size:14px; font-weight:600; }
+.pf-item-desc { font-size:12px; color:var(--secondary); margin-top:2px; }
+.pf-footer { margin-top:28px; display:flex; flex-direction:column; gap:10px; }
+.btn-begin { background:var(--g); color:white; border-radius:14px; padding:15px; font-size:15px; font-weight:700; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:var(--shadow-blue); transition:opacity 0.15s,transform 0.15s; }
+.btn-begin:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-begin:not(:disabled):hover { opacity:0.92; transform:scale(1.01); }
+.btn-skip { background:none; color:var(--secondary); font-size:13px; font-weight:600; width:100%; padding:8px; border-radius:12px; transition:background 0.1s; }
+.btn-skip:hover { background:var(--sc-low); }
+
+/* ══════════════════════════════════════════
+   S3 — AREA INTRO INTERSTITIAL
+══════════════════════════════════════════ */
+#s-area-intro { flex-direction:column; align-items:center; justify-content:center; background:var(--sc-lowest); padding:40px 20px; }
+.area-intro-card { max-width:520px; width:100%; text-align:center; }
+.area-intro-icon-wrap { width:96px; height:96px; border-radius:28px; display:flex; align-items:center; justify-content:center; margin:0 auto 24px; }
+.area-intro-num { font-size:12px; font-weight:700; letter-spacing:0.28em; text-transform:uppercase; color:var(--secondary); margin-bottom:8px; }
+.area-intro-title { font-size:36px; font-weight:900; letter-spacing:-0.03em; }
+.area-intro-desc { font-size:15px; color:var(--on-sv); margin-top:12px; line-height:1.7; }
+.area-intro-meta { display:flex; justify-content:center; gap:24px; margin-top:28px; flex-wrap:wrap; }
+.aim { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--secondary); }
+.aim .ms { font-size:18px; }
+.area-intro-competencies { margin-top:28px; display:flex; flex-direction:column; gap:8px; }
+.comp-pill { display:flex; align-items:center; gap:10px; background:var(--sc-low); border-radius:12px; padding:10px 14px; text-align:left; }
+.comp-code { font-size:10px; font-weight:700; border-radius:8px; padding:3px 8px; }
+.comp-name { font-size:13px; font-weight:600; }
+.area-intro-progress { margin-top:32px; }
+.ai-prog-label { display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--secondary); margin-bottom:6px; }
+.ai-prog-track { height:6px; border-radius:9999px; background:var(--sc-high); overflow:hidden; }
+.ai-prog-fill { height:100%; border-radius:9999px; background:var(--primary); transition:width 0.7s ease; }
+.area-intro-btns { display:flex; flex-direction:column; gap:10px; margin-top:28px; }
+.btn-area-start { background:var(--g); color:white; border-radius:14px; padding:15px; font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:var(--shadow-blue); transition:transform 0.15s; }
+.btn-area-start:hover { transform:scale(1.01); }
+
+/* ══════════════════════════════════════════
+   S4 — SESSION ACTIVA
+══════════════════════════════════════════ */
+#s-session { height:100vh; flex-direction:column; background:var(--surface); overflow:hidden; }
+
+/* Session Header */
+.sh { height:68px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:rgba(247,249,251,0.9); backdrop-filter:blur(20px); box-shadow:0 4px 20px rgba(25,28,30,0.05); z-index:20; }
+.sh-left { display:flex; align-items:center; gap:20px; }
+.sh-brand { display:flex; align-items:center; gap:10px; }
+.sh-brand-icon { width:36px; height:36px; border-radius:10px; background:var(--gbr); display:flex; align-items:center; justify-content:center; }
+.sh-title { font-size:14px; font-weight:700; color:var(--primary); }
+.sh-area { font-size:10px; font-weight:700; letter-spacing:0.28em; text-transform:uppercase; color:var(--secondary); }
+.sh-divider { width:1px; height:28px; background:rgba(195,198,215,0.3); }
+
+/* Multi-area progress */
+.sh-areas { display:flex; gap:6px; align-items:center; }
+.area-dot { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; letter-spacing:0.1em; transition:all 0.2s; }
+.area-dot.done { opacity:0.5; }
+.area-dot.active { transform:scale(1.1); box-shadow:0 2px 8px rgba(0,74,198,0.3); }
+.area-dot.pending { opacity:0.3; filter:grayscale(1); }
+
+/* Progress bar */
+.sh-progress { display:flex; flex-direction:column; gap:4px; width:160px; }
+.sh-prog-labels { display:flex; justify-content:space-between; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--secondary); }
+.sh-prog-track { height:6px; border-radius:9999px; background:var(--sc-high); overflow:hidden; }
+.sh-prog-fill { height:100%; border-radius:9999px; background:var(--progress-green); transition:width 0.5s; }
+
+/* Right controls */
+.sh-right { display:flex; align-items:center; gap:10px; }
+.sh-timer { display:flex; align-items:center; gap:6px; background:var(--sc-low); border-radius:10px; padding:7px 14px; }
+.sh-timer .ms { font-size:16px; color:var(--secondary); }
+.timer-num { font-family:monospace; font-size:17px; font-weight:700; letter-spacing:-0.02em; }
+.sh-icon-btn { width:36px; height:36px; border-radius:10px; background:transparent; display:flex; align-items:center; justify-content:center; color:var(--secondary); transition:background 0.1s; position:relative; }
+.sh-icon-btn:hover { background:var(--sc-high); }
+.sh-flag-dot { position:absolute; top:4px; right:4px; width:8px; height:8px; border-radius:9999px; background:#f59e0b; border:2px solid var(--surface); display:none; }
+.sh-pause { background:var(--sc-highest); border-radius:10px; padding:8px 16px; font-size:13px; font-weight:700; color:var(--on-surface); }
+
+/* Session body */
+.sb { flex:1; display:flex; gap:16px; padding:16px 20px; overflow:hidden; min-height:0; }
+
+/* Context pane */
+.ctx { flex:1; border-radius:24px; background:var(--sc-low); display:flex; flex-direction:column; overflow:hidden; }
+.ctx-top { padding:20px 26px 12px; display:flex; align-items:flex-end; justify-content:space-between; flex-shrink:0; }
+.ctx-badge { display:inline-block; background:var(--pf); color:#003ea8; border-radius:9999px; padding:3px 12px; font-size:9px; font-weight:900; letter-spacing:0.3em; text-transform:uppercase; margin-bottom:5px; }
+.ctx-title { font-size:15px; font-weight:700; }
+.ctx-tools { display:flex; gap:5px; }
+.ctx-tool-btn { width:34px; height:34px; border-radius:9px; background:white; border:none; display:flex; align-items:center; justify-content:center; color:var(--secondary); cursor:pointer; font-size:18px; transition:color 0.1s; }
+.ctx-tool-btn:hover { color:var(--primary); }
+.ctx-body { flex:1; overflow-y:auto; padding:4px 28px 28px; scrollbar-width:thin; scrollbar-color:var(--sc-highest) transparent; }
+.ctx-prose { font-size:15px; line-height:1.85; color:var(--on-sv); }
+.ctx-prose p + p { margin-top:14px; }
+.ctx-source { font-size:11px; color:var(--outline); font-style:italic; margin-top:12px; }
+
+/* Question pane */
+.qp { width:400px; flex-shrink:0; display:flex; flex-direction:column; gap:12px; }
+.q-card { flex:1; border-radius:24px; background:white; padding:22px; overflow-y:auto; box-shadow:0 8px 28px rgba(25,28,30,0.04); scrollbar-width:thin; scrollbar-color:var(--sc-highest) transparent; min-height:0; }
+.q-top { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.q-num-badge { width:36px; height:36px; border-radius:9999px; background:#d0e1fb; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; color:#54647a; flex-shrink:0; }
+.q-area-tag { font-size:10px; font-weight:700; border-radius:8px; padding:3px 8px; }
+.q-stem { font-size:15px; font-weight:500; line-height:1.65; margin-bottom:18px; }
+.opts { display:flex; flex-direction:column; gap:9px; }
+.opt { display:flex; align-items:flex-start; gap:11px; padding:12px 14px; border-radius:13px; background:var(--sc-low); cursor:pointer; border:2px solid transparent; transition:all 0.15s; }
+.opt:hover { background:white; border-color:rgba(0,74,198,0.15); }
+.opt.sel { background:#d0e1fb; border-color:rgba(0,74,198,0.2); }
+.opt.flagged-opt { background:rgba(245,158,11,0.08); border-color:rgba(245,158,11,0.3); }
+.ol { width:28px; height:28px; border-radius:8px; border:1.5px solid rgba(195,198,215,0.35); background:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; transition:all 0.15s; }
+.opt.sel .ol { background:var(--primary); color:white; border-color:var(--primary); }
+.ot { font-size:13px; line-height:1.5; color:var(--on-sv); }
+.opt.sel .ot { font-weight:500; color:var(--on-surface); }
+
+/* Confidence bar (for UX richness — optional feel) */
+.confidence-row { display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 12px; background:var(--sc-low); border-radius:12px; }
+.conf-label { font-size:11px; font-weight:600; color:var(--secondary); flex-shrink:0; }
+.conf-btns { display:flex; gap:6px; flex:1; }
+.conf-btn { flex:1; padding:5px; border-radius:8px; font-size:11px; font-weight:700; text-align:center; background:white; color:var(--secondary); border:1.5px solid transparent; transition:all 0.15s; }
+.conf-btn:hover { border-color:var(--ov); }
+.conf-btn.active { border-color:var(--primary); background:var(--pf); color:var(--on-pf); }
+
+/* Nav row */
+.nav-row { display:flex; gap:10px; }
+.nav-prev-btn { flex:1; height:52px; border-radius:13px; background:var(--sc-high); font-size:13px; font-weight:700; color:var(--on-surface); display:flex; align-items:center; justify-content:center; gap:5px; transition:background 0.1s; }
+.nav-prev-btn:hover { background:var(--sc-highest); }
+.nav-next-btn { flex:1.4; height:52px; border-radius:13px; background:var(--gbr); font-size:13px; font-weight:700; color:white; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 6px 20px rgba(0,74,198,0.22); transition:opacity 0.1s; }
+.nav-next-btn:hover { opacity:0.92; }
+.nav-flag-btn { width:52px; height:52px; border-radius:13px; background:var(--sc-high); display:flex; align-items:center; justify-content:center; color:var(--secondary); font-size:22px; transition:all 0.15s; }
+.nav-flag-btn:hover,.nav-flag-btn.flagged { background:rgba(245,158,11,0.12); color:#d97706; }
+
+/* Question navigator panel */
+.q-nav-panel { position:fixed; top:0; right:0; bottom:0; width:280px; background:white; z-index:50; box-shadow:-12px 0 40px rgba(0,0,0,0.1); transform:translateX(100%); transition:transform 0.3s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; }
+.q-nav-panel.open { transform:translateX(0); }
+.qnp-header { padding:20px; border-bottom:1px solid var(--sc-low); display:flex; align-items:center; justify-content:space-between; }
+.qnp-title { font-size:14px; font-weight:700; }
+.qnp-close { width:32px; height:32px; border-radius:8px; background:var(--sc-high); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.qnp-body { flex:1; overflow-y:auto; padding:16px; }
+.qnp-section { margin-bottom:20px; }
+.qnp-section-title { font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--secondary); margin-bottom:10px; }
+.qnp-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; }
+.qnp-q { width:100%; aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.1s; }
+.qnp-q.answered { background:#d1fae5; color:#047857; }
+.qnp-q.current { background:var(--primary); color:white; }
+.qnp-q.flagged { background:rgba(245,158,11,0.15); color:#d97706; border:1.5px solid rgba(245,158,11,0.4); }
+.qnp-q.unanswered { background:var(--sc-high); color:var(--secondary); }
+.qnp-legend { display:flex; flex-direction:column; gap:8px; padding:16px; border-top:1px solid var(--sc-low); }
+.legend-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--secondary); }
+.legend-box { width:16px; height:16px; border-radius:5px; }
+
+/* ══════════════════════════════════════════
+   S5 — CHECKPOINT (HALFWAY)
+══════════════════════════════════════════ */
+#s-checkpoint { flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; background:var(--surface); }
+.checkpoint-card { max-width:480px; width:100%; background:white; border-radius:32px; padding:36px; box-shadow:var(--shadow); text-align:center; }
+.cp-emoji { font-size:48px; margin-bottom:16px; }
+.cp-title { font-size:26px; font-weight:900; letter-spacing:-0.03em; }
+.cp-sub { font-size:14px; color:var(--secondary); margin-top:8px; line-height:1.6; }
+.cp-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:24px; }
+.cp-stat { background:var(--sc-low); border-radius:14px; padding:14px 12px; }
+.cp-stat-val { font-size:22px; font-weight:900; letter-spacing:-0.03em; }
+.cp-stat-label { font-size:11px; color:var(--secondary); margin-top:3px; }
+.cp-area-progress { margin-top:20px; display:flex; flex-direction:column; gap:8px; }
+.cp-area-row { display:flex; align-items:center; gap:10px; }
+.cp-area-name { font-size:12px; font-weight:700; width:24px; text-align:right; }
+.cp-area-track { flex:1; height:8px; border-radius:9999px; background:var(--sc-high); overflow:hidden; }
+.cp-area-fill { height:100%; border-radius:9999px; }
+.cp-area-pct { font-size:11px; font-weight:700; color:var(--secondary); width:28px; }
+.cp-cta { display:flex; flex-direction:column; gap:10px; margin-top:24px; }
+.btn-continue { background:var(--g); color:white; border-radius:14px; padding:14px; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:var(--shadow-blue); transition:transform 0.15s; }
+.btn-continue:hover { transform:scale(1.01); }
+.btn-take-break { background:var(--sc-low); color:var(--secondary); border-radius:14px; padding:12px; font-size:13px; font-weight:600; }
+
+/* ══════════════════════════════════════════
+   S6 — CONFIRMACIÓN FINALIZAR
+══════════════════════════════════════════ */
+#s-confirm { flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; background:var(--surface); }
+.confirm-card { max-width:520px; width:100%; background:white; border-radius:32px; padding:36px; box-shadow:var(--shadow); }
+.conf-header { display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+.conf-header-icon { width:56px; height:56px; border-radius:18px; background:rgba(0,74,198,0.08); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.conf-title { font-size:22px; font-weight:800; letter-spacing:-0.02em; }
+.conf-sub { font-size:13px; color:var(--secondary); margin-top:4px; line-height:1.5; }
+.conf-summary { background:var(--sc-low); border-radius:18px; padding:20px; margin-bottom:20px; }
+.conf-summary-title { font-size:10px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; color:var(--secondary); margin-bottom:14px; }
+.conf-area-list { display:flex; flex-direction:column; gap:8px; }
+.conf-area-row { display:flex; align-items:center; gap:10px; }
+.conf-area-badge { width:36px; height:20px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; flex-shrink:0; }
+.conf-area-bar-wrap { flex:1; display:flex; flex-direction:column; gap:3px; }
+.conf-area-label { display:flex; justify-content:space-between; font-size:11px; }
+.conf-area-name { font-weight:600; }
+.conf-area-count { color:var(--secondary); }
+.conf-bar { height:6px; border-radius:9999px; background:var(--sc-high); overflow:hidden; }
+.conf-bar-fill { height:100%; border-radius:9999px; }
+.conf-unanswered { display:flex; align-items:center; gap:10px; background:#fef3c7; border-radius:12px; padding:12px 16px; margin-bottom:20px; }
+.conf-unanswered .ms { font-size:20px; color:#b45309; flex-shrink:0; }
+.conf-unanswered-text { font-size:13px; font-weight:600; color:#92400e; }
+.conf-btns { display:flex; gap:10px; }
+.btn-conf-finish { flex:1; background:var(--g); color:white; border-radius:14px; padding:14px; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:var(--shadow-blue); transition:transform 0.15s; }
+.btn-conf-finish:hover { transform:scale(1.01); }
+.btn-conf-back { flex:1; background:var(--sc-high); color:var(--on-surface); border-radius:14px; padding:14px; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:8px; }
+
+/* ══════════════════════════════════════════
+   S7 — PROCESANDO
+══════════════════════════════════════════ */
+#s-processing { flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; background:var(--surface); gap:32px; }
+.proc-icon { width:80px; height:80px; border-radius:24px; background:var(--gbr); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-blue); animation:procpulse 2s ease-in-out infinite; }
+@keyframes procpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+.proc-spinner { width:20px; height:20px; border:3px solid rgba(255,255,255,0.4); border-top-color:white; border-radius:9999px; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.proc-title { font-size:24px; font-weight:800; letter-spacing:-0.02em; text-align:center; }
+.proc-sub { font-size:14px; color:var(--secondary); text-align:center; }
+.proc-steps { display:flex; flex-direction:column; gap:10px; max-width:360px; width:100%; }
+.proc-step { display:flex; align-items:center; gap:12px; background:white; border-radius:14px; padding:13px 16px; font-size:13px; font-weight:600; border:1.5px solid transparent; transition:all 0.3s; }
+.proc-step.done { color:var(--secondary); border-color:var(--sc-low); }
+.proc-step.active { color:var(--primary); border-color:rgba(0,74,198,0.2); background:rgba(219,225,255,0.2); }
+.proc-step.pending { color:rgba(80,95,118,0.35); }
+.proc-step .ms { font-size:20px; }
+.proc-dots { display:flex; gap:7px; }
+.proc-dot { width:7px; height:7px; border-radius:9999px; background:var(--primary); animation:pdot 1.2s ease-in-out infinite; }
+.proc-dot:nth-child(2) { animation-delay:0.2s; }
+.proc-dot:nth-child(3) { animation-delay:0.4s; }
+@keyframes pdot { 0%,100%{opacity:0.3;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
+
+/* ══════════════════════════════════════════
+   S8 — RESULTADOS REVEAL
+══════════════════════════════════════════ */
+#s-results { flex-direction:column; background:var(--surface); min-height:100vh; }
+.res-nav { background:rgba(255,255,255,0.9); backdrop-filter:blur(20px); border-bottom:1px solid rgba(195,198,215,0.12); padding:16px 40px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:10; }
+.res-body { padding:36px 40px; display:flex; flex-direction:column; gap:24px; max-width:1100px; }
+
+/* Reveal animation */
+.reveal { opacity:0; transform:translateY(20px); transition:opacity 0.5s ease, transform 0.5s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* Score reveal hero */
+.score-hero { background:var(--primary); border-radius:32px; padding:36px 40px; color:white; display:flex; align-items:center; justify-content:space-between; gap:24px; position:relative; overflow:hidden; }
+.score-hero::before { content:""; position:absolute; width:220px; height:220px; border-radius:9999px; background:rgba(255,255,255,0.04); top:-60px; right:-60px; pointer-events:none; }
+.score-hero::after  { content:""; position:absolute; width:120px; height:120px; border-radius:9999px; background:rgba(255,255,255,0.04); bottom:-30px; right:140px; pointer-events:none; }
+.sh-left-text { position:relative; z-index:1; }
+.sh-eyebrow { font-size:11px; font-weight:700; letter-spacing:0.28em; text-transform:uppercase; opacity:0.7; margin-bottom:8px; }
+.sh-name { font-size:28px; font-weight:900; letter-spacing:-0.03em; }
+.sh-date { font-size:13px; opacity:0.65; margin-top:4px; }
+.score-big-wrap { position:relative; z-index:1; text-align:center; }
+.score-big { font-size:88px; font-weight:900; letter-spacing:-0.05em; line-height:1; }
+.score-label { font-size:16px; opacity:0.65; margin-top:4px; }
+.score-right { position:relative; z-index:1; display:flex; flex-direction:column; gap:14px; align-items:flex-end; }
+.level-badge { background:rgba(255,255,255,0.15); border-radius:14px; padding:12px 18px; text-align:center; }
+.level-badge-num { font-size:32px; font-weight:900; line-height:1; }
+.level-badge-label { font-size:10px; font-weight:700; opacity:0.7; letter-spacing:0.2em; text-transform:uppercase; }
+.sh-chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.sh-chip { background:rgba(255,255,255,0.15); border-radius:9999px; padding:5px 12px; font-size:11px; font-weight:700; display:flex; align-items:center; gap:5px; }
+
+/* Area cards */
+.area-cards { display:flex; gap:12px; }
+.ac { flex:1; background:white; border-radius:20px; padding:18px; box-shadow:var(--shadow); }
+.ac-label { font-size:9px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--secondary); }
+.ac-score { font-size:32px; font-weight:900; letter-spacing:-0.04em; margin-top:6px; }
+.ac-level { font-size:11px; font-weight:600; border-radius:9999px; padding:2px 8px; margin-top:6px; display:inline-block; }
+.ac-bar { height:6px; border-radius:9999px; background:var(--sc-high); overflow:hidden; margin-top:10px; }
+.ac-fill { height:100%; border-radius:9999px; }
+
+/* Two-col lower */
+.res-lower { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.res-card { background:white; border-radius:24px; padding:24px; box-shadow:var(--shadow); }
+.rc-title { font-size:16px; font-weight:700; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+.rc-title .ms { font-size:20px; color:var(--primary); }
+.insight-list { display:flex; flex-direction:column; gap:14px; }
+.insight { display:flex; gap:12px; align-items:flex-start; }
+.insight-icon { width:40px; height:40px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.insight-label { font-size:13px; font-weight:700; }
+.insight-desc { font-size:12px; color:var(--on-sv); margin-top:3px; line-height:1.55; }
+.steps-list { display:flex; flex-direction:column; gap:9px; }
+.step { display:flex; align-items:center; gap:12px; border-radius:13px; padding:13px 15px; }
+.step.priority { background:rgba(0,74,198,0.05); box-shadow:inset 0 0 0 1px rgba(0,74,198,0.12); }
+.step.normal { background:var(--sc-low); }
+.step-num { width:26px; height:26px; border-radius:9999px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; flex-shrink:0; }
+.step-num.p { background:var(--primary); color:white; }
+.step-num.n { background:rgba(115,118,134,0.2); color:var(--on-sv); }
+.step-txt { font-size:13px; font-weight:600; }
+.step.priority .step-txt { color:var(--on-surface); }
+.step.normal .step-txt { color:var(--on-sv); }
+.plan-cta-btn { width:100%; background:var(--on-surface); color:white; border-radius:13px; padding:14px 18px; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:space-between; margin-top:14px; transition:opacity 0.1s; }
+.plan-cta-btn:hover { opacity:0.85; }
+
+/* CTA banner */
+.cta-banner { border-radius:28px; background:#0a1a3a; padding:32px 36px; display:flex; align-items:center; justify-content:space-between; gap:20px; position:relative; overflow:hidden; }
+.cta-banner::before { content:""; position:absolute; inset:0; background:linear-gradient(to right,#0a1a3a,rgba(10,26,58,0.7),transparent); }
+.ctab-text { position:relative; z-index:1; }
+.ctab-text h3 { font-size:22px; font-weight:900; color:white; letter-spacing:-0.02em; }
+.ctab-text p { font-size:13px; color:rgba(255,255,255,0.6); margin-top:6px; }
+.ctab-btn { position:relative; z-index:1; background:white; color:var(--on-surface); border-radius:9999px; padding:12px 24px; font-size:13px; font-weight:700; white-space:nowrap; flex-shrink:0; transition:opacity 0.1s; }
+.ctab-btn:hover { opacity:0.9; }
+
+/* ── Demo nav bar ── */
+.demo-nav { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:100; background:rgba(25,28,30,0.88); backdrop-filter:blur(10px); border-radius:16px; padding:8px 12px; display:flex; gap:5px; }
+.dn-btn { padding:7px 13px; border-radius:10px; font-size:11px; font-weight:700; color:rgba(255,255,255,0.55); background:none; transition:all 0.1s; white-space:nowrap; }
+.dn-btn:hover { color:white; background:rgba(255,255,255,0.08); }
+.dn-btn.active { background:var(--primary); color:white; }
+
+/* Toast */
+.toast-wrap { position:fixed; bottom:72px; left:50%; transform:translateX(-50%); z-index:999; pointer-events:none; display:flex; flex-direction:column; gap:8px; align-items:center; }
+.toast { display:flex; align-items:center; gap:8px; background:#1e293b; color:white; padding:10px 18px; border-radius:13px; font-size:13px; font-weight:600; box-shadow:0 8px 28px rgba(0,0,0,0.25); opacity:0; transform:translateY(10px); transition:opacity 0.25s,transform 0.25s; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast .ms { font-size:16px; }
+.toast.success .ms { color:#34d399; }
+.toast.info    .ms { color:#60a5fa; }
+.toast.warning .ms { color:#fbbf24; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     S1 — LANDING
+═══════════════════════════════ -->
+<div id="s-landing" class="view active">
+  <nav class="landing-nav">
+    <div class="landing-logo">
+      <div class="logo-icon"><span class="ms msf" style="font-size:22px;color:white">auto_stories</span></div>
+      <div>
+        <div class="logo-title">Saber 11</div>
+        <div class="logo-sub">Simulador</div>
+      </div>
+    </div>
+    <div class="nav-back" onclick="window.location='StudentDashboard.html'">
+      <span class="ms" style="font-size:16px">arrow_back</span>Dashboard
+    </div>
+  </nav>
+
+  <div class="landing-body">
+    <div class="landing-hero">
+      <div class="landing-badge">
+        <span class="ms msf" style="font-size:14px">verified</span>
+        Validación Académica
+      </div>
+      <h1 class="landing-h1">Hola, Víctor.<br>Descubramos tu <span>potencial académico.</span></h1>
+      <p class="landing-sub">Antes de comenzar tu plan de estudio personalizado, realizaremos una evaluación diagnóstica para identificar tus fortalezas y áreas de oportunidad en cada componente del Saber 11.</p>
+    </div>
+
+    <div class="landing-cards">
+      <!-- Algoritmo adaptativo -->
+      <div class="info-card-white">
+        <div class="card-icon-wrap" style="background:rgba(0,74,198,0.08)">
+          <span class="ms msf" style="font-size:26px;color:var(--primary)">psychology</span>
+        </div>
+        <div class="card-h3">Algoritmo Adaptativo</div>
+        <p class="card-desc">Nuestro sistema ajusta la dificultad de cada pregunta en tiempo real basándose en tu desempeño. Esto nos permite mapear con precisión quirúrgica tu nivel en cada competencia.</p>
+        <ul class="card-list">
+          <li><span class="ms msf">check_circle</span>Evaluación dinámica por competencia DCE</li>
+          <li><span class="ms msf">check_circle</span>Basado en Teoría de Respuesta al Ítem (TRI)</li>
+          <li><span class="ms msf">check_circle</span>Sin retroceso — cada respuesta refina el perfil</li>
+        </ul>
+      </div>
+
+      <!-- Tiempo -->
+      <div class="info-card-blue">
+        <div>
+          <div style="width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center">
+            <span class="ms msf" style="font-size:26px;color:white">timer</span>
+          </div>
+          <div class="blue-tag">Tiempo Estimado</div>
+          <div class="blue-desc">Recomendamos un espacio tranquilo y sin distracciones. Puedes pausar entre áreas pero no dentro de una sesión.</div>
+        </div>
+        <div class="blue-time">
+          <span class="blue-num">45</span>
+          <span class="blue-unit">min</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA section -->
+    <div class="landing-cta-section">
+      <div class="cta-subjects">
+        <div class="subj-row">
+          <span class="subj-num">01</span>
+          <div class="subj-dot" style="background:#6d28d9"></div>
+          <div><div class="subj-name">Lectura Crítica</div><div class="subj-sub">Comprensión y análisis textual</div></div>
+        </div>
+        <div class="subj-row">
+          <span class="subj-num">02</span>
+          <div class="subj-dot" style="background:#1d4ed8"></div>
+          <div><div class="subj-name">Matemáticas</div><div class="subj-sub">Razonamiento cuantitativo</div></div>
+        </div>
+        <div class="subj-row">
+          <span class="subj-num">03</span>
+          <div class="subj-dot" style="background:#be123c"></div>
+          <div><div class="subj-name">Sociales y Ciudadanas</div><div class="subj-sub">Pensamiento social y reflexivo</div></div>
+        </div>
+        <div class="subj-row">
+          <span class="subj-num">04</span>
+          <div class="subj-dot" style="background:#047857"></div>
+          <div><div class="subj-name">Ciencias Naturales</div><div class="subj-sub">Física, Química, Biología</div></div>
+        </div>
+        <div class="subj-row">
+          <span class="subj-num">05</span>
+          <div class="subj-dot" style="background:#b45309"></div>
+          <div><div class="subj-name">Inglés</div><div class="subj-sub">Comprensión lectora y gramatical</div></div>
+        </div>
+      </div>
+      <div class="cta-right">
+        <div class="cta-text">
+          <h4>¿Estás listo para comenzar?</h4>
+          <p>Tu progreso se guarda automáticamente. Verás tu plan de estudio personalizado justo al finalizar.</p>
+        </div>
+        <button class="btn-start-diag" onclick="goto('s-preflight')">
+          Iniciar Diagnóstico
+          <span class="ms" style="font-size:20px">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S2 — PREFLIGHT
+═══════════════════════════════ -->
+<div id="s-preflight" class="view" style="flex-direction:column;align-items:center;justify-content:center;background:var(--surface);padding:40px 20px">
+  <div class="preflight-card">
+    <div class="pf-icon"><span class="ms msf" style="font-size:32px;color:var(--primary)">checklist_rtl</span></div>
+    <div class="pf-title">Antes de comenzar</div>
+    <div class="pf-sub">Confirma que tienes todo listo para obtener resultados precisos y aprovechables.</div>
+    <div class="pf-list" id="pf-checklist">
+      <div class="pf-item" onclick="toggleCheck(this)">
+        <div class="pf-check"><span class="ms msf">check</span></div>
+        <div><div class="pf-item-text">Estoy en un lugar tranquilo</div><div class="pf-item-desc">Sin ruido ni distracciones que interrumpan mi concentración</div></div>
+      </div>
+      <div class="pf-item" onclick="toggleCheck(this)">
+        <div class="pf-check"><span class="ms msf">check</span></div>
+        <div><div class="pf-item-text">Tengo al menos 45 minutos disponibles</div><div class="pf-item-desc">El diagnóstico completo toma entre 45 y 60 minutos</div></div>
+      </div>
+      <div class="pf-item" onclick="toggleCheck(this)">
+        <div class="pf-check"><span class="ms msf">check</span></div>
+        <div><div class="pf-item-text">Mi dispositivo está cargado</div><div class="pf-item-desc">O conectado a la corriente para evitar interrupciones</div></div>
+      </div>
+      <div class="pf-item" onclick="toggleCheck(this)">
+        <div class="pf-check"><span class="ms msf">check</span></div>
+        <div><div class="pf-item-text">Responderé lo mejor que pueda</div><div class="pf-item-desc">Cuanto más honesto sea el diagnóstico, mejor será mi plan de estudio</div></div>
+      </div>
+    </div>
+    <div class="pf-footer">
+      <button class="btn-begin" id="btn-begin" onclick="goto('s-area-intro')" disabled>
+        <span class="ms" style="font-size:18px">play_arrow</span>
+        Comenzar diagnóstico
+        <span id="pf-count" style="background:rgba(255,255,255,0.2);border-radius:9999px;padding:2px 8px;font-size:11px">0/4</span>
+      </button>
+      <button class="btn-skip" onclick="goto('s-area-intro')">Saltarse la lista y comenzar igual</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S3 — AREA INTRO
+═══════════════════════════════ -->
+<div id="s-area-intro" class="view" style="flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;background:var(--surface)">
+  <div class="area-intro-card">
+    <div class="area-intro-num" id="ai-num">Área 1 de 5</div>
+    <div class="area-intro-icon-wrap" id="ai-icon" style="background:#f5f3ff">
+      <span class="ms msf" style="font-size:48px;color:#6d28d9" id="ai-icon-ms">menu_book</span>
+    </div>
+    <div class="area-intro-title" id="ai-title">Lectura Crítica</div>
+    <div class="area-intro-desc" id="ai-desc">Evaluaremos tu capacidad de comprender, interpretar y reflexionar críticamente sobre textos continuos y discontinuos como artículos, cómics, infografías y caricaturas editoriales.</div>
+    <div class="area-intro-meta">
+      <div class="aim"><span class="ms">quiz</span><span id="ai-qcount">12–15 preguntas</span></div>
+      <div class="aim"><span class="ms">timer</span><span id="ai-time">8–12 min</span></div>
+      <div class="aim"><span class="ms">bolt</span>Adaptativo</div>
+    </div>
+    <div class="area-intro-competencies" id="ai-comps">
+      <div class="comp-pill">
+        <span class="comp-code" style="background:#f5f3ff;color:#6d28d9">LC-LIT</span>
+        <span class="comp-name">Identificación — Lectura literal</span>
+      </div>
+      <div class="comp-pill">
+        <span class="comp-code" style="background:#f5f3ff;color:#6d28d9">LC-INF</span>
+        <span class="comp-name">Comprensión — Lectura inferencial</span>
+      </div>
+      <div class="comp-pill">
+        <span class="comp-code" style="background:#f5f3ff;color:#6d28d9">LC-CRI</span>
+        <span class="comp-name">Evaluación — Lectura crítica</span>
+      </div>
+    </div>
+    <div class="area-intro-progress">
+      <div class="ai-prog-label">
+        <span>Progreso general del diagnóstico</span>
+        <span id="ai-overall-pct">0%</span>
+      </div>
+      <div class="ai-prog-track"><div class="ai-prog-fill" id="ai-prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="area-intro-btns">
+      <button class="btn-area-start" onclick="goto('s-session')">
+        <span class="ms" style="font-size:18px">play_arrow</span>
+        Comenzar esta área
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S4 — SESSION
+═══════════════════════════════ -->
+<div id="s-session" class="view" style="flex-direction:column">
+
+  <!-- Header -->
+  <div class="sh">
+    <div class="sh-left">
+      <div class="sh-brand">
+        <div class="sh-brand-icon"><span class="ms msf" style="font-size:18px;color:white">auto_stories</span></div>
+        <div>
+          <div class="sh-title" id="sh-title">Diagnóstico · Lectura Crítica</div>
+          <div class="sh-area" id="sh-area">Identificación y comprensión de textos</div>
+        </div>
+      </div>
+      <div class="sh-divider"></div>
+      <!-- Multi-area pills -->
+      <div class="sh-areas">
+        <div class="area-dot active" style="background:#f5f3ff;color:#6d28d9" title="Lectura Crítica">LC</div>
+        <div class="area-dot pending" style="background:#eff6ff;color:#1d4ed8" title="Matemáticas">MAT</div>
+        <div class="area-dot pending" style="background:#fff1f2;color:#be123c" title="Sociales">SC</div>
+        <div class="area-dot pending" style="background:#ecfdf5;color:#047857" title="Ciencias Naturales">CN</div>
+        <div class="area-dot pending" style="background:#fffbeb;color:#b45309" title="Inglés">ING</div>
+      </div>
+      <div class="sh-divider"></div>
+      <div class="sh-progress">
+        <div class="sh-prog-labels"><span id="prog-txt">Pregunta 3 / 13</span><span id="prog-pct">23%</span></div>
+        <div class="sh-prog-track"><div class="sh-prog-fill" id="prog-fill" style="width:23%"></div></div>
+      </div>
+    </div>
+    <div class="sh-right">
+      <div class="sh-timer">
+        <span class="ms">timer</span>
+        <span class="timer-num" id="timer-diag">00:04:17</span>
+      </div>
+      <button class="sh-icon-btn" onclick="toggleNavPanel()" title="Ver todas las preguntas">
+        <span class="ms">grid_view</span>
+      </button>
+      <button class="sh-icon-btn" id="flag-global-btn" onclick="toggleFlag()" title="Marcar para revisar">
+        <span class="ms" id="flag-icon">flag</span>
+        <div class="sh-flag-dot" id="flag-dot"></div>
+      </button>
+      <button class="sh-pause" onclick="goto('s-landing')">Pausar</button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="sb">
+    <!-- Context -->
+    <div class="ctx">
+      <div class="ctx-top">
+        <div>
+          <div class="ctx-badge" id="ctx-badge">Material de Lectura</div>
+          <div class="ctx-title" id="ctx-title">El silencio de las abejas</div>
+        </div>
+        <div class="ctx-tools">
+          <button class="ctx-tool-btn"><span class="ms">text_increase</span></button>
+          <button class="ctx-tool-btn"><span class="ms">zoom_in</span></button>
+        </div>
+      </div>
+      <div class="ctx-body" id="ctx-body">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Question -->
+    <div class="qp">
+      <div class="q-card" id="q-card">
+        <div class="q-top">
+          <div class="q-num-badge" id="q-num">3</div>
+          <div id="q-area-tag"></div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--secondary)">Enunciado</div>
+        </div>
+        <div class="q-stem" id="q-stem"></div>
+        <div class="opts" id="q-opts"></div>
+        <div class="confidence-row" id="conf-row">
+          <span class="conf-label">Confianza:</span>
+          <div class="conf-btns" id="conf-btns">
+            <button class="conf-btn" onclick="setConf(this,1)">Poco</button>
+            <button class="conf-btn" onclick="setConf(this,2)">Regular</button>
+            <button class="conf-btn active" onclick="setConf(this,3)">Seguro</button>
+          </div>
+        </div>
+      </div>
+      <div class="nav-row">
+        <button class="nav-prev-btn" onclick="prevQ()"><span class="ms">chevron_left</span>Anterior</button>
+        <button class="nav-flag-btn" id="flag-btn" onclick="toggleFlag()" title="Marcar para revisar"><span class="ms" id="flag-btn-icon">flag</span></button>
+        <button class="nav-next-btn" id="next-btn" onclick="nextQ()">Siguiente<span class="ms">chevron_right</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Nav Panel -->
+  <div class="q-nav-panel" id="q-nav-panel">
+    <div class="qnp-header">
+      <div class="qnp-title">Navegador de preguntas</div>
+      <div class="qnp-close" onclick="toggleNavPanel()"><span class="ms" style="font-size:18px">close</span></div>
+    </div>
+    <div class="qnp-body">
+      <div class="qnp-section">
+        <div class="qnp-section-title">Lectura Crítica (3/13)</div>
+        <div class="qnp-grid" id="qnp-grid-lc">
+          <!-- filled by JS -->
+        </div>
+      </div>
+      <div class="qnp-section">
+        <div class="qnp-section-title">Matemáticas</div>
+        <div style="font-size:12px;color:rgba(115,118,134,0.5);font-style:italic">Pendiente</div>
+      </div>
+    </div>
+    <div class="qnp-legend">
+      <div class="legend-row"><div class="legend-box" style="background:#d1fae5"></div>Respondida</div>
+      <div class="legend-row"><div class="legend-box" style="background:var(--primary)"></div>Actual</div>
+      <div class="legend-row"><div class="legend-box" style="background:rgba(245,158,11,0.15);border:1.5px solid rgba(245,158,11,0.4)"></div>Marcada</div>
+      <div class="legend-row"><div class="legend-box" style="background:var(--sc-high)"></div>Sin responder</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S5 — CHECKPOINT
+═══════════════════════════════ -->
+<div id="s-checkpoint" class="view">
+  <div class="checkpoint-card">
+    <div class="cp-emoji">🎯</div>
+    <div class="cp-title">¡Vas a la mitad!</div>
+    <div class="cp-sub">Has completado 2 de las 5 áreas del diagnóstico. Vas muy bien. Tómate un momento si lo necesitas.</div>
+    <div class="cp-stats">
+      <div class="cp-stat"><div class="cp-stat-val" style="color:var(--primary)">27</div><div class="cp-stat-label">preguntas respondidas</div></div>
+      <div class="cp-stat"><div class="cp-stat-val" style="color:#047857">74%</div><div class="cp-stat-label">precisión estimada</div></div>
+      <div class="cp-stat"><div class="cp-stat-val" style="color:var(--secondary)">18 min</div><div class="cp-stat-label">tiempo transcurrido</div></div>
+    </div>
+    <div class="cp-area-progress">
+      <div class="cp-area-row">
+        <span class="cp-area-name" style="color:#6d28d9">LC</span>
+        <div class="cp-area-track"><div class="cp-area-fill" style="width:100%;background:#6d28d9"></div></div>
+        <span class="cp-area-pct">100%</span>
+      </div>
+      <div class="cp-area-row">
+        <span class="cp-area-name" style="color:#1d4ed8">MAT</span>
+        <div class="cp-area-track"><div class="cp-area-fill" style="width:100%;background:#1d4ed8"></div></div>
+        <span class="cp-area-pct">100%</span>
+      </div>
+      <div class="cp-area-row">
+        <span class="cp-area-name" style="color:#be123c">SC</span>
+        <div class="cp-area-track"><div class="cp-area-fill" style="width:0%;background:#be123c"></div></div>
+        <span class="cp-area-pct">0%</span>
+      </div>
+      <div class="cp-area-row">
+        <span class="cp-area-name" style="color:#047857">CN</span>
+        <div class="cp-area-track"><div class="cp-area-fill" style="width:0%;background:#047857"></div></div>
+        <span class="cp-area-pct">0%</span>
+      </div>
+      <div class="cp-area-row">
+        <span class="cp-area-name" style="color:#b45309">ING</span>
+        <div class="cp-area-track"><div class="cp-area-fill" style="width:0%;background:#b45309"></div></div>
+        <span class="cp-area-pct">0%</span>
+      </div>
+    </div>
+    <div class="cp-cta">
+      <button class="btn-continue" onclick="goto('s-session')"><span class="ms" style="font-size:18px">play_arrow</span>Continuar con Sociales</button>
+      <button class="btn-take-break">Necesito un descanso (volver más tarde)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S6 — CONFIRMAR FINALIZAR
+═══════════════════════════════ -->
+<div id="s-confirm" class="view">
+  <div class="confirm-card">
+    <div class="conf-header">
+      <div class="conf-header-icon"><span class="ms msf" style="font-size:30px;color:var(--primary)">assignment_turned_in</span></div>
+      <div>
+        <div class="conf-title">¿Finalizar diagnóstico?</div>
+        <div class="conf-sub">Revisa que hayas respondido todas las preguntas antes de enviar.</div>
+      </div>
+    </div>
+    <div class="conf-summary">
+      <div class="conf-summary-title">Resumen de respuestas</div>
+      <div class="conf-area-list">
+        <div class="conf-area-row">
+          <span class="conf-area-badge" style="background:#f5f3ff;color:#6d28d9">LC</span>
+          <div class="conf-area-bar-wrap">
+            <div class="conf-area-label"><span class="conf-area-name">Lectura Crítica</span><span class="conf-area-count">13/13 respondidas</span></div>
+            <div class="conf-bar"><div class="conf-bar-fill" style="width:100%;background:#6d28d9"></div></div>
+          </div>
+        </div>
+        <div class="conf-area-row">
+          <span class="conf-area-badge" style="background:#eff6ff;color:#1d4ed8">MAT</span>
+          <div class="conf-area-bar-wrap">
+            <div class="conf-area-label"><span class="conf-area-name">Matemáticas</span><span class="conf-area-count">14/14 respondidas</span></div>
+            <div class="conf-bar"><div class="conf-bar-fill" style="width:100%;background:#1d4ed8"></div></div>
+          </div>
+        </div>
+        <div class="conf-area-row">
+          <span class="conf-area-badge" style="background:#fff1f2;color:#be123c">SC</span>
+          <div class="conf-area-bar-wrap">
+            <div class="conf-area-label"><span class="conf-area-name">Sociales</span><span class="conf-area-count">12/12 respondidas</span></div>
+            <div class="conf-bar"><div class="conf-bar-fill" style="width:100%;background:#be123c"></div></div>
+          </div>
+        </div>
+        <div class="conf-area-row">
+          <span class="conf-area-badge" style="background:#ecfdf5;color:#047857">CN</span>
+          <div class="conf-area-bar-wrap">
+            <div class="conf-area-label"><span class="conf-area-name">Ciencias Naturales</span><span class="conf-area-count">14/14 respondidas</span></div>
+            <div class="conf-bar"><div class="conf-bar-fill" style="width:100%;background:#047857"></div></div>
+          </div>
+        </div>
+        <div class="conf-area-row">
+          <span class="conf-area-badge" style="background:#fffbeb;color:#b45309">ING</span>
+          <div class="conf-area-bar-wrap">
+            <div class="conf-area-label"><span class="conf-area-name">Inglés</span><span class="conf-area-count" style="color:#b45309;font-weight:700">10/12 — 2 sin responder</span></div>
+            <div class="conf-bar"><div class="conf-bar-fill" style="width:83%;background:#b45309"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="conf-unanswered">
+      <span class="ms msf">warning</span>
+      <div class="conf-unanswered-text">Tienes 2 preguntas de Inglés sin responder. Puedes volver a completarlas antes de finalizar.</div>
+    </div>
+    <div class="conf-btns">
+      <button class="btn-conf-back" onclick="goto('s-session')"><span class="ms" style="font-size:16px">arrow_back</span>Revisar respuestas</button>
+      <button class="btn-conf-finish" onclick="goto('s-processing');startProcessing()">
+        <span class="ms" style="font-size:16px">check</span>Finalizar y ver resultados
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     S7 — PROCESANDO
+═══════════════════════════════ -->
+<div id="s-processing" class="view" style="flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:28px;background:var(--surface)">
+  <div class="proc-icon">
+    <div class="proc-spinner"></div>
+  </div>
+  <div style="text-align:center">
+    <div class="proc-title">Analizando tu perfil académico…</div>
+    <div class="proc-sub" style="margin-top:6px">El motor de diagnóstico está procesando 63 respuestas</div>
+  </div>
+  <div class="proc-steps" id="proc-steps">
+    <div class="proc-step active"><span class="ms msf" style="color:var(--primary)">send</span>Respuestas enviadas al servidor</div>
+    <div class="proc-step pending"><span class="ms">psychology</span>Calculando habilidad TRI por competencia</div>
+    <div class="proc-step pending"><span class="ms">bar_chart</span>Generando reporte de fortalezas y áreas débiles</div>
+    <div class="proc-step pending"><span class="ms">auto_stories</span>Creando tu plan de estudio personalizado</div>
+    <div class="proc-step pending"><span class="ms">notifications</span>Configurando notificaciones de estudio</div>
+  </div>
+  <div class="proc-dots"><div class="proc-dot"></div><div class="proc-dot"></div><div class="proc-dot"></div></div>
+</div>
+
+<!-- ═══════════════════════════════
+     S8 — RESULTADOS
+═══════════════════════════════ -->
+<div id="s-results" class="view" style="flex-direction:column">
+  <div class="res-nav">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="goto('s-landing')" style="background:var(--sc-high);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px"><span class="ms" style="font-size:16px">home</span>Inicio</button>
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--secondary)">Reporte de Diagnóstico</div>
+        <div style="font-size:14px;font-weight:700">Diagnóstico Inicial Completo · 20 abr 2026</div>
+      </div>
+    </div>
+    <button style="display:flex;align-items:center;gap:6px;background:white;border:1px solid rgba(195,198,215,0.3);border-radius:12px;padding:9px 18px;font-size:13px;font-weight:600">
+      <span class="ms" style="font-size:18px">download</span>Exportar PDF
+    </button>
+  </div>
+
+  <div class="res-body">
+
+    <!-- Score hero -->
+    <div class="score-hero reveal" id="r1">
+      <div class="sh-left-text">
+        <div class="sh-eyebrow">Diagnóstico completado</div>
+        <div class="sh-name">Víctor Puello González</div>
+        <div class="sh-date">20 de abril de 2026 · 63 preguntas · 52 min</div>
+        <div class="sh-chips" style="margin-top:14px">
+          <div class="sh-chip"><span class="ms msf" style="font-size:14px">check_circle</span>63/63 respondidas</div>
+          <div class="sh-chip"><span class="ms msf" style="font-size:14px">bolt</span>Algoritmo CAT</div>
+        </div>
+      </div>
+      <div class="score-big-wrap">
+        <div style="font-size:14px;font-weight:700;opacity:0.65;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px">Puntaje estimado</div>
+        <div class="score-big">62</div>
+        <div class="score-label">de 100 puntos</div>
+      </div>
+      <div class="score-right">
+        <div class="level-badge">
+          <div class="level-badge-num">3</div>
+          <div class="level-badge-label">de 4</div>
+        </div>
+        <div class="sh-chips" style="flex-direction:column;align-items:flex-end;gap:6px">
+          <div class="sh-chip"><span class="ms msf" style="font-size:13px">trending_up</span>Percentil 68%</div>
+          <div class="sh-chip" style="background:rgba(245,158,11,0.25);color:#fde68a"><span class="ms msf" style="font-size:13px">priority_high</span>ING prioritario</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Area breakdown -->
+    <div class="area-cards reveal" id="r2">
+      <div class="ac">
+        <div class="ac-label">Lectura Crítica</div>
+        <div class="ac-score" style="color:#6d28d9">75<span style="font-size:14px;font-weight:500;opacity:0.5">/100</span></div>
+        <div class="ac-level" style="background:#ecfdf5;color:#047857">Nivel 3 — Satisfactorio</div>
+        <div class="ac-bar"><div class="ac-fill" style="width:75%;background:#6d28d9"></div></div>
+      </div>
+      <div class="ac">
+        <div class="ac-label">Matemáticas</div>
+        <div class="ac-score" style="color:#1d4ed8">58<span style="font-size:14px;font-weight:500;opacity:0.5">/100</span></div>
+        <div class="ac-level" style="background:#fef3c7;color:#b45309">Nivel 2 — Mínimo</div>
+        <div class="ac-bar"><div class="ac-fill" style="width:58%;background:#1d4ed8"></div></div>
+      </div>
+      <div class="ac">
+        <div class="ac-label">Sociales</div>
+        <div class="ac-score" style="color:#be123c">61<span style="font-size:14px;font-weight:500;opacity:0.5">/100</span></div>
+        <div class="ac-level" style="background:#ecfdf5;color:#047857">Nivel 3 — Satisfactorio</div>
+        <div class="ac-bar"><div class="ac-fill" style="width:61%;background:#be123c"></div></div>
+      </div>
+      <div class="ac">
+        <div class="ac-label">Ciencias Nat.</div>
+        <div class="ac-score" style="color:#047857">65<span style="font-size:14px;font-weight:500;opacity:0.5">/100</span></div>
+        <div class="ac-level" style="background:#ecfdf5;color:#047857">Nivel 3 — Satisfactorio</div>
+        <div class="ac-bar"><div class="ac-fill" style="width:65%;background:#047857"></div></div>
+      </div>
+      <div class="ac">
+        <div class="ac-label">Inglés</div>
+        <div class="ac-score" style="color:#b45309">42<span style="font-size:14px;font-weight:500;opacity:0.5">/100</span></div>
+        <div class="ac-level" style="background:#ffdad6;color:#93000a">Nivel 1 — Insuficiente</div>
+        <div class="ac-bar"><div class="ac-fill" style="width:42%;background:#b45309"></div></div>
+      </div>
+    </div>
+
+    <!-- Lower: Insights + Plan -->
+    <div class="res-lower reveal" id="r3">
+      <div class="res-card">
+        <div class="rc-title"><span class="ms msf">insights</span>Fortalezas y Oportunidades</div>
+        <div class="insight-list">
+          <div class="insight">
+            <div class="insight-icon" style="background:#ecfdf5"><span class="ms msf" style="font-size:20px;color:#047857">thumb_up</span></div>
+            <div><div class="insight-label">Lectura Crítica — Nivel destacado</div><div class="insight-desc">Tu desempeño supera el promedio nacional. Sigue consolidando este diferencial.</div></div>
+          </div>
+          <div class="insight">
+            <div class="insight-icon" style="background:rgba(0,74,198,0.08)"><span class="ms msf" style="font-size:20px;color:var(--primary)">science</span></div>
+            <div><div class="insight-label">Ciencias Naturales — Base sólida</div><div class="insight-desc">Refuerza los temas de mayor complejidad en Indagación científica.</div></div>
+          </div>
+          <div class="insight">
+            <div class="insight-icon" style="background:#ffdad6"><span class="ms msf" style="font-size:20px;color:#be123c">flag</span></div>
+            <div><div class="insight-label">Inglés — Atención prioritaria (A2)</div><div class="insight-desc">Mejorar esta área tiene el mayor impacto potencial en tu puntaje global. El plan se enfocará aquí primero.</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="res-card">
+        <div class="rc-title"><span class="ms msf">route</span>Plan de Estudio Generado</div>
+        <div class="steps-list">
+          <div class="step priority"><div class="step-num p">1</div><div class="step-txt">Inglés — Diagnóstico específico Partes 1–3 (A2)</div></div>
+          <div class="step normal"><div class="step-num n">2</div><div class="step-txt">Matemáticas — Formulación y Ejecución (MAT-FE)</div></div>
+          <div class="step normal"><div class="step-num n">3</div><div class="step-txt">Inglés — Cloze gramatical básico (Parte 4)</div></div>
+          <div class="step normal"><div class="step-num n">4</div><div class="step-txt">Matemáticas — Argumentación (MAT-AR)</div></div>
+        </div>
+        <button class="plan-cta-btn" onclick="window.location='StudentDashboard.html'">
+          Ir al Plan de Estudio Completo
+          <span class="ms" style="font-size:18px">arrow_forward</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CTA Banner -->
+    <div class="cta-banner reveal" id="r4">
+      <div class="ctab-text">
+        <h3>¿Listo para subir al Nivel 4?</h3>
+        <p>Hemos preparado tu primer simulacro de práctica basado en tus áreas débiles.</p>
+      </div>
+      <button class="ctab-btn" onclick="window.location='ExamSession.html'">Iniciar práctica ahora</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Demo nav ── -->
+<div class="demo-nav">
+  <button class="dn-btn active" onclick="gotoDemo('s-landing',this)">① Inicio</button>
+  <button class="dn-btn" onclick="gotoDemo('s-preflight',this)">② Check</button>
+  <button class="dn-btn" onclick="gotoDemo('s-area-intro',this)">③ Área</button>
+  <button class="dn-btn" onclick="gotoDemo('s-session',this)">④ Sesión</button>
+  <button class="dn-btn" onclick="gotoDemo('s-checkpoint',this)">⑤ Mitad</button>
+  <button class="dn-btn" onclick="gotoDemo('s-confirm',this)">⑥ Confirmar</button>
+  <button class="dn-btn" onclick="gotoDemo('s-processing',this);startProcessing()">⑦ Procesando</button>
+  <button class="dn-btn" onclick="gotoDemo('s-results',this);revealResults()">⑧ Resultados</button>
+</div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+// ── Navigation ───────────────────────────────────────────────
+function goto(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active','anim-in'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  setTimeout(() => el.classList.add('anim-in'), 10);
+  localStorage.setItem('diag-view', id);
+  window.scrollTo(0,0);
+}
+function gotoDemo(id, btn) {
+  document.querySelectorAll('.dn-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  goto(id);
+}
+
+// ── Toast ────────────────────────────────────────────────────
+function toast(msg, type='info', icon='info') {
+  const c = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span class="ms msf" style="font-size:16px">${icon}</span>${msg}`;
+  c.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
+}
+
+// ── Preflight checklist ──────────────────────────────────────
+let checkCount = 0;
+function toggleCheck(el) {
+  const wasChecked = el.classList.contains('checked');
+  el.classList.toggle('checked', !wasChecked);
+  checkCount += wasChecked ? -1 : 1;
+  document.getElementById('pf-count').textContent = checkCount + '/4';
+  const btn = document.getElementById('btn-begin');
+  btn.disabled = checkCount < 4;
+  if (checkCount === 4) toast('¡Todo listo! Puedes comenzar.', 'success', 'check_circle');
+}
+
+// ── Area intro data ──────────────────────────────────────────
+const AREAS = [
+  { num:'Área 1 de 5', title:'Lectura Crítica', icon:'menu_book', color:'#6d28d9', bg:'#f5f3ff',
+    desc:'Evaluaremos tu capacidad de comprender, interpretar y reflexionar críticamente sobre textos continuos y discontinuos.',
+    qcount:'12–15 preguntas', time:'8–12 min', pct:'0%', pctWidth:'0%',
+    comps:[{code:'LC-LIT',name:'Identificación — Lectura literal'},{code:'LC-INF',name:'Comprensión — Lectura inferencial'},{code:'LC-CRI',name:'Evaluación — Lectura crítica'}] },
+  { num:'Área 2 de 5', title:'Matemáticas', icon:'calculate', color:'#1d4ed8', bg:'#eff6ff',
+    desc:'Evaluaremos interpretación de datos cuantitativos, formulación de estrategias matemáticas y argumentación de procedimientos.',
+    qcount:'13–16 preguntas', time:'9–14 min', pct:'20%', pctWidth:'20%',
+    comps:[{code:'MAT-IR',name:'Interpretación y Representación'},{code:'MAT-FE',name:'Formulación y Ejecución'},{code:'MAT-AR',name:'Argumentación matemática'}] },
+];
+let areaIdx = 0;
+
+// ── Session questions ────────────────────────────────────────
+const QUESTIONS = [
+  { num:3, area:'LC', areaColor:'#6d28d9', areaBg:'#f5f3ff', areaLabel:'Lectura Crítica · LC-INF',
+    ctxBadge:'Texto Argumentativo', ctxTitle:'El silencio de las abejas',
+    ctx:`<div class="ctx-prose">
+      <p>En los últimos cincuenta años, las poblaciones de abejas melíferas y silvestres han disminuido drásticamente en todo el mundo. Los apicultores de Europa y América del Norte reportan pérdidas anuales de colonias que superan el 30%, mientras que algunas especies de abejas solitarias se encuentran al borde de la extinción.</p>
+      <p>Aunque los medios de comunicación suelen señalar a los pesticidas —en especial a los neonicotinoides— como los principales culpables, la realidad es más compleja. La pérdida de hábitat, la introducción de parásitos como el <em>Varroa destructor</em>, la proliferación de patógenos, el cambio climático y la fragmentación del paisaje agrícola actúan sinérgicamente, creando un entorno en el que las colonias que en otras condiciones habrían sobrevivido no pueden hacerlo.</p>
+      <p>Lo que está en juego no es únicamente la industria apícola. Las abejas polinizan aproximadamente el 70% de los cultivos que alimentan al mundo. Sin ellas, la producción de almendras, manzanas, aguacates, fresas y docenas de cultivos más colapsaría en pocos años. Los economistas estiman que el valor de la polinización por insectos asciende a más de 500.000 millones de dólares anuales en todo el mundo.</p>
+      <p>El verdadero problema, argumentan los entomólogos, no es que no sepamos qué hacer: ya existen soluciones probadas. El obstáculo es político y económico: los agroquímicos responsables de gran parte del daño son producidos por corporaciones que invierten millones en cabildeo para retrasar o evitar su regulación.</p>
+      <p class="ctx-source">Adaptado de artículo científico de divulgación, 2025. Reelaborado con fines académicos.</p>
+    </div>`,
+    stem:'De acuerdo con el texto, ¿cuál es la posición del autor respecto a la causa de la disminución de las abejas?',
+    opts:['Los pesticidas son el único factor responsable de la desaparición de las abejas.',
+          'El problema tiene múltiples causas que actúan de forma conjunta y compleja.',
+          'La pérdida de hábitat es más importante que cualquier otro factor individual.',
+          'Los economistas son los más indicados para resolver el problema apícola.'],
+    correct:1 },
+  { num:4, area:'LC', areaColor:'#6d28d9', areaBg:'#f5f3ff', areaLabel:'Lectura Crítica · LC-CRI',
+    ctxBadge:'Texto Argumentativo', ctxTitle:'El silencio de las abejas',
+    ctx:`<div class="ctx-prose">
+      <p>En los últimos cincuenta años, las poblaciones de abejas melíferas y silvestres han disminuido drásticamente en todo el mundo...</p>
+      <p>El verdadero problema, argumentan los entomólogos, no es que no sepamos qué hacer: ya existen soluciones probadas. El obstáculo es político y económico: los agroquímicos responsables de gran parte del daño son producidos por corporaciones que invierten millones en cabildeo para retrasar o evitar su regulación.</p>
+      <p class="ctx-source">Adaptado de artículo científico de divulgación, 2025.</p>
+    </div>`,
+    stem:'¿Qué recurso argumentativo utiliza el autor en el último párrafo para fortalecer su posición?',
+    opts:['Apela a la autoridad citando estudios científicos publicados.',
+          'Usa la comparación entre dos modelos económicos diferentes.',
+          'Contrasta una solución técnica disponible con un obstáculo político y económico.',
+          'Describe estadísticas históricas para proyectar el futuro del sector.'],
+    correct:2 },
+  { num:5, area:'MAT', areaColor:'#1d4ed8', areaBg:'#eff6ff', areaLabel:'Matemáticas · MAT-IR',
+    ctxBadge:'Recurso Estadístico', ctxTitle:'Distribución de edades — Municipio X',
+    ctx:`<div>
+      <p style="font-size:14px;color:var(--on-sv);line-height:1.7;margin-bottom:16px">La siguiente tabla muestra la distribución de la población de un municipio por grupo de edad, según el último censo.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+        <thead style="background:var(--sc)"><tr>
+          <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--secondary)">Grupo de edad</th>
+          <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--secondary)">Hombres</th>
+          <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--secondary)">Mujeres</th>
+          <th style="padding:9px 14px;text-align:right;font-size:10px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:var(--secondary)">Total</th>
+        </tr></thead>
+        <tbody>
+          ${[['0–14',28,26,54],['15–29',24,25,49],['30–44',22,23,45],['45–59',16,15,31],['60+',10,11,21]].map(([r,h,m,t],i)=>`<tr style="border-bottom:1px solid var(--sc-low)${i===4?';border:none':''}"><td style="padding:9px 14px;font-weight:600">${r}</td><td style="padding:9px 14px;text-align:right">${h}%</td><td style="padding:9px 14px;text-align:right">${m}%</td><td style="padding:9px 14px;text-align:right;font-weight:700;color:var(--primary)">${t}%</td></tr>`).join('')}
+        </tbody>
+      </table>
+      <p style="font-size:11px;color:var(--secondary);font-style:italic;margin-top:10px">Fuente: datos ficticios con fines académicos.</p>
+    </div>`,
+    stem:'Según la tabla, si el municipio tiene 50.000 habitantes en total, ¿cuántas personas tienen entre 15 y 29 años?',
+    opts:['24.500 personas','49.000 personas','24.000 personas','49 personas'],
+    correct:0 },
+];
+
+let qIdx = 0;
+let answers = {};
+let flagged = {};
+
+function renderQ() {
+  const q = QUESTIONS[qIdx];
+  document.getElementById('ctx-badge').textContent = q.ctxBadge;
+  document.getElementById('ctx-title').textContent = q.ctxTitle;
+  document.getElementById('ctx-body').innerHTML = q.ctx;
+  document.getElementById('q-num').textContent = q.num;
+  document.getElementById('q-area-tag').innerHTML = `<span class="q-area-tag" style="background:${q.areaBg};color:${q.areaColor}">${q.areaLabel}</span>`;
+  document.getElementById('q-stem').textContent = q.stem;
+
+  // Options
+  const sel = answers[qIdx];
+  document.getElementById('q-opts').innerHTML = q.opts.map((t,i) => {
+    const letter = ['A','B','C','D'][i];
+    const isSel = sel === i;
+    const isFlag = flagged[qIdx];
+    return `<div class="opt${isSel?' sel':''}${isFlag&&!isSel?' flagged-opt':''}" onclick="selectOpt(${i})">
+      <div class="ol">${letter}</div>
+      <div class="ot">${t}</div>
+    </div>`;
+  }).join('');
+
+  // Flag state
+  const isF = !!flagged[qIdx];
+  document.getElementById('flag-btn').classList.toggle('flagged', isF);
+  document.getElementById('flag-btn-icon').textContent = isF ? 'flag' : 'flag';
+  document.getElementById('flag-btn').style.background = isF ? 'rgba(245,158,11,0.12)' : '';
+  document.getElementById('flag-btn').style.color = isF ? '#d97706' : '';
+
+  // Progress
+  const total = QUESTIONS.length;
+  const answered = Object.keys(answers).length;
+  const pct = Math.round(((qIdx+1)/total)*100);
+  document.getElementById('prog-txt').textContent = `Pregunta ${qIdx+1} / ${total}`;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+
+  // Nav panel grid
+  renderNavGrid();
+
+  // Last q button
+  const isLast = qIdx === QUESTIONS.length - 1;
+  const nb = document.getElementById('next-btn');
+  if (isLast) {
+    nb.innerHTML = 'Finalizar <span class="ms">check</span>';
+    nb.className = 'nav-next-btn';
+    nb.style.background = 'linear-gradient(135deg,#047857,#059669)';
+  } else {
+    nb.innerHTML = 'Siguiente <span class="ms">chevron_right</span>';
+    nb.style.background = '';
+  }
+}
+
+function selectOpt(i) {
+  answers[qIdx] = i;
+  renderQ();
+}
+
+function nextQ() {
+  if (answers[qIdx] === undefined) {
+    toast('Selecciona una opción antes de continuar', 'warning', 'warning');
+    return;
+  }
+  if (qIdx < QUESTIONS.length - 1) {
+    qIdx++;
+    renderQ();
+  } else {
+    goto('s-confirm');
+  }
+}
+
+function prevQ() {
+  if (qIdx > 0) { qIdx--; renderQ(); }
+  else { goto('s-area-intro'); }
+}
+
+let isFlaggedGlobal = false;
+function toggleFlag() {
+  flagged[qIdx] = !flagged[qIdx];
+  isFlaggedGlobal = !!flagged[qIdx];
+  renderQ();
+  toast(flagged[qIdx] ? 'Pregunta marcada para revisar' : 'Marca eliminada', 'info', 'flag');
+}
+
+function setConf(el, level) {
+  document.querySelectorAll('.conf-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Nav panel
+let navPanelOpen = false;
+function toggleNavPanel() {
+  navPanelOpen = !navPanelOpen;
+  document.getElementById('q-nav-panel').classList.toggle('open', navPanelOpen);
+}
+
+function renderNavGrid() {
+  const grid = document.getElementById('qnp-grid-lc');
+  if (!grid) return;
+  grid.innerHTML = QUESTIONS.map((q,i) => {
+    let cls = i === qIdx ? 'current' : answers[i] !== undefined ? 'answered' : flagged[i] ? 'flagged' : 'unanswered';
+    return `<div class="qnp-q ${cls}" onclick="jumpToQ(${i})">${q.num}</div>`;
+  }).join('');
+  // fill rest
+  for(let i=QUESTIONS.length;i<13;i++) {
+    grid.innerHTML += `<div class="qnp-q unanswered">${i+3}</div>`;
+  }
+}
+
+function jumpToQ(i) { qIdx = i; renderQ(); toggleNavPanel(); }
+
+// ── Timer ────────────────────────────────────────────────────
+let timerSecs = 257, timerInt = null;
+function startSessionTimer() {
+  clearInterval(timerInt);
+  timerInt = setInterval(() => {
+    timerSecs++;
+    const m = Math.floor(timerSecs/60).toString().padStart(2,'0');
+    const s = (timerSecs%60).toString().padStart(2,'0');
+    const el = document.getElementById('timer-diag');
+    if (el) el.textContent = `00:${m}:${s}`;
+  }, 1000);
+}
+
+// ── Processing animation ─────────────────────────────────────
+let procStarted = false;
+function startProcessing() {
+  if (procStarted) return;
+  procStarted = true;
+  const steps = document.querySelectorAll('#proc-steps .proc-step');
+  let i = 0;
+  const icons = ['send','psychology','bar_chart','auto_stories','notifications'];
+  const int = setInterval(() => {
+    if (i < steps.length) {
+      steps.forEach((s,j) => {
+        if (j < i) {
+          s.className = 'proc-step done';
+          s.querySelector('.ms').classList.add('msf');
+          s.querySelector('.ms').style.color = '#047857';
+        } else if (j === i) {
+          s.className = 'proc-step active';
+        } else {
+          s.className = 'proc-step pending';
+        }
+      });
+      i++;
+    } else {
+      clearInterval(int);
+      setTimeout(() => { goto('s-results'); revealResults(); procStarted = false; }, 600);
+    }
+  }, 900);
+}
+
+// ── Results reveal ───────────────────────────────────────────
+function revealResults() {
+  const els = document.querySelectorAll('.reveal');
+  els.forEach((el,i) => {
+    el.classList.remove('visible');
+    setTimeout(() => el.classList.add('visible'), 200 + i * 200);
+  });
+}
+
+// ── Init ─────────────────────────────────────────────────────
+const saved = localStorage.getItem('diag-view');
+if (saved && document.getElementById(saved)) {
+  goto(saved);
+  // sync demo nav
+  const map = {'s-landing':0,'s-preflight':1,'s-area-intro':2,'s-session':3,'s-checkpoint':4,'s-confirm':5,'s-processing':6,'s-results':7};
+  const dnBtns = document.querySelectorAll('.dn-btn');
+  if (map[saved] !== undefined) { dnBtns.forEach(b=>b.classList.remove('active')); if(dnBtns[map[saved]]) dnBtns[map[saved]].classList.add('active'); }
+}
+
+renderQ();
+startSessionTimer();
+
+// Show results reveal if already on results
+if (document.getElementById('s-results').classList.contains('active')) revealResults();
+</script>
+</body>
+</html>

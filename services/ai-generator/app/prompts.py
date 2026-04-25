@@ -167,32 +167,355 @@ Componente: {content_component}
   incorrecta de ley/principio, error en unidades.
 """,
 
-    "ING": """\
-## ÁREA: INGLÉS
-Genera una pregunta para Inglés del Saber 11.
+}
 
-Competencia objetivo: {competency_name}
+# =============================================================================
+# Inglés — constantes de mapeo por sección
+# =============================================================================
+
+# Sección → componente React que renderiza el contexto (None = texto plano)
+ING_COMPONENT_MAP: dict[int, str | None] = {
+    1: "NoticeSign",   # Avisos públicos
+    2: None,           # Relación de palabras — lista de definiciones
+    3: "ChatUI",       # Diálogos cotidianos — burbujas de chat
+    4: None,           # Cloze test básico
+    5: None,           # Comprensión lectora literal
+    6: None,           # Comprensión lectora inferencial
+    7: None,           # Cloze test avanzado
+}
+
+# Sección → competencia DCE evaluada
+ING_SECTION_COMPETENCE: dict[int, str] = {
+    1: "pragmatica",
+    2: "linguistica",
+    3: "pragmatica",
+    4: "linguistica",
+    5: "comprension_lectora",
+    6: "comprension_lectora",
+    7: "linguistica",
+}
+
+# Sección → descripción pedagógica para el revisor humano
+ING_SECTION_DESCRIPTIONS: dict[int, str] = {
+    1: "Avisos Públicos — ¿Dónde puedes ver este aviso? (Matching contextual, A1-A2)",
+    2: "Relación de Palabras — Asociar definición con palabra correcta (A1-A2)",
+    3: "Diálogos Cortos — Completar una interacción social cotidiana (A2)",
+    4: "Textos Incompletos — Cloze test: elegir la palabra que completa el texto (A2-B1)",
+    5: "Comprensión Lectora Literal — Preguntas Wh- sobre información explícita (B1)",
+    6: "Comprensión Lectora Inferencial — Propósito del autor, título ideal, conclusiones (B1-B+)",
+    7: "Textos Incompletos Avanzados — Cohesión, coherencia y conectores discursivos (B1-B+)",
+}
+
+# =============================================================================
+# Directriz L1 obligatoria (se inyecta en todos los sub-prompts de inglés)
+# =============================================================================
+
+_L1_DIRECTIVE = """\
+### DIRECTRIZ OBLIGATORIA — INTERFERENCIA L1 (Español → Inglés)
+Esta es la regla más crítica para generar distractores de calidad ICFES.
+Piensa como un hispanohablante aprendiendo inglés. Al menos 2 de los 4 distractores
+DEBEN explotar alguno de estos errores sistemáticos de transferencia:
+
+1. **Cognados falsos**: "actually" (en realidad, ≠ actualmente), "carpet" (alfombra, ≠ carpeta),
+   "realize" (darse cuenta, ≠ realizar), "library" (biblioteca, ≠ librería),
+   "embarrassed" (avergonzado, ≠ embarazada), "assist" (ayudar, ≠ asistir a un evento).
+2. **Transferencia sintáctica**: omitir "it" sujeto ("Is raining"), artículo indebido,
+   preposición incorrecta ("in Monday" en vez de "on Monday").
+3. **Rutinas sociales mal transferidas**: "You are welcome" solo responde "Thank you"
+   (nunca "I'm sorry"). "I agree" nunca lleva "am". Confusión disculpa / agradecimiento.
+4. **Calco estructural**: "I have 15 years" (correcto: "I am 15"), "She is agree",
+   confusión "make / do", confusión "say / tell".
+5. **Registro incorrecto**: respuesta formal en contexto informal o viceversa.
+
+Indica en el campo "l1_distractor_note" cuál opción usa interferencia L1 y cómo.
+"""
+
+# =============================================================================
+# Sub-prompts por sección (1-7) — se agregan al área ING en build_user_prompt
+# =============================================================================
+
+ING_SECTION_PROMPTS: dict[int, str] = {
+
+    # ── Sección 1 — Avisos Públicos (Pragmática, A1-A2, NoticeSign) ───────────
+    1: """\
+## ÁREA: INGLÉS — Sección 1: Avisos Públicos
+Genera un ítem para la Sección 1 del examen ICFES de Inglés (nivel A1-A2).
+
+Competencia: {competency_name} (Pragmática)
 Afirmación: {assertion_statement}
 Evidencia: {evidence_behavior}
-Sección: {english_section}
-Nivel MCER esperado: {mcer_level}
+Nivel MCER: {mcer_level}
 
-### Tipos de contexto válidos:
-- continuous_text: Artículos, emails, cartas, historias cortas (en inglés)
-- dialogue: Conversaciones cotidianas (en inglés)
-- discontinuous_text: Avisos, menús, horarios, instrucciones (en inglés)
-- cloze_text: Texto con espacios para completar (secciones 4-5)
+### Contexto — Aviso Público (React Component: NoticeSign)
+Crea un aviso público breve en inglés (6-12 palabras) de uno de estos tipos:
+danger (rojo), warning (amarillo/naranja), info (azul/verde), prohibition (rojo/negro),
+instruction (azul).
 
-### Guía específica:
-- Secciones 1-3 (A-/A1): vocabulario básico, información explícita, anuncios simples.
-- Secciones 4-5 (A2): completar textos, gramática en contexto, coherencia.
-- Secciones 6-7 (B1/B+): inferencia, propósito del autor, lectura crítica en inglés.
-- TODO el contexto y las opciones DEBEN estar en INGLÉS.
-- El enunciado (stem) puede estar en español para secciones 1-3, en inglés para 4-7.
-- Distractores: falsos amigos, colocaciones incorrectas, error de tiempo verbal,
-  confusión de preposición.
+El campo "context" DEBE ser un JSON string con esta estructura exacta:
+{{"type": "danger|warning|info|prohibition|instruction", "text": "TEXTO DEL AVISO EN INGLÉS", "location_hint": "Tipo de lugar donde se encontraría"}}
+
+El campo "context_type" DEBE ser "react_component".
+
+Ejemplo de context válido:
+{{"type": "warning", "text": "Wet Floor — Please Walk Carefully", "location_hint": "restaurant or public building"}}
+
+### Stem (en español para A1-A2)
+Formulas posibles: "¿En qué lugar puedes encontrar este aviso?" /
+"¿Dónde es más probable ver este letrero?" / "This sign is most likely found in a..."
+
+### Opciones (4 lugares plausibles)
+- Una opción CORRECTA que corresponde exactamente al propósito real del aviso.
+- Tres DISTRACTORES: lugares que comparten una palabra del aviso o un concepto
+  superficialmente relacionado, pero cuyo propósito no justifica ese tipo de aviso.
+
+{l1_directive}
+
+### Campos JSON adicionales requeridos para inglés
+Agrega al JSON de respuesta:
+"grammar_tags": ["aviso_tipo", "vocabulario_contextual"],
+"l1_distractor_note": "Opción X — descripción del error L1 usado"
+""",
+
+    # ── Sección 2 — Relación de Palabras (Lingüística, A1-A2) ────────────────
+    2: """\
+## ÁREA: INGLÉS — Sección 2: Relación de Palabras
+Genera un ítem para la Sección 2 del examen ICFES de Inglés (nivel A1-A2).
+
+Competencia: {competency_name} (Lingüística — Léxica)
+Afirmación: {assertion_statement}
+Evidencia: {evidence_behavior}
+Nivel MCER: {mcer_level}
+
+### Formato
+El contexto (campo "context") es una definición corta en inglés al estilo diccionario
+(1-2 oraciones, sin mencionar la palabra definida).
+El stem pregunta qué palabra corresponde a esa definición.
+Las 4 opciones son palabras del mismo campo semántico (ej. todas son profesiones, o
+todas son adjetivos de carácter).
+
+### Criterio de dificultad
+- A1: vocabulario cotidiano básico (colores, familia, objetos de casa, animales)
+- A2: vocabulario funcional (profesiones, emociones simples, actividades de tiempo libre)
+
+{l1_directive}
+
+### Ejemplo de estructura
+context: "A person who treats sick people and works in a hospital."
+stem: "Which word matches this definition?"
+options: nurse / engineer / lawyer / teacher
+(nurse es la respuesta; las demás son profesiones que NO encajan con la definición)
+
+### Campos JSON adicionales requeridos para inglés
+"grammar_tags": ["campo_semantico", "vocabulario_nivel"],
+"l1_distractor_note": "Opción X — cognado falso o confusión léxica con español"
+""",
+
+    # ── Sección 3 — Diálogos (Pragmática/Sociolingüística, A2, ChatUI) ────────
+    3: """\
+## ÁREA: INGLÉS — Sección 3: Diálogos Cortos
+Genera un ítem para la Sección 3 del examen ICFES de Inglés (nivel A2).
+
+Competencia: {competency_name} (Pragmática / Sociolingüística)
+Afirmación: {assertion_statement}
+Evidencia: {evidence_behavior}
+Nivel MCER: {mcer_level}
+
+### Contexto — Diálogo (React Component: ChatUI)
+Crea un intercambio cotidiano realista entre dos personas (informal).
+Escenario posible: disculpa, agradecimiento, invitación rechazada, felicitación,
+queja leve, pedir un favor, reaccionar a una noticia.
+
+El campo "context" DEBE ser un JSON string con esta estructura exacta:
+{{"speaker_a_name": "NOMBRE", "speaker_a_message": "MENSAJE DE SPEAKER A EN INGLÉS"}}
+
+El campo "context_type" DEBE ser "react_component".
+
+El stem SIEMPRE es (en inglés): "What is the best response for Speaker B?"
+
+### Opciones (en inglés)
+- Una opción CORRECTA: la respuesta pragmáticamente natural en inglés para ese contexto.
+- Tres DISTRACTORES que exploten interferencia L1:
+  * Una opción gramaticalmente correcta pero pragmáticamente inapropiada para el contexto.
+  * Una opción que calca directamente una estructura del español ("You are welcome"
+    como respuesta a "I'm sorry", o "I am agree").
+  * Una opción de registro incorrecto (muy formal para contexto informal).
+
+{l1_directive}
+
+### Campos JSON adicionales requeridos para inglés
+"grammar_tags": ["speech_act", "registro", "funcion_comunicativa"],
+"l1_distractor_note": "Opción X — error L1 específico (ej: calco de 'de nada' como respuesta a disculpa)"
+""",
+
+    # ── Sección 4 — Textos Incompletos Básico (Lingüística, A2-B1, cloze_text) ─
+    4: """\
+## ÁREA: INGLÉS — Sección 4: Textos Incompletos
+Genera un ítem de Cloze Test para la Sección 4 del ICFES de Inglés (nivel A2-B1).
+
+Competencia: {competency_name} (Lingüística — Gramatical y Léxica)
+Afirmación: {assertion_statement}
+Evidencia: {evidence_behavior}
+Nivel MCER: {mcer_level}
+
+### Formato — Cloze Test
+El campo "context" es un texto expositivo o informativo corto (60-100 palabras) en inglés
+con UN espacio en blanco marcado como [BLANK]. El [BLANK] debe requerir elegir entre
+verbos conjugados, preposiciones, conectores simples o vocabulario en contexto.
+
+El campo "context_type" DEBE ser "cloze_text".
+
+El stem (en inglés para nivel B1, en español para A2):
+"Choose the word or phrase that best completes the text." /
+"¿Cuál palabra completa mejor el texto?"
+
+### Opciones
+Las 4 opciones deben ser de la MISMA categoría gramatical (todos verbos, todas
+preposiciones, o todo vocabulario del mismo campo semántico) para evitar que la
+categoría por sí sola revele la respuesta. La dificultad viene de la diferencia
+de uso, conjugación o colocation.
+
+{l1_directive}
+
+### Campos JSON adicionales requeridos para inglés
+"grammar_tags": ["categoria_gramatical", "estructura_evaluada"],
+"l1_distractor_note": "Opción X — error de preposición/tiempo verbal por calco del español"
+""",
+
+    # ── Sección 5 — Comprensión Lectora Literal (Comprensión Lectora, B1) ─────
+    5: """\
+## ÁREA: INGLÉS — Sección 5: Comprensión Lectora Literal
+Genera un ítem de comprensión lectora literal para la Sección 5 del ICFES (nivel B1).
+
+Competencia: {competency_name} (Comprensión Lectora)
+Afirmación: {assertion_statement}
+Evidencia: {evidence_behavior}
+Nivel MCER: {mcer_level}
+
+### Contexto — Texto continuo o funcional (mín 150 palabras)
+Tipos válidos de texto: artículo periodístico, biografía breve, texto informativo,
+correo electrónico formal/informal, aviso de texto largo con instrucciones.
+Si el texto es un correo, el campo "context_type" es "react_component" y
+"context" es JSON: {{"component": "EmailWrapper", "to": "...", "from": "...",
+"subject": "...", "date": "...", "body": "...texto del correo..."}}
+Para cualquier otro texto, usar "context_type": "continuous_text".
+
+El texto DEBE contener la respuesta de forma EXPLÍCITA (skimming/scanning).
+
+### Stem (en inglés)
+Pregunta tipo Wh- sobre información concreta: What, Who, When, Where, How many.
+NO preguntar por inferencias; la respuesta debe estar literalmente en el texto.
+
+### Opciones
+- Opción correcta: información que aparece exactamente en el texto.
+- Tres distractores: información que SÍ aparece en el texto pero que responde
+  una pregunta diferente a la formulada (trampa de skimming apresurado).
+
+{l1_directive}
+
+### Campos JSON adicionales requeridos para inglés
+"grammar_tags": ["tipo_texto", "habilidad_lectora"],
+"l1_distractor_note": "Opción X — información real del texto pero que responde otra pregunta"
+""",
+
+    # ── Sección 6 — Comprensión Lectora Inferencial (B1-B+) ──────────────────
+    6: """\
+## ÁREA: INGLÉS — Sección 6: Comprensión Lectora Inferencial
+Genera un ítem de comprensión lectora inferencial para la Sección 6 del ICFES (nivel B1-B+).
+
+Competencia: {competency_name} (Comprensión Lectora)
+Afirmación: {assertion_statement}
+Evidencia: {evidence_behavior}
+Nivel MCER: {mcer_level}
+
+### Contexto — Texto de opinión o narrativo (mín 180 palabras)
+Tipos válidos: artículo de opinión, texto argumentativo, ensayo corto, narración
+con punto de vista explícito, texto científico de divulgación.
+El campo "context_type" DEBE ser "continuous_text".
+
+El texto debe tener un tono o propósito reconocible sin que sea declarado
+explícitamente (el estudiante debe inferirlo).
+
+### Stem (en inglés)
+Tipos de preguntas inferenciales:
+- "What is the main purpose of this text?"
+- "What can be inferred about the author's opinion on...?"
+- "Which of the following titles best captures the main idea?"
+- "What conclusion can be drawn from the last paragraph?"
+
+### Opciones
+- Opción correcta: inferencia con base demostrable en el texto (no mera opinión).
+- Tres distractores:
+  * Una inferencia lógica pero sin evidencia textual específica.
+  * Una afirmación verdadera pero que no responde la pregunta.
+  * Una afirmación que contradice el texto de forma sutil.
+
+{l1_directive}
+
+### Campos JSON adicionales requeridos para inglés
+"grammar_tags": ["inference_type", "text_purpose", "nivel_lectura"],
+"l1_distractor_note": "Opción X — asunción lógica plausible pero sin soporte textual"
+""",
+
+    # ── Sección 7 — Textos Incompletos Avanzados (Lingüística, B1-B+) ─────────
+    7: """\
+## ÁREA: INGLÉS — Sección 7: Textos Incompletos Avanzados
+Genera un ítem de Cloze Test avanzado para la Sección 7 del ICFES (nivel B1-B+).
+
+Competencia: {competency_name} (Lingüística — Gramática avanzada y Conectores)
+Afirmación: {assertion_statement}
+Evidencia: {evidence_behavior}
+Nivel MCER: {mcer_level}
+
+### Formato — Cloze Test con foco en cohesión y coherencia
+El campo "context" es un texto académico, científico o argumentativo (80-120 palabras)
+en inglés con UN espacio en blanco marcado como [BLANK]. El [BLANK] debe ser
+un conector discursivo o una estructura gramatical avanzada cuya elección cambia
+radicalmente el significado lógico del párrafo.
+
+El campo "context_type" DEBE ser "cloze_text".
+
+El stem (siempre en inglés): "Choose the word or phrase that best completes the text."
+
+### Opciones — Conectores o estructuras avanzadas
+Evaluar el uso de conectores como:
+- Contraste: however, nevertheless, in spite of, although, even though, whereas
+- Consecuencia: therefore, consequently, as a result, hence, thus
+- Adición: furthermore, moreover, in addition, besides
+- Concesión: despite, notwithstanding, granted that
+- Condición: provided that, as long as, unless
+
+Las 4 opciones deben ser conectores que estructuralmente podrían caber en el espacio
+pero que crean un significado lógico incorrecto o incoherente si se elige el equivocado.
+
+{l1_directive}
+
+### Campos JSON adicionales requeridos para inglés
+"grammar_tags": ["discourse_connector", "cohesion_type", "text_logic"],
+"l1_distractor_note": "Opción X — conector que un hispanohablante usaría por calco del español (ej. 'but' en lugar de 'however' para nivel B1+)"
 """,
 }
+
+
+def _build_ing_prompt(
+    english_section: int,
+    competency_name: str,
+    assertion_statement: str,
+    evidence_behavior: str,
+    mcer_level: str,
+) -> str:
+    """Construye el prompt específico para una sección de inglés."""
+    section_template = ING_SECTION_PROMPTS.get(english_section)
+    if not section_template:
+        msg = f"Sección de inglés no válida: {english_section}"
+        raise ValueError(msg)
+
+    return section_template.format(
+        competency_name=competency_name,
+        assertion_statement=assertion_statement,
+        evidence_behavior=evidence_behavior,
+        mcer_level=mcer_level,
+        l1_directive=_L1_DIRECTIVE,
+    )
 
 # =============================================================================
 # Visual prompts por tipo
@@ -250,7 +573,21 @@ def build_user_prompt(
     include_visual: bool = False,
     visual_type: str | None = None,
 ) -> str:
-    """Construye el user prompt parametrizado según el área."""
+    """Construye el user prompt parametrizado según el área.
+
+    Para ING con english_section definido, usa los sub-prompts especializados
+    por sección con la directriz de interferencia L1.
+    Para las demás áreas usa AREA_PROMPTS.
+    """
+    if area_code == "ING" and english_section:
+        return _build_ing_prompt(
+            english_section=english_section,
+            competency_name=competency_name,
+            assertion_statement=assertion_statement,
+            evidence_behavior=evidence_behavior,
+            mcer_level=mcer_level or "A2",
+        )
+
     template = AREA_PROMPTS.get(area_code)
     if not template:
         msg = f"Área no soportada: {area_code}"
