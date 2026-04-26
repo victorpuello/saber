@@ -35,10 +35,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: gateway/pnpm-lock.yaml
 
-      - name: Activar pnpm con Corepack
+      - name: Instalar pnpm
         run: |
-          corepack enable
-          corepack prepare pnpm@10 --activate
+          npm install --global pnpm@10
+          pnpm --version
 
       - run: pnpm install --frozen-lockfile
 
@@ -70,10 +70,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
-      - name: Activar pnpm con Corepack
+      - name: Instalar pnpm
         run: |
-          corepack enable
-          corepack prepare pnpm@10 --activate
+          npm install --global pnpm@10
+          pnpm --version
 
       - run: pnpm install --frozen-lockfile
 

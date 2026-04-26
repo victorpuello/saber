@@ -20,7 +20,12 @@ from .prompts import (
     SYSTEM_PROMPT,
     build_user_prompt,
 )
-from .schemas import GeneratedMedia, GeneratedQuestion, GeneratedQuestionBlock, GeneratedQuestionBlockItem
+from .schemas import (
+    GeneratedMedia,
+    GeneratedQuestion,
+    GeneratedQuestionBlock,
+    GeneratedQuestionBlockItem,
+)
 
 logger = logging.getLogger(__name__)
 
