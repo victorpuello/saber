@@ -68,6 +68,39 @@ async def lifespan(app: FastAPI):
                 "ALTER TABLE IF EXISTS questions "
                 "ADD COLUMN IF NOT EXISTS component_name VARCHAR(50)"
             )
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ADD COLUMN IF NOT EXISTS context_category VARCHAR(30)"
+            )
+            # Sprint M4 - Matematicas: etiquetas tematicas para filtros y calibracion.
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ADD COLUMN IF NOT EXISTS tags JSONB"
+            )
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ADD COLUMN IF NOT EXISTS irt_difficulty NUMERIC(5, 3) DEFAULT 0.0"
+            )
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ADD COLUMN IF NOT EXISTS irt_discrimination NUMERIC(5, 3) DEFAULT 1.0"
+            )
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ADD COLUMN IF NOT EXISTS irt_guessing NUMERIC(5, 3) DEFAULT 0.25"
+            )
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ALTER COLUMN irt_difficulty SET DEFAULT 0.0"
+            )
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ALTER COLUMN irt_discrimination SET DEFAULT 1.0"
+            )
+            await conn.exec_driver_sql(
+                "ALTER TABLE IF EXISTS questions "
+                "ALTER COLUMN irt_guessing SET DEFAULT 0.25"
+            )
             # Sprint 1 — Inglés: ampliar context_type para incluir react_component.
             # Busca y elimina el constraint previo por nombre, luego recrea con el
             # valor nuevo. El bloque DO ignora si no existe el constraint anterior.

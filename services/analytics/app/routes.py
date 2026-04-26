@@ -1,6 +1,8 @@
 """Rutas API — Analytics: progreso, grado, institución, banco de preguntas."""
 
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from saber11_shared.auth import CurrentUser, require_role
 from sqlalchemy import distinct, func, select
@@ -27,6 +29,10 @@ router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
 async def _get_db():
     raise NotImplementedError
+
+
+def _round_or_none(value, digits: int = 2) -> float | None:
+    return round(float(value), digits) if value is not None else None
 
 
 # ── Progreso individual ─────────────────────────────────────────
@@ -257,6 +263,144 @@ async def get_institution_report(
 
 
 # ── Rendimiento del banco de preguntas ──────────────────────────
+
+
+# =============================================================================
+# Analitica especializada MAT
+# =============================================================================
+
+
+@router.get("/areas/MAT/competency-breakdown")
+async def get_mat_competency_breakdown(
+    group_id: str | None = Query(None),
+    db: AsyncSession = Depends(_get_db),
+    user: CurrentUser = Depends(require_role("TEACHER", "ADMIN")),
+):
+    """Desglose de Matematicas por competencia para un grado/grupo."""
+    query = (
+        select(
+            CompetencySnapshot.competency_id,
+            func.count(distinct(CompetencySnapshot.student_user_id)).label("students"),
+            func.avg(CompetencySnapshot.theta_estimate).label("avg_theta"),
+            func.sum(CompetencySnapshot.questions_attempted).label("attempted"),
+            func.sum(CompetencySnapshot.questions_correct).label("correct"),
+        )
+        .where(CompetencySnapshot.area_code == "MAT")
+        .group_by(CompetencySnapshot.competency_id)
+    )
+    if group_id:
+        query = query.where(CompetencySnapshot.grade == group_id)
+    if user.institution_id:
+        query = query.where(CompetencySnapshot.institution_id == user.institution_id)
+
+    rows = (await db.execute(query)).all()
+    items = []
+    for row in rows:
+        attempted = int(row.attempted or 0)
+        correct = int(row.correct or 0)
+        avg_accuracy = round(correct / attempted * 100, 2) if attempted else None
+        items.append(
+            {
+                "competency_id": str(row.competency_id),
+                "students": int(row.students or 0),
+                "avg_theta": _round_or_none(row.avg_theta, 3),
+                "questions_attempted": attempted,
+                "questions_correct": correct,
+                "avg_accuracy": avg_accuracy,
+            }
+        )
+
+    return {"area_code": "MAT", "group_id": group_id, "items": items}
+
+
+@router.get("/areas/MAT/distractor-analysis")
+async def get_mat_distractor_analysis(
+    question_id: str = Query(...),
+    db: AsyncSession = Depends(_get_db),
+    user: CurrentUser = Depends(require_role("TEACHER", "ADMIN")),
+):
+    """Distribucion de respuestas A/B/C/D para una pregunta MAT."""
+    try:
+        q_uuid = uuid.UUID(question_id)
+    except ValueError as exc:
+        raise HTTPException(422, "question_id debe ser un UUID valido") from exc
+
+    result = await db.execute(
+        select(QuestionStat).where(
+            QuestionStat.question_id == q_uuid,
+            QuestionStat.area_code == "MAT",
+        )
+    )
+    stat = result.scalar_one_or_none()
+    if not stat:
+        raise HTTPException(404, "No hay estadisticas MAT para esta pregunta")
+
+    counts = {
+        "A": stat.count_a,
+        "B": stat.count_b,
+        "C": stat.count_c,
+        "D": stat.count_d,
+    }
+    most_selected = max(counts, key=counts.get) if counts else None
+    return {
+        "area_code": "MAT",
+        "question_id": str(stat.question_id),
+        "total": stat.times_presented,
+        "times_correct": stat.times_correct,
+        "accuracy_rate": _round_or_none(stat.accuracy_rate),
+        "counts": counts,
+        "most_selected": most_selected,
+        "most_selected_count": counts.get(most_selected, 0) if most_selected else 0,
+    }
+
+
+@router.get("/areas/MAT/struggling-components")
+async def get_mat_struggling_components(
+    group_id: str | None = Query(None),
+    db: AsyncSession = Depends(_get_db),
+    user: CurrentUser = Depends(require_role("TEACHER", "ADMIN")),
+):
+    """Lista senales MAT con tasa de fallo mayor al 60%."""
+    query = (
+        select(
+            CompetencySnapshot.competency_id,
+            func.count(distinct(CompetencySnapshot.student_user_id)).label("students"),
+            func.sum(CompetencySnapshot.questions_attempted).label("attempted"),
+            func.sum(CompetencySnapshot.questions_correct).label("correct"),
+        )
+        .where(CompetencySnapshot.area_code == "MAT")
+        .group_by(CompetencySnapshot.competency_id)
+    )
+    if group_id:
+        query = query.where(CompetencySnapshot.grade == group_id)
+    if user.institution_id:
+        query = query.where(CompetencySnapshot.institution_id == user.institution_id)
+    rows = (await db.execute(query)).all()
+
+    items = []
+    for row in rows:
+        attempted = int(row.attempted or 0)
+        correct = int(row.correct or 0)
+        if attempted <= 0:
+            continue
+        accuracy = correct / attempted * 100
+        failure_rate = round(100 - accuracy, 2)
+        if failure_rate <= 60:
+            continue
+        items.append(
+            {
+                "component_id": str(row.competency_id),
+                "label": "MAT competency proxy",
+                "failure_rate": failure_rate,
+                "avg_accuracy": round(accuracy, 2),
+                "students": int(row.students or 0),
+                "questions_attempted": attempted,
+                "source": "competency_snapshots_by_group",
+            }
+        )
+
+    items.sort(key=lambda item: item["failure_rate"], reverse=True)
+    return {"area_code": "MAT", "group_id": group_id, "items": items}
 
 
 @router.get("/questions/performance", response_model=QuestionBankMetricsOut)

@@ -38,7 +38,11 @@ export interface QuestionRow {
   difficulty: Difficulty;
   context: string;
   contextType?: string | null;
+  contextCategory?: string | null;
   componentName?: string | null;
+  irtDifficulty?: number | null;
+  irtDiscrimination?: number | null;
+  irtGuessing?: number | null;
   stem: string;
   options: QuestionOption[];
   tags: string[] | null;

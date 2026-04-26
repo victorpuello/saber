@@ -1,34 +1,35 @@
-import type { AdminHeroModel } from "../types";
+import type { AdminAreaPerformanceModel, AdminHeroModel } from "../types";
 
 interface AdminInstitutionStatsProps {
   model: AdminHeroModel;
+  areas: AdminAreaPerformanceModel[];
   loading: boolean;
 }
 
 const AREAS = [
-  { code: "MAT", label: "Matemáticas", icon: "calculate" },
-  { code: "LC", label: "Lectura Crítica", icon: "menu_book" },
+  { code: "MAT", label: "Matematicas", icon: "calculate" },
+  { code: "LC", label: "Lectura Critica", icon: "menu_book" },
   { code: "SC", label: "Sociales y Ciudadanas", icon: "public" },
   { code: "CN", label: "Ciencias Naturales", icon: "science" },
-  { code: "ING", label: "Inglés", icon: "language" },
+  { code: "ING", label: "Ingles", icon: "language" },
 ];
 
-export default function AdminInstitutionStats({ model, loading }: AdminInstitutionStatsProps) {
+export default function AdminInstitutionStats({ model, areas, loading }: AdminInstitutionStatsProps) {
   const scorePercent =
     model.institutionAvgScore !== null
       ? Math.min(100, Math.round((model.institutionAvgScore / 100) * 100))
       : null;
+  const areaMap = new Map(areas.map((area) => [area.areaCode, area]));
 
   return (
     <section className="rounded-4xl border border-outline-variant/10 bg-surface-container-lowest p-7 shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold tracking-tight">Reporte institucional</h2>
         <span className="rounded-full bg-primary/8 px-3 py-1 text-xs font-bold text-primary">
-          Últimos 30 días
+          Ultimos 30 dias
         </span>
       </div>
 
-      {/* Main score */}
       <div className="mb-6 flex items-end gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-secondary">
@@ -39,7 +40,7 @@ export default function AdminInstitutionStats({ model, loading }: AdminInstituti
           ) : (
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-5xl font-black tracking-tighter text-primary">
-                {model.institutionAvgScore !== null ? model.institutionAvgScore : "—"}
+                {model.institutionAvgScore !== null ? model.institutionAvgScore : "-"}
               </span>
               <span className="text-lg font-medium text-secondary">/ 100 pts</span>
             </div>
@@ -62,34 +63,38 @@ export default function AdminInstitutionStats({ model, loading }: AdminInstituti
         )}
       </div>
 
-      {/* Area breakdown placeholder */}
       <div>
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-secondary">
-          Áreas de evaluación
+          Areas de evaluacion
         </p>
         <ul className="space-y-2">
-          {AREAS.map((area) => (
-            <li key={area.code} className="flex items-center gap-2.5 rounded-[14px] bg-surface-container-low px-3.5 py-2.5">
-              <span className="material-symbols-outlined text-[18px] text-secondary">{area.icon}</span>
-              <span className="flex-1 text-sm font-medium text-on-surface">{area.label}</span>
-              <span className="rounded-md bg-surface-container px-2 py-0.5 text-xs font-bold text-secondary">
-                {area.code}
-              </span>
-              {loading ? (
-                <div className="h-3 w-16 animate-pulse rounded-full bg-surface-container-high" />
-              ) : (
-                <div className="h-2 w-16 overflow-hidden rounded-full bg-surface-container-high">
-                  <div
-                    className="h-full rounded-full bg-primary/60"
-                    style={{ width: "0%" }}
-                  />
-                </div>
-              )}
-              <span className="w-8 text-right text-[11px] font-bold text-secondary">
-                {loading ? "" : "—"}
-              </span>
-            </li>
-          ))}
+          {AREAS.map((area) => {
+            const performance = areaMap.get(area.code);
+            const accuracy = performance?.avgAccuracyPercent ?? null;
+
+            return (
+              <li key={area.code} className="flex items-center gap-2.5 rounded-[14px] bg-surface-container-low px-3.5 py-2.5">
+                <span className="material-symbols-outlined text-[18px] text-secondary">{area.icon}</span>
+                <span className="flex-1 text-sm font-medium text-on-surface">{area.label}</span>
+                <span className="rounded-md bg-surface-container px-2 py-0.5 text-xs font-bold text-secondary">
+                  {area.code}
+                </span>
+                {loading ? (
+                  <div className="h-3 w-16 animate-pulse rounded-full bg-surface-container-high" />
+                ) : (
+                  <div className="h-2 w-16 overflow-hidden rounded-full bg-surface-container-high">
+                    <div
+                      className="h-full rounded-full bg-primary/60"
+                      style={{ width: `${accuracy ?? 0}%` }}
+                    />
+                  </div>
+                )}
+                <span className="w-10 text-right text-[11px] font-bold text-secondary">
+                  {loading ? "" : accuracy !== null ? `${accuracy}%` : "-"}
+                </span>
+              </li>
+            );
+          })}
         </ul>
         <p className="mt-3 text-center text-xs text-on-surface-variant">
           Datos detallados por grado disponibles en Analytics Institucional

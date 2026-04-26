@@ -175,6 +175,7 @@ interface QBTableProps {
   onPageChange: (page: number) => void;
   selectedQuestionId?: string | null;
   onRowClick?: (question: QuestionRow) => void;
+  onTagClick?: (tag: string) => void;
 }
 
 const COL_HEADERS = ["Código", "Área / Competencia", "Enunciado", "Autor", "Estado", "Desempeño"];
@@ -189,6 +190,7 @@ export default function QBTable({
   onPageChange,
   selectedQuestionId,
   onRowClick,
+  onTagClick,
 }: QBTableProps) {
   return (
     <section className="overflow-hidden rounded-3xl bg-surface-container-lowest shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
@@ -246,6 +248,29 @@ export default function QBTable({
                   <td className="max-w-65 px-5 py-4">
                     <div className="min-w-0">
                       <p className="truncate text-on-surface/80">{row.enunciado}</p>
+                      {row.tags && row.tags.length > 0 && (
+                        <div className="mt-2 flex max-w-80 flex-wrap gap-1">
+                          {row.tags.slice(0, 3).map((tag) => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onTagClick?.(tag);
+                              }}
+                              className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary transition hover:bg-primary/20"
+                              title={`Filtrar por ${tag}`}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                          {row.tags.length > 3 && (
+                            <span className="rounded-full bg-surface-container-high px-2 py-0.5 text-[10px] font-semibold text-secondary">
+                              +{row.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {row.structureType === "QUESTION_BLOCK" && (
                         <p className="mt-1 text-[11px] font-semibold text-primary">
                           Bloque · {row.blockSize ?? 0} preguntas

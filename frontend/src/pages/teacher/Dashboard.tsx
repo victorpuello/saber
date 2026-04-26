@@ -3,6 +3,7 @@ import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { fetchTeacherDashboardSummary, type TeacherDashboardSummary } from "../../services/dashboard";
+import AdminMathAnalyticsCard from "../admin/dashboard/components/AdminMathAnalyticsCard";
 
 export default function TeacherDashboard() {
   useDocumentTitle("Panel Docente");
@@ -90,6 +91,15 @@ export default function TeacherDashboard() {
           <li>Notificaciones: endpoint /api/notifications/unread-count</li>
         </ul>
       </nav>
+
+      <div className="mt-8">
+        <AdminMathAnalyticsCard
+          competencies={summary?.matCompetencies ?? []}
+          strugglingComponents={summary?.matStrugglingComponents ?? []}
+          hardestQuestions={summary?.matHardestQuestions ?? []}
+          loading={loadingSummary}
+        />
+      </div>
     </main>
   );
 }

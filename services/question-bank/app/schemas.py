@@ -345,6 +345,10 @@ class QuestionOut(BaseModel):
     dce_metadata: DceMetadata | None = None
     component_name: str | None = None
 
+    irt_difficulty: float | None = None
+    irt_discrimination: float | None = None
+    irt_guessing: float | None = None
+
     times_used: int = 0
     created_at: datetime
     updated_at: datetime

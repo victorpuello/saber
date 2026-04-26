@@ -228,15 +228,143 @@ def _remove_trailing_commas(raw_text: str) -> str:
     return re.sub(r",(\s*[}\]])", r"\1", raw_text)
 
 
+def _escape_invalid_json_backslashes(raw_text: str) -> str:
+    """Escapa backslashes no validos dentro de strings JSON, comun en LaTeX."""
+    out: list[str] = []
+    in_string = False
+    escaped = False
+    valid_escapes = {'"', "\\", "/", "b", "f", "n", "r", "t", "u"}
+
+    for index, char in enumerate(raw_text):
+        if in_string:
+            if escaped:
+                if char not in valid_escapes:
+                    out.append("\\\\")
+                else:
+                    out.append("\\")
+                out.append(char)
+                escaped = False
+                continue
+
+            if char == "\\":
+                escaped = True
+                continue
+
+            if char == '"':
+                out.append(char)
+                in_string = False
+                continue
+
+            out.append(char)
+            continue
+
+        out.append(char)
+        if char == '"' and (index == 0 or raw_text[index - 1] != "\\"):
+            in_string = True
+
+    if escaped:
+        out.append("\\\\")
+
+    return "".join(out)
+
+
+def _escape_latex_backslashes_in_strings(raw_text: str) -> str:
+    """Dobla backslashes de comandos LaTeX antes de json.loads.
+
+    Sin esto, secuencias como \\frac pueden parsearse como el escape JSON valido
+    \\f y quedar corruptas como form-feed + "rac".
+    """
+    latex_commands = (
+        "frac",
+        "sqrt",
+        "times",
+        "cdot",
+        "div",
+        "left",
+        "right",
+        "le",
+        "leq",
+        "ge",
+        "geq",
+        "neq",
+        "approx",
+        "pi",
+        "theta",
+        "alpha",
+        "beta",
+        "gamma",
+        "delta",
+        "Delta",
+        "sum",
+        "in",
+        "angle",
+        "overline",
+        "bar",
+        "hat",
+        "text",
+    )
+    out: list[str] = []
+    in_string = False
+    escaped = False
+    index = 0
+
+    while index < len(raw_text):
+        char = raw_text[index]
+        if in_string:
+            if escaped:
+                out.append(char)
+                escaped = False
+                index += 1
+                continue
+
+            if char == "\\":
+                remainder = raw_text[index + 1 :]
+                if any(remainder.startswith(command) for command in latex_commands):
+                    out.append("\\\\")
+                    index += 1
+                    continue
+                out.append(char)
+                escaped = True
+                index += 1
+                continue
+
+            if char == '"':
+                out.append(char)
+                in_string = False
+                index += 1
+                continue
+
+            out.append(char)
+            index += 1
+            continue
+
+        out.append(char)
+        if char == '"':
+            in_string = True
+        index += 1
+
+    return "".join(out)
+
+
 def _parse_provider_json(raw_text: str) -> dict:
     """Parsea JSON del proveedor con estrategias de recuperacion leves."""
     base_text = _extract_json_object(_strip_markdown_fences(raw_text))
+    latex_escaped = _escape_latex_backslashes_in_strings(base_text)
 
     candidates = [
+        latex_escaped,
+        _remove_trailing_commas(latex_escaped),
+        _escape_control_chars_in_strings(latex_escaped),
+        _remove_trailing_commas(_escape_control_chars_in_strings(latex_escaped)),
         base_text,
         _escape_control_chars_in_strings(base_text),
         _remove_trailing_commas(base_text),
         _remove_trailing_commas(_escape_control_chars_in_strings(base_text)),
+        _escape_invalid_json_backslashes(base_text),
+        _remove_trailing_commas(_escape_invalid_json_backslashes(base_text)),
+        _remove_trailing_commas(
+            _escape_invalid_json_backslashes(_escape_control_chars_in_strings(base_text))
+        ),
     ]
 
     seen: set[str] = set()
@@ -262,6 +390,53 @@ def _parse_provider_json(raw_text: str) -> dict:
     raise ValueError(f"JSON invalido del proveedor: {detail}")
 
 
+def _coerce_single_question_payload(data: dict) -> dict:
+    """Normaliza variantes comunes del proveedor al contrato plano de pregunta."""
+    if "stem" in data:
+        return data
+
+    candidate: dict | None = None
+    for key in ("question", "item"):
+        value = data.get(key)
+        if isinstance(value, dict):
+            candidate = value
+            break
+
+    if candidate is None:
+        for key in ("questions", "items"):
+            value = data.get(key)
+            if isinstance(value, list) and value and isinstance(value[0], dict):
+                candidate = value[0]
+                break
+
+    if candidate is None:
+        return data
+
+    shared_keys = {
+        "context",
+        "context_type",
+        "context_category",
+        "visual_data",
+        "visual_type",
+        "visual_render_engine",
+        "visual_alt_text",
+        "visual_alt_text_detailed",
+        "tags",
+    }
+    shared = {key: data[key] for key in shared_keys if key in data and key not in candidate}
+    return {**shared, **candidate}
+
+
+def _require_fields(data: dict, required_fields: tuple[str, ...], label: str) -> None:
+    missing = [
+        field
+        for field in required_fields
+        if field not in data or data[field] is None or data[field] == ""
+    ]
+    if missing:
+        raise ValueError(f"{label} incompleto: faltan campos {', '.join(missing)}")
+
+
 def _build_retry_prompt(user_prompt: str) -> str:
     return f"{user_prompt}{_JSON_RETRY_SUFFIX}"
 
@@ -279,6 +454,18 @@ def _extract_valid_block_items(data: dict) -> list[dict]:
     for index, item in enumerate(raw_items, start=1):
         if not isinstance(item, dict):
             raise ValueError(f"El item {index} del bloque generado no es un objeto valido")
+        _require_fields(
+            item,
+            (
+                "stem",
+                "option_a",
+                "option_b",
+                "option_c",
+                "correct_answer",
+                "explanation_correct",
+            ),
+            f"Item {index} del bloque",
+        )
 
     return raw_items
 
@@ -445,6 +632,10 @@ async def generate_question(
     include_visual: bool = False,
     visual_type: str | None = None,
     english_section: int | None = None,
+    question_type: str | None = None,
+    context_category: str | None = None,
+    tags: list[str] | None = None,
+    additional_context: str | None = None,
 ) -> tuple[GeneratedQuestion, dict, str, str]:
     """Genera una pregunta usando el proveedor seleccionado.
 
@@ -496,7 +687,7 @@ async def generate_question(
     if model_override:
         model_name = model_override
     elif provider_name == "gemini":
-        model_name = settings.gemini_image_model if include_visual else settings.gemini_text_model
+        model_name = provider_config.default_model or settings.gemini_text_model
     else:
         model_name = provider_config.default_model
     max_tokens = provider_config.max_tokens
@@ -531,6 +722,10 @@ async def generate_question(
         include_visual=include_visual,
         visual_type=visual_type,
         structure_type="INDIVIDUAL",
+        question_type=question_type,
+        context_category=context_category,
+        tags=tags,
+        additional_context=additional_context,
     )
 
     retry_prompt = _build_retry_prompt(user_prompt)
@@ -566,7 +761,24 @@ async def generate_question(
             raise ValueError(msg)
 
         try:
-            data = _parse_provider_json(raw_text)
+            parsed = _coerce_single_question_payload(_parse_provider_json(raw_text))
+            if area_code == "MAT":
+                parsed.setdefault("context_type", "math_problem")
+            _require_fields(
+                parsed,
+                (
+                    "context",
+                    "context_type",
+                    "stem",
+                    "option_a",
+                    "option_b",
+                    "option_c",
+                    "correct_answer",
+                    "explanation_correct",
+                ),
+                "Pregunta generada",
+            )
+            data = parsed
             break
         except ValueError as err:
             last_parse_error = err
@@ -666,8 +878,8 @@ async def generate_question(
         content_component_code=content_comp.get("code") if content_comp else None,
         context=data["context"],
         context_type=data["context_type"],
-        context_category=data.get("context_category"),
-        tags=data.get("tags") if isinstance(data.get("tags"), list) else None,
+        context_category=data.get("context_category") or context_category,
+        tags=data.get("tags") if isinstance(data.get("tags"), list) else tags,
         stem=data["stem"],
         option_a=data["option_a"],
         option_b=data["option_b"],
@@ -700,6 +912,10 @@ async def generate_question_block(
     competency_code: str | None = None,
     cognitive_level: int | None = None,
     english_section: int | None = None,
+    question_type: str | None = None,
+    context_category: str | None = None,
+    tags: list[str] | None = None,
+    additional_context: str | None = None,
 ) -> tuple[GeneratedQuestionBlock, dict, str, str]:
     provider_name = provider or settings.default_provider
     provider_config = await get_provider_config(db, provider_name)
@@ -769,6 +985,10 @@ async def generate_question_block(
         english_section=english_section,
         mcer_level=mcer_level,
         structure_type="QUESTION_BLOCK",
+        question_type=question_type,
+        context_category=context_category,
+        tags=tags,
+        additional_context=additional_context,
     )
     retry_prompt = _build_retry_prompt(user_prompt) + _BLOCK_STRUCTURE_RETRY_SUFFIX
 
@@ -802,7 +1022,12 @@ async def generate_question_block(
             raise ValueError(f"Proveedor no implementado: {provider_name}")
 
         try:
-            data = _parse_provider_json(raw_text)
+            parsed = _parse_provider_json(raw_text)
+            if area_code == "MAT":
+                parsed.setdefault("context_type", "math_problem")
+            _require_fields(parsed, ("context", "context_type"), "Bloque generado")
+            _extract_valid_block_items(parsed)
+            data = parsed
             break
         except ValueError as err:
             last_parse_error = err
@@ -850,7 +1075,7 @@ async def generate_question_block(
         content_component_code=content_comp.get("code") if content_comp else None,
         context=data["context"],
         context_type=data["context_type"],
-        context_category=data.get("context_category"),
+        context_category=data.get("context_category") or context_category,
         items=items,
     )
 

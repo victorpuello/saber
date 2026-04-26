@@ -73,6 +73,14 @@ function deriveEnglishComponentName(englishSection: string): string | null {
   return ENGLISH_COMPONENT_BY_SECTION[section] ?? null;
 }
 
+function parseTagsInput(value: string): string[] | null {
+  const tags = value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  return tags.length > 0 ? Array.from(new Set(tags)) : null;
+}
+
 type SaveResult = QuestionOut | QuestionBlockOut;
 
 interface FormViewModelOptions {
@@ -104,6 +112,7 @@ function mapQuestionToFormData(q: QuestionOut): QuestionFormData {
     explanation_d: q.explanation_d ?? "",
     cognitive_process: q.cognitive_process ?? "",
     difficulty_estimated: q.difficulty_estimated != null ? String(q.difficulty_estimated) : "",
+    tags: (q.tags ?? []).join(", "),
     english_section: q.english_section != null ? String(q.english_section) : "",
     mcer_level: q.mcer_level ?? "",
   };
@@ -361,6 +370,7 @@ export function useNewQuestionFormViewModel(onSuccessOrOpts?: ((q: SaveResult) =
             explanation_d: "",
             cognitive_process: "",
             difficulty_estimated: "",
+            tags: "",
             english_section: "",
             mcer_level: "",
           });
@@ -747,6 +757,7 @@ export function useNewQuestionFormViewModel(onSuccessOrOpts?: ((q: SaveResult) =
       difficulty_estimated: formData.difficulty_estimated
         ? Number(formData.difficulty_estimated)
         : null,
+      tags: parseTagsInput(formData.tags),
       source: "MANUAL",
       structure_type: "INDIVIDUAL",
       english_section: formData.english_section

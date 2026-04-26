@@ -137,3 +137,12 @@ class DiagnosticSessionSummary(BaseModel):
     finished_at: datetime | None
 
     model_config = {"from_attributes": True}
+
+
+class DiagnosticStatsOut(BaseModel):
+    total: int = 0
+    in_progress: int = 0
+    completed: int = 0
+    abandoned: int = 0
+    students: int = 0
+    avg_questions_answered: float | None = None

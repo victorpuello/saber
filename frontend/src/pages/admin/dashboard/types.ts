@@ -26,6 +26,14 @@ export interface AdminHeroModel {
   avgAccuracyPercent: number | null;
 }
 
+export interface AdminAreaPerformanceModel {
+  areaCode: string;
+  avgScore: number | null;
+  avgAccuracyPercent: number | null;
+  examsCount: number;
+  studentsCount: number;
+}
+
 export interface AdminQuickActionModel {
   id: string;
   label: string;

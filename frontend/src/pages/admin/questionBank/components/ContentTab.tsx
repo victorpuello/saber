@@ -125,6 +125,27 @@ export default function ContentTab({
         minLength={5}
       />
 
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] font-bold uppercase tracking-widest text-secondary">
+          Etiquetas tematicas
+        </label>
+        <div className="relative">
+          <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-outline">
+            label
+          </span>
+          <input
+            type="text"
+            value={formData.tags}
+            onChange={(e) => updateField("tags", e.target.value)}
+            placeholder="Funciones lineales, Porcentajes, Modelado"
+            className="w-full rounded-xl bg-surface-container-lowest py-2.5 pl-9 pr-3 text-sm font-medium text-on-surface outline-none ring-1 ring-outline-variant/20 transition placeholder:text-secondary/50 focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+        <p className="text-xs text-secondary">
+          Separalas con coma para filtrar el banco por subtema.
+        </p>
+      </div>
+
       {/* Opciones de respuesta */}
       <fieldset className="space-y-3">
         <legend className="mb-1 text-[10px] font-bold uppercase tracking-widest text-secondary">

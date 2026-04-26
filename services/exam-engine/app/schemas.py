@@ -131,6 +131,16 @@ class SessionSummary(BaseModel):
     total_answered: int | None = None
 
 
+class SessionStatsOut(BaseModel):
+    total: int = 0
+    in_progress: int = 0
+    completed: int = 0
+    abandoned: int = 0
+    timed_out: int = 0
+    avg_score_global: float | None = None
+    avg_time_spent_seconds: int | None = None
+
+
 # =============================================================================
 # Answers
 # =============================================================================
@@ -162,6 +172,13 @@ class AnswerOut(BaseModel):
 class QuestionResult(BaseModel):
     question_id: uuid.UUID
     position: int
+    competency_id: uuid.UUID | None = None
+    content_component_id: uuid.UUID | None = None
+    cognitive_process: str | None = None
+    component_name: str | None = None
+    context: str | None = None
+    context_type: str | None = None
+    media: list[dict] | None = None
     structure_type: str | None = None
     block_id: uuid.UUID | None = None
     block_item_order: int | None = None

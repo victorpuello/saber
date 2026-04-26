@@ -188,6 +188,7 @@ export interface QuestionOut {
 
   context: string;
   context_type: string;
+  context_category: string | null;
   structure_type: StructureType;
   block_id: string | null;
   block_item_order: number | null;
@@ -222,6 +223,10 @@ export interface QuestionOut {
   mcer_level: string | null;
   dce_metadata?: Record<string, unknown> | null;
   component_name?: string | null;
+
+  irt_difficulty: number | null;
+  irt_discrimination: number | null;
+  irt_guessing: number | null;
 
   times_used: number;
   created_at: string;
@@ -434,6 +439,7 @@ export interface QuestionFormData {
   // Metadatos
   cognitive_process: string;
   difficulty_estimated: string; // string para input, se convierte a float
+  tags: string;
 
   // Inglés
   english_section: string;
@@ -487,6 +493,7 @@ export const INITIAL_FORM_DATA: QuestionFormData = {
 
   cognitive_process: "",
   difficulty_estimated: "",
+  tags: "",
 
   english_section: "",
   mcer_level: "",

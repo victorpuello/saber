@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import MathText from "../../components/MathText";
+import QuestionContextMedia from "../../components/QuestionContextMedia";
 import { fetchSessionResults, type QuestionResultDetail, type SessionResults } from "../../services/examSession";
 
 // ── Performance level helper ─────────────────────────────────────────
@@ -23,6 +24,38 @@ function formatDuration(seconds: number): string {
 }
 
 // ── Per-question row ──────────────────────────────────────────────────
+
+interface BreakdownItem {
+  key: string;
+  label: string;
+  total: number;
+  correct: number;
+}
+
+function percent(item: BreakdownItem): number {
+  return item.total > 0 ? Math.round((item.correct / item.total) * 100) : 0;
+}
+
+function compactId(id: string | null): string {
+  return id ? id.slice(0, 8).toUpperCase() : "SIN-DATO";
+}
+
+function buildBreakdown(
+  questions: QuestionResultDetail[],
+  keyOf: (q: QuestionResultDetail) => string | null,
+  labelOf: (q: QuestionResultDetail, key: string) => string,
+): BreakdownItem[] {
+  const map = new Map<string, BreakdownItem>();
+  for (const q of questions) {
+    const key = keyOf(q);
+    if (!key) continue;
+    const current = map.get(key) ?? { key, label: labelOf(q, key), total: 0, correct: 0 };
+    current.total += 1;
+    if (q.is_correct) current.correct += 1;
+    map.set(key, current);
+  }
+  return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+}
 
 function QuestionResultRow({ question: q }: { question: QuestionResultDetail }) {
   const [open, setOpen] = useState(false);
@@ -84,6 +117,27 @@ function QuestionResultRow({ question: q }: { question: QuestionResultDetail }) 
 
       {open && (
         <div className="mt-3 rounded-xl bg-white p-3 text-sm leading-relaxed text-on-surface-variant">
+          {(q.media?.length || q.context) && (
+            <div className="mb-3 rounded-xl bg-surface-container-low p-3">
+              {q.media?.length ? (
+                <QuestionContextMedia
+                  media={q.media}
+                  context={q.context}
+                  contextType={q.context_type}
+                  componentName={q.component_name}
+                  compact
+                />
+              ) : (
+                <MathText as="p">{q.context ?? ""}</MathText>
+              )}
+            </div>
+          )}
+          <div className="mb-3">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-secondary">
+              Enunciado completo
+            </p>
+            <MathText as="p">{q.stem.replace(/\[BLANK\]/gi, "[_________________]")}</MathText>
+          </div>
           {q.explanation_selected && q.selected_answer !== q.correct_answer && (
             <div className="mb-3">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-rose-600">
@@ -163,6 +217,16 @@ export default function ExamResults() {
   const correct = sortedQuestions.filter((q) => q.is_correct).length;
   const wrong   = sortedQuestions.length - correct;
   const strongFirst = correct >= wrong;
+  const competencyBreakdown = buildBreakdown(
+    sortedQuestions,
+    (q) => q.competency_id,
+    (q, key) => q.cognitive_process ?? `Competencia ${compactId(key)}`,
+  );
+  const componentBreakdown = buildBreakdown(
+    sortedQuestions,
+    (q) => q.content_component_id ?? q.component_name,
+    (q, key) => q.component_name ?? `Componente ${compactId(key)}`,
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -281,6 +345,57 @@ export default function ExamResults() {
       </div>
 
       {/* ── Strength banner ──────────────────────────────────────── */}
+      {(competencyBreakdown.length > 0 || componentBreakdown.length > 0) && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {competencyBreakdown.length > 0 && (
+            <div className="rounded-3xl bg-white p-6 shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
+              <h3 className="mb-4 text-[16px] font-bold text-on-surface">Desglose por competencia</h3>
+              <div className="flex flex-col gap-3">
+                {competencyBreakdown.map((item) => {
+                  const value = percent(item);
+                  return (
+                    <div key={item.key}>
+                      <div className="mb-1.5 flex items-center justify-between gap-3 text-[12px]">
+                        <span className="font-bold text-on-surface">{item.label}</span>
+                        <span className="font-semibold text-secondary">{item.correct}/{item.total} · {value}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-surface-container-high">
+                        <div className="h-full rounded-full bg-primary" style={{ width: `${value}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {componentBreakdown.length > 0 && (
+            <div className="rounded-3xl bg-white p-6 shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
+              <h3 className="mb-4 text-[16px] font-bold text-on-surface">Desglose por componente</h3>
+              <div className="flex flex-col gap-3">
+                {componentBreakdown.map((item) => {
+                  const value = percent(item);
+                  const weak = value < 50;
+                  return (
+                    <div key={item.key} className={weak ? "rounded-2xl bg-rose-50 p-3" : ""}>
+                      <div className="mb-1.5 flex items-center justify-between gap-3 text-[12px]">
+                        <span className="font-bold text-on-surface">{item.label}</span>
+                        <span className={weak ? "font-semibold text-rose-700" : "font-semibold text-secondary"}>
+                          {item.correct}/{item.total} · {value}%
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-surface-container-high">
+                        <div className={`h-full rounded-full ${weak ? "bg-rose-500" : "bg-emerald-500"}`} style={{ width: `${value}%` }} />
+                      </div>
+                      {weak && <p className="mt-2 text-[11px] font-semibold text-rose-700">Area de mejora</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between rounded-[18px] bg-white px-5 py-4 shadow-[0_12px_40px_rgba(25,28,30,0.05)]">
         <div className="flex items-center gap-3.5">
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${strongFirst ? "bg-emerald-50" : "bg-rose-50"}`}>
@@ -456,4 +571,3 @@ export default function ExamResults() {
     </div>
   );
 }
-

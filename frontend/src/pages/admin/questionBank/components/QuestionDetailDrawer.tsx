@@ -43,14 +43,21 @@ interface QuestionDetailDrawerProps {
   onReview?: (target: { type: "question" | "block"; id: string }, action: "APPROVE" | "REJECT", notes?: string) => Promise<void>;
   onSubmitForReview?: (target: { type: "question" | "block"; id: string }) => Promise<void>;
   onDelete?: (questionId: string) => Promise<void>;
+  onIrtUpdate?: (
+    questionId: string,
+    values: { irt_difficulty: number; irt_discrimination: number; irt_guessing: number },
+  ) => Promise<void>;
 }
 
-export default function QuestionDetailDrawer({ question, block = null, media = [], loading = false, onClose, onEdit, onReview, onSubmitForReview, onDelete }: QuestionDetailDrawerProps) {
+export default function QuestionDetailDrawer({ question, block = null, media = [], loading = false, onClose, onEdit, onReview, onSubmitForReview, onDelete, onIrtUpdate }: QuestionDetailDrawerProps) {
   const isOpen = question !== null || block !== null;
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | "submit" | "delete" | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [irtDraft, setIrtDraft] = useState({ difficulty: "0", discrimination: "1", guessing: "0.25" });
+  const [irtSaving, setIrtSaving] = useState(false);
+  const [irtError, setIrtError] = useState<string | null>(null);
   const status = question?.status ?? null;
   const isBlock = block !== null;
   const context = block?.context ?? question?.context ?? "";
@@ -85,8 +92,38 @@ export default function QuestionDetailDrawer({ question, block = null, media = [
     return () => { document.body.style.overflow = ""; };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!question) return;
+    setIrtDraft({
+      difficulty: String(question.irtDifficulty ?? 0),
+      discrimination: String(question.irtDiscrimination ?? 1),
+      guessing: String(question.irtGuessing ?? 0.25),
+    });
+    setIrtError(null);
+  }, [question?.id, question?.irtDifficulty, question?.irtDiscrimination, question?.irtGuessing]);
+
   const perfColor = (v: number | null) =>
     v === null ? "" : v >= 70 ? "bg-emerald-400" : v >= 45 ? "bg-amber-400" : "bg-rose-400";
+
+  const saveIrt = async () => {
+    if (!question || !onIrtUpdate) return;
+    const irt_difficulty = Number(irtDraft.difficulty);
+    const irt_discrimination = Number(irtDraft.discrimination);
+    const irt_guessing = Number(irtDraft.guessing);
+    if (![irt_difficulty, irt_discrimination, irt_guessing].every(Number.isFinite)) {
+      setIrtError("Los parametros IRT deben ser numericos.");
+      return;
+    }
+    setIrtError(null);
+    setIrtSaving(true);
+    try {
+      await onIrtUpdate(question.id, { irt_difficulty, irt_discrimination, irt_guessing });
+    } catch (err) {
+      setIrtError(err instanceof Error ? err.message : "No se pudieron actualizar los parametros IRT.");
+    } finally {
+      setIrtSaving(false);
+    }
+  };
 
   return (
     <>
@@ -370,6 +407,12 @@ export default function QuestionDetailDrawer({ question, block = null, media = [
                     <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">Autor</p>
                     <p className="mt-1 text-[13px] font-semibold text-on-surface">{question.authorName}</p>
                   </div>
+                  {question.contextCategory && (
+                    <div className="col-span-2">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">Categoria de contexto</p>
+                      <p className="mt-1 text-[13px] font-semibold text-on-surface">{question.contextCategory}</p>
+                    </div>
+                  )}
                   {/* Dificultad */}
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">Dificultad</p>
@@ -396,6 +439,72 @@ export default function QuestionDetailDrawer({ question, block = null, media = [
                       </div>
                     )}
                   </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">IRT b</p>
+                    <p className="mt-1 text-[13px] font-semibold text-on-surface">
+                      {(question.irtDifficulty ?? 0).toFixed(3)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">IRT a / c</p>
+                    <p className="mt-1 text-[13px] font-semibold text-on-surface">
+                      {(question.irtDiscrimination ?? 1).toFixed(2)} / {(question.irtGuessing ?? 0.25).toFixed(2)}
+                    </p>
+                  </div>
+                  {onIrtUpdate && (
+                    <div className="col-span-2 rounded-2xl bg-surface-container-low p-3">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
+                        Calibracion IRT
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-secondary">
+                          b
+                          <input
+                            type="number"
+                            step="0.001"
+                            min="-4"
+                            max="4"
+                            value={irtDraft.difficulty}
+                            onChange={(event) => setIrtDraft((draft) => ({ ...draft, difficulty: event.target.value }))}
+                            className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-white px-2 py-1.5 text-[13px] font-semibold text-on-surface"
+                          />
+                        </label>
+                        <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-secondary">
+                          a
+                          <input
+                            type="number"
+                            step="0.001"
+                            min="0.1"
+                            max="3"
+                            value={irtDraft.discrimination}
+                            onChange={(event) => setIrtDraft((draft) => ({ ...draft, discrimination: event.target.value }))}
+                            className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-white px-2 py-1.5 text-[13px] font-semibold text-on-surface"
+                          />
+                        </label>
+                        <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-secondary">
+                          c
+                          <input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            max="0.5"
+                            value={irtDraft.guessing}
+                            onChange={(event) => setIrtDraft((draft) => ({ ...draft, guessing: event.target.value }))}
+                            className="mt-1 w-full rounded-lg border border-outline-variant/30 bg-white px-2 py-1.5 text-[13px] font-semibold text-on-surface"
+                          />
+                        </label>
+                      </div>
+                      {irtError && <p className="mt-2 text-xs font-semibold text-rose-600">{irtError}</p>}
+                      <button
+                        type="button"
+                        disabled={irtSaving}
+                        onClick={() => { void saveIrt(); }}
+                        className="mt-3 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-white transition hover:bg-primary/90 disabled:opacity-60"
+                      >
+                        {irtSaving ? "Guardando..." : "Guardar IRT"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
               )}

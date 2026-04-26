@@ -26,6 +26,7 @@ from .schemas import (
     SessionOut,
     SessionResults,
     SessionStart,
+    SessionStatsOut,
     SessionSummary,
 )
 
@@ -144,6 +145,36 @@ async def get_session_questions(
             ))
 
     return safe_questions
+
+
+@router.get("/stats", response_model=SessionStatsOut)
+async def get_session_stats(
+    db: AsyncSession = Depends(_get_db),
+    _user: CurrentUser = Depends(require_role("TEACHER", "ADMIN")),
+):
+    """Resumen agregado de sesiones para dashboards administrativos."""
+    status_rows = await db.execute(
+        select(ExamSession.status, func.count(ExamSession.id)).group_by(ExamSession.status)
+    )
+    by_status = {status: count for status, count in status_rows.all()}
+
+    averages = await db.execute(
+        select(
+            func.avg(ExamSession.score_global),
+            func.avg(ExamSession.time_spent_seconds),
+        ).where(ExamSession.status == "COMPLETED")
+    )
+    avg_score, avg_time = averages.one()
+
+    return SessionStatsOut(
+        total=sum(by_status.values()),
+        in_progress=by_status.get("IN_PROGRESS", 0),
+        completed=by_status.get("COMPLETED", 0),
+        abandoned=by_status.get("ABANDONED", 0),
+        timed_out=by_status.get("TIMED_OUT", 0),
+        avg_score_global=round(float(avg_score), 2) if avg_score is not None else None,
+        avg_time_spent_seconds=round(float(avg_time)) if avg_time is not None else None,
+    )
 
 
 # ── Enviar respuesta ──────────────────────────────────────────────────
@@ -374,6 +405,13 @@ async def get_session_results(
         question_results.append(QuestionResult(
             question_id=uuid.UUID(q_id),
             position=position_map.get(q_id, 0),
+            competency_id=uuid.UUID(q_data["competency_id"]) if q_data.get("competency_id") else None,
+            content_component_id=uuid.UUID(q_data["content_component_id"]) if q_data.get("content_component_id") else None,
+            cognitive_process=q_data.get("cognitive_process"),
+            component_name=q_data.get("component_name"),
+            context=q_data.get("context"),
+            context_type=q_data.get("context_type"),
+            media=q_data.get("media") or [],
             structure_type=q_data.get("structure_type"),
             block_id=q_data.get("block_id"),
             block_item_order=q_data.get("block_item_order"),
@@ -617,6 +655,18 @@ async def _fetch_questions_full(question_ids: list[str]) -> list[dict]:
         return []
     async with httpx.AsyncClient(timeout=10) as client:
         results = await asyncio.gather(
-            *[_fetch_one_question(client, q_id) for q_id in question_ids]
+            *[_fetch_one_question_full(client, q_id) for q_id in question_ids]
         )
     return [d for d in results if d is not None]
+
+
+async def _fetch_one_question_full(client: httpx.AsyncClient, q_id: str) -> dict | None:
+    """Obtiene una pregunta completa con media para la revisión post-examen."""
+    data, media = await asyncio.gather(
+        _fetch_one_question(client, q_id),
+        _fetch_question_media(client, q_id),
+    )
+    if data is None:
+        return None
+    data["media"] = media
+    return data

@@ -17,7 +17,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -98,6 +98,10 @@ class GenerationJob(Base):
     include_visual: Mapped[bool] = mapped_column(Boolean, default=False)
     visual_type: Mapped[str | None] = mapped_column(String(50))
     english_section: Mapped[int | None] = mapped_column(Integer)
+    question_type: Mapped[str | None] = mapped_column(String(50))
+    context_category: Mapped[str | None] = mapped_column(String(50))
+    tags: Mapped[list | None] = mapped_column(JSONB)
+    additional_context: Mapped[str | None] = mapped_column(Text)
 
     total_requested: Mapped[int] = mapped_column(Integer, nullable=False)
     total_processed: Mapped[int] = mapped_column(Integer, default=0)

@@ -40,6 +40,24 @@ async def _wait_for_db(retries: int = 10, delay: float = 2.0) -> None:
                         "ALTER TABLE generation_jobs ADD COLUMN IF NOT EXISTS structure_type VARCHAR(20) DEFAULT 'INDIVIDUAL'"
                     )
                 )
+                await conn.execute(
+                    text(
+                        "ALTER TABLE generation_jobs ADD COLUMN IF NOT EXISTS question_type VARCHAR(50)"
+                    )
+                )
+                await conn.execute(
+                    text(
+                        "ALTER TABLE generation_jobs ADD COLUMN IF NOT EXISTS context_category VARCHAR(50)"
+                    )
+                )
+                await conn.execute(
+                    text("ALTER TABLE generation_jobs ADD COLUMN IF NOT EXISTS tags JSONB")
+                )
+                await conn.execute(
+                    text(
+                        "ALTER TABLE generation_jobs ADD COLUMN IF NOT EXISTS additional_context TEXT"
+                    )
+                )
             return
         except Exception as exc:
             if attempt == retries:

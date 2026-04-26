@@ -117,11 +117,70 @@ interface ClassroomAnalyticsOut {
 
 interface InstitutionReportOut {
   total_students: number;
+  total_exams?: number;
+  total_diagnostics?: number;
   avg_score_global: number | null;
+  avg_accuracy_global?: number | null;
+  areas?: Array<{
+    area_code: string;
+    avg_score: number | null;
+    avg_accuracy: number | null;
+    exams_count: number;
+    students_count: number;
+  }>;
+}
+
+interface QuestionStatOut {
+  question_id: string;
+  area_code: string | null;
+  competency_id: string | null;
+  times_presented: number;
+  times_correct: number;
+  accuracy_rate: number | null;
+  count_a: number;
+  count_b: number;
+  count_c: number;
+  count_d: number;
 }
 
 interface QuestionPerformanceOut {
   avg_accuracy_rate: number | null;
+  hardest_questions?: QuestionStatOut[];
+}
+
+export interface MatCompetencyBreakdownItem {
+  competency_id: string;
+  students: number;
+  avg_theta: number | null;
+  questions_attempted: number;
+  questions_correct: number;
+  avg_accuracy: number | null;
+}
+
+interface MatCompetencyBreakdownOut {
+  items: MatCompetencyBreakdownItem[];
+}
+
+export interface MatStrugglingComponentItem {
+  component_id: string;
+  label: string;
+  failure_rate: number;
+  avg_accuracy: number;
+  students: number;
+  questions_attempted: number;
+  source: string;
+}
+
+interface MatStrugglingComponentsOut {
+  items: MatStrugglingComponentItem[];
+}
+
+export interface MatQuestionErrorItem {
+  questionId: string;
+  accuracyRate: number | null;
+  timesPresented: number;
+  mostSelected: string | null;
+  mostSelectedCount: number;
 }
 
 interface UnreadCountOut {
@@ -143,6 +202,41 @@ interface NotificationListOut {
 
 interface MarkReadResponse {
   marked: number;
+}
+
+interface StudentStatsOverviewOut {
+  total_active: number;
+  total_withdrawn: number;
+  total_inactive: number;
+}
+
+interface DiagnosticStatsOut {
+  total: number;
+  in_progress: number;
+  completed: number;
+  abandoned: number;
+  students: number;
+  avg_questions_answered: number | null;
+}
+
+interface PlanStatsOut {
+  total: number;
+  active: number;
+  paused: number;
+  completed: number;
+  replaced: number;
+  total_units: number;
+  completed_units: number;
+}
+
+interface SessionStatsOut {
+  total: number;
+  in_progress: number;
+  completed: number;
+  abandoned: number;
+  timed_out: number;
+  avg_score_global: number | null;
+  avg_time_spent_seconds: number | null;
 }
 
 interface DiagnosticSessionSummary {
@@ -886,6 +980,9 @@ export interface TeacherDashboardSummary {
   examsAvailable: number;
   classroomStudents: number;
   classroomAvgScore: number | null;
+  matCompetencies: MatCompetencyBreakdownItem[];
+  matStrugglingComponents: MatStrugglingComponentItem[];
+  matHardestQuestions: MatQuestionErrorItem[];
   unreadNotifications: number;
   errors: string[];
 }
@@ -894,12 +991,28 @@ export async function fetchTeacherDashboardSummary(
   authFetch: AuthFetch,
   grade = "11",
 ): Promise<TeacherDashboardSummary> {
-  const [questionStatsRes, examsRes, classroomRes, notificationsRes] = await Promise.all([
+  const [questionStatsRes, examsRes, classroomRes, notificationsRes, matCompetencyRes, matStrugglingRes, performanceRes] = await Promise.all([
     safeCall(() => authFetch<QuestionStatsSummary>("/api/questions/stats/summary")),
     safeCall(() => authFetch<PaginatedResponse<unknown>>("/api/exams/?page=1&page_size=5")),
     safeCall(() => authFetch<ClassroomAnalyticsOut>(`/api/analytics/classroom/${grade}`), { optionalStatuses: [404] }),
     safeCall(() => authFetch<UnreadCountOut>("/api/notifications/unread-count")),
+    safeCall(() => authFetch<MatCompetencyBreakdownOut>(`/api/analytics/areas/MAT/competency-breakdown?group_id=${encodeURIComponent(grade)}`), { optionalStatuses: [404] }),
+    safeCall(() => authFetch<MatStrugglingComponentsOut>(`/api/analytics/areas/MAT/struggling-components?group_id=${encodeURIComponent(grade)}`), { optionalStatuses: [404] }),
+    safeCall(() => authFetch<QuestionPerformanceOut>("/api/analytics/questions/performance?limit=5"), { optionalStatuses: [404] }),
   ]);
+  const matHardestQuestions = (performanceRes.data?.hardest_questions ?? [])
+    .filter((question) => question.area_code === "MAT")
+    .map((question) => {
+      const counts = { A: question.count_a, B: question.count_b, C: question.count_c, D: question.count_d };
+      const mostSelected = Object.entries(counts).sort((left, right) => right[1] - left[1])[0] ?? null;
+      return {
+        questionId: question.question_id,
+        accuracyRate: question.accuracy_rate,
+        timesPresented: question.times_presented,
+        mostSelected: mostSelected && mostSelected[1] > 0 ? mostSelected[0] : null,
+        mostSelectedCount: mostSelected?.[1] ?? 0,
+      } satisfies MatQuestionErrorItem;
+    });
 
   return {
     questionBankTotal: questionStatsRes.data?.total ?? 0,
@@ -907,8 +1020,19 @@ export async function fetchTeacherDashboardSummary(
     examsAvailable: examsRes.data?.total ?? 0,
     classroomStudents: classroomRes.data?.total_students ?? 0,
     classroomAvgScore: classroomRes.data?.avg_score ?? null,
+    matCompetencies: matCompetencyRes.data?.items ?? [],
+    matStrugglingComponents: matStrugglingRes.data?.items ?? [],
+    matHardestQuestions,
     unreadNotifications: notificationsRes.data?.unread ?? 0,
-    errors: compactErrors(questionStatsRes.error, examsRes.error, classroomRes.error, notificationsRes.error),
+    errors: compactErrors(
+      questionStatsRes.error,
+      examsRes.error,
+      classroomRes.error,
+      notificationsRes.error,
+      matCompetencyRes.error,
+      matStrugglingRes.error,
+      performanceRes.error,
+    ),
   };
 }
 
@@ -924,6 +1048,22 @@ export interface AdminDashboardSummary {
   institutionStudents: number;
   institutionAvgScore: number | null;
   avgQuestionAccuracy: number | null;
+  completedDiagnostics: number;
+  totalDiagnostics: number;
+  activeStudyPlans: number;
+  totalStudyPlans: number;
+  completedExamSessions: number;
+  avgSessionMinutes: number | null;
+  areaPerformance: Array<{
+    areaCode: string;
+    avgScore: number | null;
+    avgAccuracyPercent: number | null;
+    examsCount: number;
+    studentsCount: number;
+  }>;
+  matCompetencies: MatCompetencyBreakdownItem[];
+  matStrugglingComponents: MatStrugglingComponentItem[];
+  matHardestQuestions: MatQuestionErrorItem[];
   unreadNotifications: number;
   recentAuditEntries: number;
   moduleHealth: AdminDashboardModuleHealth;
@@ -931,12 +1071,30 @@ export interface AdminDashboardSummary {
 }
 
 export async function fetchAdminDashboardSummary(authFetch: AuthFetch): Promise<AdminDashboardSummary> {
-  const [questionStatsRes, institutionRes, performanceRes, notificationsRes, auditRes] = await Promise.all([
+  const [
+    questionStatsRes,
+    institutionRes,
+    performanceRes,
+    notificationsRes,
+    auditRes,
+    matCompetencyRes,
+    matStrugglingRes,
+    studentStatsRes,
+    diagnosticStatsRes,
+    planStatsRes,
+    sessionStatsRes,
+  ] = await Promise.all([
     safeCall(() => authFetch<QuestionStatsSummary>("/api/questions/stats/summary")),
     safeCall(() => authFetch<InstitutionReportOut>("/api/analytics/institution?days=30")),
     safeCall(() => authFetch<QuestionPerformanceOut>("/api/analytics/questions/performance?limit=5")),
     safeCall(() => authFetch<UnreadCountOut>("/api/notifications/unread-count")),
     safeCall(() => authFetch<unknown[]>("/api/notifications/audit?limit=5"), { optionalStatuses: [404] }),
+    safeCall(() => authFetch<MatCompetencyBreakdownOut>("/api/analytics/areas/MAT/competency-breakdown"), { optionalStatuses: [404] }),
+    safeCall(() => authFetch<MatStrugglingComponentsOut>("/api/analytics/areas/MAT/struggling-components"), { optionalStatuses: [404] }),
+    safeCall(() => authFetch<StudentStatsOverviewOut>("/api/students/stats")),
+    safeCall(() => authFetch<DiagnosticStatsOut>("/api/diagnostic/stats")),
+    safeCall(() => authFetch<PlanStatsOut>("/api/plans/stats")),
+    safeCall(() => authFetch<SessionStatsOut>("/api/sessions/stats")),
   ]);
 
   const questionBankStatus: DashboardDataStatus = questionStatsRes.error
@@ -950,16 +1108,55 @@ export async function fetchAdminDashboardSummary(authFetch: AuthFetch): Promise<
       ? "degraded"
       : institutionRes.data
         ? "connected"
-        : "pending";
+      : "pending";
 
   const notificationsStatus: DashboardDataStatus = notificationsRes.error ? "degraded" : "connected";
+  const matHardestQuestions = (performanceRes.data?.hardest_questions ?? [])
+    .filter((question) => question.area_code === "MAT")
+    .map((question) => {
+      const counts = {
+        A: question.count_a,
+        B: question.count_b,
+        C: question.count_c,
+        D: question.count_d,
+      };
+      const mostSelected = Object.entries(counts).sort((left, right) => right[1] - left[1])[0] ?? null;
+      return {
+        questionId: question.question_id,
+        accuracyRate: question.accuracy_rate,
+        timesPresented: question.times_presented,
+        mostSelected: mostSelected && mostSelected[1] > 0 ? mostSelected[0] : null,
+        mostSelectedCount: mostSelected?.[1] ?? 0,
+      } satisfies MatQuestionErrorItem;
+    });
+  const areaPerformance = (institutionRes.data?.areas ?? []).map((area) => ({
+    areaCode: area.area_code,
+    avgScore: area.avg_score !== null ? Math.round(area.avg_score) : null,
+    avgAccuracyPercent: area.avg_accuracy !== null ? Math.round(area.avg_accuracy) : null,
+    examsCount: area.exams_count,
+    studentsCount: area.students_count,
+  }));
 
   return {
     questionBankTotal: questionStatsRes.data?.total ?? 0,
     pendingReviewQuestions: questionStatsRes.data?.by_status?.PENDING_REVIEW ?? 0,
-    institutionStudents: institutionRes.data?.total_students ?? 0,
-    institutionAvgScore: institutionRes.data?.avg_score_global ?? null,
+    institutionStudents: studentStatsRes.data?.total_active ?? institutionRes.data?.total_students ?? 0,
+    institutionAvgScore: institutionRes.data?.avg_score_global ?? sessionStatsRes.data?.avg_score_global ?? null,
     avgQuestionAccuracy: performanceRes.data?.avg_accuracy_rate ?? null,
+    completedDiagnostics: diagnosticStatsRes.data?.completed ?? institutionRes.data?.total_diagnostics ?? 0,
+    totalDiagnostics: diagnosticStatsRes.data?.total ?? institutionRes.data?.total_diagnostics ?? 0,
+    activeStudyPlans: planStatsRes.data?.active ?? 0,
+    totalStudyPlans: planStatsRes.data?.total ?? 0,
+    completedExamSessions: sessionStatsRes.data?.completed ?? institutionRes.data?.total_exams ?? 0,
+    avgSessionMinutes:
+      sessionStatsRes.data?.avg_time_spent_seconds !== null &&
+      sessionStatsRes.data?.avg_time_spent_seconds !== undefined
+        ? Math.round(sessionStatsRes.data.avg_time_spent_seconds / 60)
+        : null,
+    areaPerformance,
+    matCompetencies: matCompetencyRes.data?.items ?? [],
+    matStrugglingComponents: matStrugglingRes.data?.items ?? [],
+    matHardestQuestions,
     unreadNotifications: notificationsRes.data?.unread ?? 0,
     recentAuditEntries: auditRes.data?.length ?? 0,
     moduleHealth: {
@@ -973,6 +1170,12 @@ export async function fetchAdminDashboardSummary(authFetch: AuthFetch): Promise<
       performanceRes.error,
       notificationsRes.error,
       auditRes.error,
+      matCompetencyRes.error,
+      matStrugglingRes.error,
+      studentStatsRes.error,
+      diagnosticStatsRes.error,
+      planStatsRes.error,
+      sessionStatsRes.error,
     ),
   };
 }

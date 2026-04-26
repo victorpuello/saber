@@ -7,7 +7,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from saber11_shared.auth import CurrentUser, require_role
 from saber11_shared.events import EventBus
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -17,6 +17,7 @@ from .models import StudyPlan, StudyPlanUnit, UnitPracticeSet
 from .schemas import (
     PlanGenerateRequest,
     PlanOut,
+    PlanStatsOut,
     PlanSummary,
     PracticeAnswerRequest,
     PracticeItemOut,
@@ -146,6 +147,7 @@ async def generate_plan(
         total_weeks=body.total_weeks,
     )
     plan_data = planner.apply_english_section_recommendations(plan_data, profile_data)
+    plan_data = planner.apply_math_micro_capsules(plan_data, enriched_scores)
 
     # Persistir plan
     plan = StudyPlan(
@@ -173,6 +175,8 @@ async def generate_plan(
         await db.flush()
 
         # Asignar preguntas de práctica
+        if unit_data["recommended_questions"] <= 0:
+            continue
         questions = await planner.fetch_practice_questions(
             settings.question_bank_url,
             unit_data["competency_id"],
@@ -197,6 +201,44 @@ async def generate_plan(
 
 
 # ── Consultar plan activo ───────────────────────────────────────
+
+
+@router.get("/micro-capsules/MAT")
+async def list_mat_micro_capsules(
+    user: CurrentUser = Depends(require_role("STUDENT", "TEACHER", "ADMIN")),
+):
+    """Retorna el catalogo de micro-capsulas MAT usado por el planner."""
+    return planner.MAT_MICRO_CAPSULES
+
+
+@router.get("/stats", response_model=PlanStatsOut)
+async def get_plan_stats(
+    db: AsyncSession = Depends(_get_db),
+    _user: CurrentUser = Depends(require_role("TEACHER", "ADMIN")),
+):
+    """Resumen operativo de planes de estudio para dashboards institucionales."""
+    status_rows = await db.execute(
+        select(StudyPlan.status, func.count(StudyPlan.id)).group_by(StudyPlan.status)
+    )
+    by_status = {status: count for status, count in status_rows.all()}
+
+    unit_totals = await db.execute(
+        select(
+            func.count(StudyPlanUnit.id),
+            func.sum(case((StudyPlanUnit.completed.is_(True), 1), else_=0)),
+        )
+    )
+    total_units, completed_units = unit_totals.one()
+
+    return PlanStatsOut(
+        total=sum(by_status.values()),
+        active=by_status.get("ACTIVE", 0),
+        paused=by_status.get("PAUSED", 0),
+        completed=by_status.get("COMPLETED", 0),
+        replaced=by_status.get("REPLACED", 0),
+        total_units=total_units or 0,
+        completed_units=completed_units or 0,
+    )
 
 
 @router.get("/active", response_model=PlanOut)
@@ -500,6 +542,7 @@ async def replace_plan(
         total_weeks=body.total_weeks,
     )
     plan_data = planner.apply_english_section_recommendations(plan_data, profile_data)
+    plan_data = planner.apply_math_micro_capsules(plan_data, enriched_scores)
 
     plan = StudyPlan(
         profile_id=uuid.UUID(profile_id),
@@ -524,6 +567,8 @@ async def replace_plan(
         db.add(unit)
         await db.flush()
 
+        if unit_data["recommended_questions"] <= 0:
+            continue
         questions = await planner.fetch_practice_questions(
             settings.question_bank_url,
             unit_data["competency_id"],

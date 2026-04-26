@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from saber11_shared.auth import CurrentUser, get_current_user, require_role
 from saber11_shared.events import EventBus
-from sqlalchemy import select
+from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -23,6 +23,7 @@ from .schemas import (
     DiagnosticResultsOut,
     DiagnosticSessionOut,
     DiagnosticSessionSummary,
+    DiagnosticStatsOut,
     DiagnosticStartRequest,
     NextQuestionOut,
     StudentProfileOut,
@@ -99,8 +100,25 @@ async def _fetch_area_questions(area_id: str) -> list[dict]:
                 headers=INTERNAL_QB_HEADERS,
             )
             if full_resp.status_code == 200:
-                full_questions.append(full_resp.json())
+                question = full_resp.json()
+                question["media"] = await _fetch_question_media(client, str(question_id))
+                full_questions.append(question)
         return full_questions
+
+
+async def _fetch_question_media(client: httpx.AsyncClient, question_id: str) -> list[dict]:
+    """Obtiene media contextual de una pregunta desde Question Bank."""
+    try:
+        resp = await client.get(
+            f"{settings.question_bank_url}/api/questions/{question_id}/media",
+            headers=INTERNAL_QB_HEADERS,
+        )
+        if resp.status_code != 200:
+            return []
+        payload = resp.json()
+        return payload if isinstance(payload, list) else []
+    except Exception:
+        return []
 
 
 def _answer_history(session: DiagnosticSession) -> list[dict]:
@@ -252,6 +270,39 @@ async def get_next_question(
         session_theta=float(session.current_theta),
         session_se=float(session.current_se),
         questions_remaining=remaining,
+    )
+
+
+@router.get("/stats", response_model=DiagnosticStatsOut)
+async def get_diagnostic_stats(
+    db: AsyncSession = Depends(_get_db),
+    _user: CurrentUser = Depends(require_role("TEACHER", "ADMIN")),
+):
+    """Resumen agregado de diagnósticos para dashboards institucionales."""
+    status_rows = await db.execute(
+        select(DiagnosticSession.status, func.count(DiagnosticSession.id)).group_by(
+            DiagnosticSession.status
+        )
+    )
+    by_status = {status: count for status, count in status_rows.all()}
+
+    aggregate = await db.execute(
+        select(
+            func.count(distinct(DiagnosticSession.student_user_id)),
+            func.avg(DiagnosticSession.questions_answered),
+        )
+    )
+    students, avg_questions = aggregate.one()
+
+    return DiagnosticStatsOut(
+        total=sum(by_status.values()),
+        in_progress=by_status.get("IN_PROGRESS", 0),
+        completed=by_status.get("COMPLETED", 0),
+        abandoned=by_status.get("ABANDONED", 0),
+        students=students or 0,
+        avg_questions_answered=round(float(avg_questions), 2)
+        if avg_questions is not None
+        else None,
     )
 
 

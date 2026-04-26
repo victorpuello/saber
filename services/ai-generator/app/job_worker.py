@@ -177,6 +177,10 @@ async def _mark_job_running(
             "include_visual": job.include_visual,
             "visual_type": job.visual_type,
             "english_section": job.english_section,
+            "question_type": job.question_type,
+            "context_category": job.context_category,
+            "tags": job.tags,
+            "additional_context": job.additional_context,
             "total_requested": job.total_requested,
         }
 
@@ -218,6 +222,10 @@ async def _process_job_item(
                         competency_code=params["competency_code"],
                         cognitive_level=params["cognitive_level"],
                         english_section=params["english_section"],
+                        question_type=params["question_type"],
+                        context_category=params["context_category"],
+                        tags=params["tags"],
+                        additional_context=params["additional_context"],
                     ),
                     timeout=settings.ai_jobs_item_timeout_seconds,
                 )
@@ -249,6 +257,10 @@ async def _process_job_item(
                         include_visual=params["include_visual"],
                         visual_type=params["visual_type"],
                         english_section=params["english_section"],
+                        question_type=params["question_type"],
+                        context_category=params["context_category"],
+                        tags=params["tags"],
+                        additional_context=params["additional_context"],
                     ),
                     timeout=settings.ai_jobs_item_timeout_seconds,
                 )

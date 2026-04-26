@@ -27,6 +27,7 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
 {
   "context": "Texto del contexto (situación, texto, datos, escenario)",
   "context_type": "tipo_de_contexto",
+  "context_category": null,
   "stem": "Enunciado de la pregunta (lo que se pregunta)",
   "option_a": "Opción A",
   "option_b": "Opción B",
@@ -39,7 +40,8 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
   "explanation_c": "Por qué C es correcta/incorrecta y el error cognitivo si aplica",
   "explanation_d": "Por qué D es correcta/incorrecta y el error cognitivo si aplica",
   "cognitive_process": "proceso_cognitivo_evaluado",
-  "difficulty_estimated": 0.5
+  "difficulty_estimated": 0.5,
+  "tags": []
 }
 
 NO incluyas texto fuera del JSON. NO uses markdown. Solo JSON puro.
@@ -57,6 +59,7 @@ _MAT_SYSTEM_SUFFIX = """\
     - "laboral_ocupacional": trabajo, negocios, economía laboral
     - "comunitario_social": transporte, servicios públicos, ciudad, medio ambiente
     - "matematico_cientifico": matemática abstracta, ciencia, ingeniería
+11. Incluye el campo "tags" con 1 a 3 etiquetas tematicas cortas en espanol.
 """
 
 MAT_SYSTEM_PROMPT = SYSTEM_PROMPT.rstrip() + _MAT_SYSTEM_SUFFIX
@@ -688,6 +691,25 @@ VISUAL_TYPE_GUIDANCE: dict[str, str] = {
 }
 
 
+VISUAL_TYPE_GUIDANCE["chart"] = (
+    "Genera datos para una grafica (bar, line, pie o scatter) compatible con Chart.js. "
+    'visual_data = {"type":"bar|line|pie|scatter","labels":[...],'
+    '"datasets":[{"label":"...","data":[...]}],'
+    '"options":{"scales":{"x":{"title":{"display":true,"text":"Eje X"}},'
+    '"y":{"title":{"display":true,"text":"Eje Y"}}},"plugins":{"title":{"display":true,"text":"Titulo"}}}}. '
+    "En matematicas, incluye escala explicita, etiquetas de ejes y titulo."
+)
+
+VISUAL_TYPE_GUIDANCE["geometric_figure"] = (
+    "Genera una figura geometrica parametrica con dimensiones numericas explicitas. "
+    "Plantillas soportadas por el frontend: triangle, rectangle_with_dimensions, composite_figure. "
+    'Para triangulo: visual_data = {"template":"triangle","params":{"base":8,"height":5,"unit":"cm","side_a":6,"side_b":7,"side_c":8}}. '
+    'Para rectangulo: visual_data = {"template":"rectangle_with_dimensions","params":{"width":12,"height":7,"unit":"m"}}. '
+    'Para compuesta: visual_data = {"template":"composite_figure","params":{"width":12,"height":8,"cutout_width":4,"cutout_height":3,"unit":"cm"}}. '
+    "Los valores numericos deben ser consistentes con la pregunta matematica."
+)
+
+
 _MAT_DISTRACTOR_GUIDANCE: dict[str, str] = {
     "tabular_grafica": (
         "Este ítem evalúa lectura de tablas o gráficas. "
@@ -741,6 +763,10 @@ def build_user_prompt(
     include_visual: bool = False,
     visual_type: str | None = None,
     structure_type: str = "INDIVIDUAL",
+    question_type: str | None = None,
+    context_category: str | None = None,
+    tags: list[str] | None = None,
+    additional_context: str | None = None,
 ) -> str:
     """Construye el user prompt parametrizado según el área.
 
@@ -776,6 +802,35 @@ def build_user_prompt(
         guidance = VISUAL_TYPE_GUIDANCE.get(visual_type, "")
         if guidance:
             prompt += f"\nTipo visual solicitado: {visual_type}\n{guidance}\n"
+
+    if area_code == "MAT":
+        if question_type:
+            guidance = build_mat_distractor_guidance(question_type)
+            prompt += f"\n### Tipo de pregunta MAT solicitado\nUsa question_type='{question_type}'.\n"
+            if guidance:
+                prompt += f"{guidance}\n"
+        if context_category:
+            prompt += (
+                "\n### Categoria de contexto solicitada\n"
+                f"Devuelve exactamente \"context_category\": \"{context_category}\".\n"
+            )
+        if tags:
+            clean_tags = [tag.strip() for tag in tags if tag.strip()]
+            if clean_tags:
+                prompt += (
+                    "\n### Etiquetas tematicas solicitadas\n"
+                    f"Incluye estas tags en el campo \"tags\": {clean_tags}.\n"
+                )
+        if additional_context:
+            prompt += (
+                "\n### Contexto adicional del revisor\n"
+                f"{additional_context.strip()}\n"
+            )
+    elif additional_context:
+        prompt += (
+            "\n### Contexto adicional del revisor\n"
+            f"{additional_context.strip()}\n"
+        )
 
     if structure_type == "QUESTION_BLOCK":
         prompt += BLOCK_SUFFIX

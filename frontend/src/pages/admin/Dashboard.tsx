@@ -6,6 +6,7 @@ import {
   AdminErrorBanner,
   AdminHero,
   AdminInstitutionStats,
+  AdminMathAnalyticsCard,
   AdminMetricsGrid,
   AdminModulesStatus,
   AdminQuestionBankCard,
@@ -16,7 +17,7 @@ export default function AdminDashboard() {
   const { user, authFetch } = useAuth();
   const navigate = useNavigate();
 
-  const { loading, errors, adminName, hero, metrics, modules, quickActions, reload } =
+  const { loading, errors, adminName, hero, areaPerformance, metrics, matAnalytics, modules, quickActions, reload } =
     useAdminDashboardViewModel({
       authFetch,
       adminName: user?.name ?? "Administrador",
@@ -70,7 +71,7 @@ export default function AdminDashboard() {
       {/* Row 2: Institution Stats (col-7) + Quick Actions (col-5) */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-12">
         <div className="lg:col-span-7">
-          <AdminInstitutionStats model={hero} loading={loading} />
+          <AdminInstitutionStats model={hero} areas={areaPerformance} loading={loading} />
         </div>
         <div className="lg:col-span-5">
           <AdminQuickActions
@@ -93,7 +94,13 @@ export default function AdminDashboard() {
           />
         </div>
         <div className="lg:col-span-7">
-          <section className="flex h-full flex-col items-center justify-center rounded-4xl border border-dashed border-outline-variant/40 bg-surface-container-lowest p-8 text-center">
+          <AdminMathAnalyticsCard
+            competencies={matAnalytics.competencies}
+            strugglingComponents={matAnalytics.strugglingComponents}
+            hardestQuestions={matAnalytics.hardestQuestions}
+            loading={loading}
+          />
+          {false && <section className="flex h-full flex-col items-center justify-center rounded-4xl border border-dashed border-outline-variant/40 bg-surface-container-lowest p-8 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/8 text-primary">
               <span className="material-symbols-outlined text-[28px]">bar_chart</span>
             </div>
@@ -109,7 +116,7 @@ export default function AdminDashboard() {
             >
               Ver Analytics
             </button>
-          </section>
+          </section>}
         </div>
       </div>
 

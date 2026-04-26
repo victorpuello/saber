@@ -95,6 +95,16 @@ class PlanSummary(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PlanStatsOut(BaseModel):
+    total: int = 0
+    active: int = 0
+    paused: int = 0
+    completed: int = 0
+    replaced: int = 0
+    total_units: int = 0
+    completed_units: int = 0
+
+
 # ── Semana ──────────────────────────────────────────────────────
 
 

@@ -111,6 +111,16 @@ class GenerateRequest(BaseModel):
     english_section: int | None = Field(
         None, ge=1, le=7, description="Sección de inglés (solo para ING)"
     )
+    question_type: str | None = Field(
+        None, description="Tipo pedagogico MAT para guiar distractores"
+    )
+    context_category: str | None = Field(
+        None, description="Categoria de contexto ICFES para MAT"
+    )
+    tags: list[str] | None = Field(None, description="Etiquetas tematicas sugeridas")
+    additional_context: str | None = Field(
+        None, description="Indicaciones adicionales para orientar la generacion"
+    )
 
 
 class GenerateBatchRequest(BaseModel):
@@ -125,6 +135,10 @@ class GenerateBatchRequest(BaseModel):
     competency_code: str | None = None
     cognitive_level: int | None = Field(None, ge=1, le=3)
     english_section: int | None = Field(None, ge=1, le=7)
+    question_type: str | None = None
+    context_category: str | None = None
+    tags: list[str] | None = None
+    additional_context: str | None = None
 
 
 class CreateGenerationJobRequest(BaseModel):
@@ -140,6 +154,10 @@ class CreateGenerationJobRequest(BaseModel):
     competency_code: str | None = None
     cognitive_level: int | None = Field(None, ge=1, le=3)
     english_section: int | None = Field(None, ge=1, le=7)
+    question_type: str | None = None
+    context_category: str | None = None
+    tags: list[str] | None = None
+    additional_context: str | None = None
 
 
 class GeneratedMedia(BaseModel):
@@ -291,6 +309,10 @@ class GenerationJobResponse(BaseModel):
     include_visual: bool
     visual_type: str | None = None
     english_section: int | None = None
+    question_type: str | None = None
+    context_category: str | None = None
+    tags: list[str] | None = None
+    additional_context: str | None = None
 
     total_requested: int
     total_processed: int

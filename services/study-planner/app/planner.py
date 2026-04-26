@@ -32,6 +32,73 @@ PRIORITY_WEIGHTS: dict[str, tuple[str, int]] = {
     "STRENGTH": ("LOW", 1),
 }
 
+MAT_MICRO_CAPSULES = [
+    {
+        "code": "MAT-MC-01",
+        "title": "Aprende a leer graficos cartesianos",
+        "trigger": "Error: leer eje incorrecto",
+        "description": "Lectura de ejes, escala, unidades y coordenadas antes de resolver.",
+        "estimated_minutes": 20,
+        "resource_url": "https://es.khanacademy.org/math/statistics-probability",
+    },
+    {
+        "code": "MAT-MC-02",
+        "title": "Porcentajes vs valores absolutos",
+        "trigger": "Error: confundir porcentaje con unidades",
+        "description": "Conversion entre razon, porcentaje y cambio absoluto en contexto.",
+        "estimated_minutes": 20,
+        "resource_url": "https://es.khanacademy.org/math/arithmetic/arith-review-percentages",
+    },
+    {
+        "code": "MAT-MC-03",
+        "title": "Modelos lineales en contexto real",
+        "trigger": "Error: variable mal asignada",
+        "description": "Identificacion de variable, pendiente, intercepto y unidades.",
+        "estimated_minutes": 25,
+        "resource_url": "https://es.khanacademy.org/math/algebra/x2f8bb11595b61c86:linear-equations-graphs",
+    },
+    {
+        "code": "MAT-MC-04",
+        "title": "Areas y perimetros: no los confundas",
+        "trigger": "Error: usa perimetro en vez de area",
+        "description": "Diferencia operacional entre medir borde y medir superficie.",
+        "estimated_minutes": 20,
+        "resource_url": "https://es.khanacademy.org/math/basic-geo/basic-geometry-area-and-perimeter",
+    },
+    {
+        "code": "MAT-MC-05",
+        "title": "Probabilidad condicional paso a paso",
+        "trigger": "Error: usa total en vez de subgrupo",
+        "description": "Uso del denominador correcto cuando la condicion restringe el universo.",
+        "estimated_minutes": 25,
+        "resource_url": "https://es.khanacademy.org/math/statistics-probability/probability-library",
+    },
+    {
+        "code": "MAT-MC-06",
+        "title": "Jerarquia de operaciones PEMDAS/BODMAS",
+        "trigger": "Error: viola jerarquia de operaciones",
+        "description": "Orden correcto de parentesis, potencias, productos y sumas.",
+        "estimated_minutes": 15,
+        "resource_url": "https://es.khanacademy.org/math/arithmetic/arith-review-order-of-operations",
+    },
+    {
+        "code": "MAT-MC-07",
+        "title": "Correlacion directa vs inversa",
+        "trigger": "Error: confunde tipo de proporcionalidad",
+        "description": "Reconocimiento de relaciones directas, inversas y no proporcionales.",
+        "estimated_minutes": 20,
+        "resource_url": "https://es.khanacademy.org/math/cc-seventh-grade-math/cc-7th-ratio-proportion",
+    },
+    {
+        "code": "MAT-MC-08",
+        "title": "Lectura de tablas de doble entrada",
+        "trigger": "Error: lee fila en vez de columna",
+        "description": "Cruce correcto entre filas, columnas, totales marginales y subgrupos.",
+        "estimated_minutes": 20,
+        "resource_url": "https://es.khanacademy.org/math/statistics-probability",
+    },
+]
+
 
 # ── Generación de plan ─────────────────────────────────────────
 
@@ -155,6 +222,70 @@ def apply_english_section_recommendations(plan_data: dict, profile_data: dict) -
         unit["recommended_questions"] = max(unit.get("recommended_questions", 10), 12)
 
     return plan_data
+
+
+def apply_math_micro_capsules(plan_data: dict, competency_scores: list[dict]) -> dict:
+    """Inserta micro-capsulas MAT al inicio del plan si hay debilidades."""
+    weak_math = [
+        score for score in competency_scores
+        if score.get("area_code") == "MAT"
+        and score.get("classification") in ("CRITICAL", "WEAKNESS")
+    ]
+    if not weak_math:
+        return plan_data
+
+    existing_codes = {
+        unit.get("title", "").split(":", 1)[0]
+        for unit in plan_data.get("units", [])
+    }
+    week_one_positions = [
+        int(unit.get("position", 0))
+        for unit in plan_data.get("units", [])
+        if unit.get("week_number") == 1
+    ]
+    next_position = max(week_one_positions, default=-1) + 1
+
+    selected = _select_math_capsules(weak_math)
+    target_score = weak_math[0]
+    for capsule in selected:
+        if capsule["code"] in existing_codes:
+            continue
+        plan_data.setdefault("units", []).append(
+            {
+                "week_number": 1,
+                "position": next_position,
+                "competency_id": target_score["competency_id"],
+                "area_code": "MAT",
+                "title": f"{capsule['code']}: {capsule['title']}",
+                "description": (
+                    f"{capsule['description']} Trigger: {capsule['trigger']}. "
+                    f"Duracion sugerida: {capsule['estimated_minutes']} min. "
+                    f"Recurso: {capsule['resource_url']}"
+                ),
+                "priority": "HIGH",
+                "recommended_questions": 0,
+            }
+        )
+        next_position += 1
+
+    return plan_data
+
+
+def _select_math_capsules(weak_math: list[dict]) -> list[dict]:
+    text = " ".join(
+        f"{score.get('competency_name', '')} {score.get('classification', '')}".lower()
+        for score in weak_math
+    )
+    codes = ["MAT-MC-01", "MAT-MC-02"]
+    if any(word in text for word in ("aleatorio", "probabilidad", "estadistica", "tabla")):
+        codes = ["MAT-MC-05", "MAT-MC-08"]
+    elif any(word in text for word in ("geometr", "area", "perimetro", "medida")):
+        codes = ["MAT-MC-04", "MAT-MC-01"]
+    elif any(word in text for word in ("variacional", "lineal", "proporcional", "funcion")):
+        codes = ["MAT-MC-03", "MAT-MC-07"]
+
+    by_code = {capsule["code"]: capsule for capsule in MAT_MICRO_CAPSULES}
+    return [by_code[code] for code in codes if code in by_code]
 
 
 def _build_unit(score: dict, week: int, position: int, priority: str) -> dict:

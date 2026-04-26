@@ -17,16 +17,12 @@ function buildHero(summary: AdminDashboardSummary): AdminHeroModel {
 }
 
 function buildMetrics(summary: AdminDashboardSummary, loading: boolean): AdminMetricModel[] {
-  const studentsTotal = summary.institutionStudents;
-  const diagnosticsHelper =
-    studentsTotal > 0 ? `${Math.round(studentsTotal * 0.75)} de ${studentsTotal} estudiantes` : undefined;
-
   return [
     {
       id: "diagnostics",
-      label: "Diagnósticos completados",
-      value: loading ? "..." : studentsTotal > 0 ? String(Math.round(studentsTotal * 0.75)) : "—",
-      helper: diagnosticsHelper ?? "del total de estudiantes",
+      label: "Diagnosticos completados",
+      value: loading ? "..." : String(summary.completedDiagnostics),
+      helper: `${summary.totalDiagnostics} sesiones registradas`,
       icon: "analytics",
       variant: "default",
     },
@@ -34,24 +30,24 @@ function buildMetrics(summary: AdminDashboardSummary, loading: boolean): AdminMe
       id: "pending_review",
       label: "Preguntas sin revisar",
       value: loading ? "..." : String(summary.pendingReviewQuestions),
-      helper: "requieren aprobación",
+      helper: "requieren aprobacion",
       icon: "pending_actions",
       variant: "warning",
-      badge: summary.pendingReviewQuestions > 0 ? "Requiere atención" : undefined,
+      badge: summary.pendingReviewQuestions > 0 ? "Requiere atencion" : undefined,
     },
     {
       id: "study_plans",
       label: "Planes de estudio activos",
-      value: loading ? "..." : "—",
-      helper: "semana en curso",
+      value: loading ? "..." : String(summary.activeStudyPlans),
+      helper: `${summary.totalStudyPlans} planes creados`,
       icon: "auto_stories",
       variant: "success",
     },
     {
       id: "avg_session",
-      label: "Promedio sesión diaria",
-      value: loading ? "..." : "—",
-      helper: "por estudiante activo",
+      label: "Promedio de sesion",
+      value: loading ? "..." : summary.avgSessionMinutes !== null ? `${summary.avgSessionMinutes} min` : "-",
+      helper: `${summary.completedExamSessions} sesiones finalizadas`,
       icon: "timer",
       variant: "default",
     },
@@ -69,7 +65,7 @@ function buildModules(summary: AdminDashboardSummary): AdminModuleModel[] {
       id: "gateway",
       title: "API Gateway",
       status: "connected" as AdminModuleStatus,
-      detail: "Node.js · Puerto 3000 · OK",
+      detail: "Node.js - Puerto 3000 - OK",
       icon: "hub",
     },
     {
@@ -78,35 +74,35 @@ function buildModules(summary: AdminDashboardSummary): AdminModuleModel[] {
       status: toStatus(summary.moduleHealth.questionBank.status),
       detail:
         summary.moduleHealth.questionBank.error ??
-        `FastAPI · Puerto 3001 · ${summary.questionBankTotal} items`,
+        `FastAPI - Puerto 3001 - ${summary.questionBankTotal} items`,
       icon: "quiz",
     },
     {
       id: "aiGenerator",
       title: "AI Generator",
       status: "pending" as AdminModuleStatus,
-      detail: "FastAPI · Puerto 3002 · Sin consultar",
+      detail: "FastAPI - Puerto 3002 - Sin consultar",
       icon: "auto_awesome",
     },
     {
       id: "examEngine",
       title: "Exam Engine",
-      status: "pending" as AdminModuleStatus,
-      detail: "FastAPI · Puerto 3003 · Sin consultar",
+      status: summary.completedExamSessions > 0 ? "connected" : "pending",
+      detail: `FastAPI - Puerto 3003 - ${summary.completedExamSessions} sesiones`,
       icon: "edit_note",
     },
     {
       id: "diagnostic",
       title: "Diagnostic Engine",
-      status: "pending" as AdminModuleStatus,
-      detail: "FastAPI · Puerto 3004 · Sin consultar",
+      status: summary.totalDiagnostics > 0 ? "connected" : "pending",
+      detail: `FastAPI - Puerto 3004 - ${summary.completedDiagnostics} completados`,
       icon: "psychology",
     },
     {
       id: "studyPlanner",
       title: "Study Planner",
-      status: "pending" as AdminModuleStatus,
-      detail: "FastAPI · Puerto 3005 · Sin consultar",
+      status: summary.totalStudyPlans > 0 ? "connected" : "pending",
+      detail: `FastAPI - Puerto 3005 - ${summary.activeStudyPlans} activos`,
       icon: "calendar_month",
     },
     {
@@ -115,7 +111,7 @@ function buildModules(summary: AdminDashboardSummary): AdminModuleModel[] {
       status: toStatus(summary.moduleHealth.notifications.status),
       detail:
         summary.moduleHealth.notifications.error ??
-        `Celery · Puerto 3007 · ${summary.unreadNotifications} sin leer`,
+        `FastAPI - Puerto 3007 - ${summary.unreadNotifications} sin leer`,
       icon: "notifications",
     },
   ];
@@ -126,7 +122,7 @@ function buildQuickActions(summary: AdminDashboardSummary): AdminQuickActionMode
     {
       id: "review-questions",
       label: "Revisar preguntas pendientes",
-      description: `${summary.pendingReviewQuestions} preguntas esperan aprobación`,
+      description: `${summary.pendingReviewQuestions} preguntas esperan aprobacion`,
       icon: "quiz",
       targetPath: "/admin/preguntas",
       variant: "primary",
@@ -134,7 +130,7 @@ function buildQuickActions(summary: AdminDashboardSummary): AdminQuickActionMode
     {
       id: "generate-ai",
       label: "Generar preguntas con IA",
-      description: "ScholarAI · ICFES Evidence-Centered Design",
+      description: "ScholarAI - ICFES Evidence-Centered Design",
       icon: "auto_awesome",
       targetPath: "/admin/preguntas",
       variant: "default",
@@ -142,7 +138,7 @@ function buildQuickActions(summary: AdminDashboardSummary): AdminQuickActionMode
     {
       id: "report",
       label: "Ver reporte institucional",
-      description: "Exportar PDF · últimos 30 días",
+      description: "Exportar PDF - ultimos 30 dias",
       icon: "analytics",
       targetPath: "/admin/analytics",
       variant: "default",
@@ -150,7 +146,7 @@ function buildQuickActions(summary: AdminDashboardSummary): AdminQuickActionMode
     {
       id: "students",
       label: "Gestionar estudiantes",
-      description: `${summary.institutionStudents} activos · sincronizado con Kampus`,
+      description: `${summary.institutionStudents} activos - sincronizado con Kampus`,
       icon: "people",
       targetPath: "/admin/estudiantes",
       variant: "default",
@@ -164,6 +160,16 @@ const EMPTY_SUMMARY: AdminDashboardSummary = {
   institutionStudents: 0,
   institutionAvgScore: null,
   avgQuestionAccuracy: null,
+  completedDiagnostics: 0,
+  totalDiagnostics: 0,
+  activeStudyPlans: 0,
+  totalStudyPlans: 0,
+  completedExamSessions: 0,
+  avgSessionMinutes: null,
+  areaPerformance: [],
+  matCompetencies: [],
+  matStrugglingComponents: [],
+  matHardestQuestions: [],
   unreadNotifications: 0,
   recentAuditEntries: 0,
   moduleHealth: {
@@ -214,7 +220,13 @@ export function useAdminDashboardViewModel({ authFetch, adminName }: UseAdminDas
     errors: summary.errors,
     adminName,
     hero: buildHero(summary),
+    areaPerformance: summary.areaPerformance,
     metrics: buildMetrics(summary, loading),
+    matAnalytics: {
+      competencies: summary.matCompetencies,
+      strugglingComponents: summary.matStrugglingComponents,
+      hardestQuestions: summary.matHardestQuestions,
+    },
     modules: buildModules(summary),
     quickActions: buildQuickActions(summary),
     reload: load,

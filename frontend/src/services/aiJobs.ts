@@ -28,6 +28,9 @@ export interface CreateGenerationJobPayload {
   competency_code?: string;
   cognitive_level?: number;
   english_section?: number;
+  question_type?: string;
+  context_category?: string;
+  tags?: string[];
   additional_context?: string;
 }
 
@@ -46,6 +49,10 @@ export interface GenerationJob {
   include_visual: boolean;
   visual_type: string | null;
   english_section: number | null;
+  question_type: string | null;
+  context_category: string | null;
+  tags: string[] | null;
+  additional_context: string | null;
   total_requested: number;
   total_processed: number;
   total_generated: number;

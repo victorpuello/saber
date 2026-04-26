@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from saber11_shared.auth import CurrentUser, require_role
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -202,6 +202,10 @@ async def generate_single(
             include_visual=req.include_visual,
             visual_type=req.visual_type.value if req.visual_type else None,
             english_section=req.english_section,
+            question_type=req.question_type,
+            context_category=req.context_category,
+            tags=req.tags,
+            additional_context=req.additional_context,
         )
     except ValueError as err:
         raise HTTPException(422, str(err)) from err
@@ -268,6 +272,10 @@ async def generate_batch(
                 include_visual=req.include_visual,
                 visual_type=req.visual_type.value if req.visual_type else None,
                 english_section=req.english_section,
+                question_type=req.question_type,
+                context_category=req.context_category,
+                tags=req.tags,
+                additional_context=req.additional_context,
             )
             validation = validate_question(question, req.area_code)
             full_model = f"{provider_name}/{model_name}"
@@ -358,6 +366,10 @@ async def create_generation_job(
         competency_code=req.competency_code,
         cognitive_level=req.cognitive_level,
         english_section=req.english_section,
+        question_type=req.question_type,
+        context_category=req.context_category,
+        tags=req.tags,
+        additional_context=req.additional_context,
     )
     await db.commit()
 
@@ -468,6 +480,11 @@ async def delete_generation_job(
     if job.status not in {JOB_STATUS_COMPLETED, JOB_STATUS_PARTIAL, JOB_STATUS_FAILED, JOB_STATUS_CANCELLED}:
         raise HTTPException(409, "Solo se pueden eliminar jobs terminados")
 
+    await db.execute(
+        update(GenerationJob)
+        .where(GenerationJob.retry_of_job_id == job.id)
+        .values(retry_of_job_id=None)
+    )
     await db.delete(job)
     await db.commit()
 
@@ -516,6 +533,10 @@ async def retry_generation_job(
         competency_code=source_job.competency_code,
         cognitive_level=source_job.cognitive_level,
         english_section=source_job.english_section,
+        question_type=source_job.question_type,
+        context_category=source_job.context_category,
+        tags=source_job.tags,
+        additional_context=source_job.additional_context,
         retry_of_job_id=source_job.id,
     )
     await db.commit()
@@ -654,6 +675,10 @@ def _job_to_response(job: GenerationJob) -> GenerationJobResponse:
         include_visual=job.include_visual,
         visual_type=job.visual_type,
         english_section=job.english_section,
+        question_type=job.question_type,
+        context_category=job.context_category,
+        tags=job.tags,
+        additional_context=job.additional_context,
         total_requested=job.total_requested,
         total_processed=job.total_processed,
         total_generated=job.total_generated,
@@ -710,6 +735,10 @@ async def _create_generation_job(
     competency_code: str | None,
     cognitive_level: int | None,
     english_section: int | None,
+    question_type: str | None,
+    context_category: str | None,
+    tags: list[str] | None,
+    additional_context: str | None,
     retry_of_job_id: uuid.UUID | None = None,
 ) -> GenerationJob:
     job = GenerationJob(
@@ -726,6 +755,10 @@ async def _create_generation_job(
         include_visual=include_visual,
         visual_type=visual_type,
         english_section=english_section,
+        question_type=question_type,
+        context_category=context_category,
+        tags=tags,
+        additional_context=additional_context,
         total_requested=count,
         total_processed=0,
         total_generated=0,

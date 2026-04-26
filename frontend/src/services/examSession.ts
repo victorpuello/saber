@@ -164,6 +164,13 @@ export interface CreateExamPayload {
 export interface QuestionResultDetail {
   question_id: string;
   position: number;
+  competency_id: string | null;
+  content_component_id: string | null;
+  cognitive_process: string | null;
+  component_name: string | null;
+  context: string | null;
+  context_type: string | null;
+  media: ExamQuestionMedia[] | null;
   structure_type: "INDIVIDUAL" | "QUESTION_BLOCK" | null;
   block_id: string | null;
   block_item_order: number | null;

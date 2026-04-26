@@ -262,6 +262,11 @@ export function useQuestionBankViewModel() {
     setCurrentPage(1);
   }, []);
 
+  const updateTagFilter = useCallback((value: string) => {
+    setTagFilter(value);
+    setCurrentPage(1);
+  }, []);
+
   const clearFilters = useCallback(() => {
     setFilters({
       area: "Todas las Áreas",
@@ -372,7 +377,7 @@ export function useQuestionBankViewModel() {
     searchQuery,
     setSearchQuery,
     tagFilter,
-    setTagFilter,
+    setTagFilter: updateTagFilter,
     refreshData,
     handleReview,
     handleSubmitForReview,

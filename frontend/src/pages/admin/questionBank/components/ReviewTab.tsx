@@ -81,6 +81,7 @@ export default function ReviewTab({
         <Field label="Tipo de contexto" value={ctxLabel} missing={!ctxLabel} />
         <Field label="Contexto" value={formData.context.slice(0, 200) + (formData.context.length > 200 ? "…" : "")} missing={!formData.context.trim()} />
         <Field label="Enunciado" value={formData.stem} missing={!formData.stem.trim()} />
+        <Field label="Etiquetas" value={formData.tags || "Sin etiquetas"} />
       </section>
 
       {/* Opciones */}

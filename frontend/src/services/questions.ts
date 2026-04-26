@@ -176,6 +176,21 @@ export async function updateQuestion(
   });
 }
 
+export async function updateQuestionIrt(
+  authFetch: AuthFetch,
+  questionId: string,
+  data: {
+    irt_difficulty: number;
+    irt_discrimination: number;
+    irt_guessing: number;
+  },
+): Promise<QuestionOut> {
+  return authFetch<QuestionOut>(`/api/questions/${questionId}/irt`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
 export async function getQuestionBlock(
   authFetch: AuthFetch,
   blockId: string,

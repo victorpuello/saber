@@ -211,9 +211,9 @@ class Question(Base):
     )
 
     # TRI
-    irt_difficulty: Mapped[float | None] = mapped_column(Numeric(5, 3))
-    irt_discrimination: Mapped[float | None] = mapped_column(Numeric(5, 3))
-    irt_guessing: Mapped[float | None] = mapped_column(Numeric(5, 3))
+    irt_difficulty: Mapped[float | None] = mapped_column(Numeric(5, 3), default=0.0)
+    irt_discrimination: Mapped[float | None] = mapped_column(Numeric(5, 3), default=1.0)
+    irt_guessing: Mapped[float | None] = mapped_column(Numeric(5, 3), default=0.25)
     times_used: Mapped[int] = mapped_column(Integer, default=0)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

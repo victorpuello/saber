@@ -20,6 +20,8 @@ interface GenerateAIModalProps {
 }
 
 type Difficulty = "low" | "medium" | "high" | "mixed";
+type MathQuestionType = "tabular_grafica" | "modelado_algebraico" | "justificacion" | "probabilidad_condicional";
+type MathContextCategory = "familiar_personal" | "laboral_ocupacional" | "comunitario_social" | "matematico_cientifico";
 
 const AREA_META: Record<string, { emoji: string; color: string; code: string }> = {
   MAT: { emoji: "📐", color: "#1d4ed8", code: "MAT" },
@@ -34,6 +36,20 @@ const DIFFICULTIES: { key: Difficulty; label: string }[] = [
   { key: "medium", label: "Media" },
   { key: "high", label: "Alta" },
   { key: "mixed", label: "Mixta" },
+];
+
+const MATH_QUESTION_TYPES: { key: MathQuestionType; label: string; copy: string }[] = [
+  { key: "tabular_grafica", label: "Tabular / grafica", copy: "Lectura de tablas, barras, lineas o dispersion." },
+  { key: "modelado_algebraico", label: "Modelado algebraico", copy: "Variables, funciones, ecuaciones y proporcionalidad." },
+  { key: "justificacion", label: "Justificacion", copy: "Valida, refuta o compara procedimientos." },
+  { key: "probabilidad_condicional", label: "Probabilidad condicional", copy: "Subgrupos, tablas de doble entrada y eventos condicionados." },
+];
+
+const MATH_CONTEXT_CATEGORIES: { key: MathContextCategory; label: string }[] = [
+  { key: "familiar_personal", label: "Familiar / personal" },
+  { key: "laboral_ocupacional", label: "Laboral / ocupacional" },
+  { key: "comunitario_social", label: "Comunitario / social" },
+  { key: "matematico_cientifico", label: "Matematico / cientifico" },
 ];
 
 interface VisualTypeOption {
@@ -119,6 +135,15 @@ function isSuccessfulTerminalStatus(status: GenerationJobStatus): boolean {
   return status === "COMPLETED" || status === "PARTIAL";
 }
 
+function parseTagsInput(value: string): string[] {
+  return Array.from(new Set(
+    value
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter(Boolean),
+  )).slice(0, 6);
+}
+
 export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalProps) {
   const { authFetch } = useAuth();
 
@@ -130,6 +155,9 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [count, setCount] = useState(5);
   const [additionalContext, setAdditionalContext] = useState("");
+  const [mathQuestionType, setMathQuestionType] = useState<MathQuestionType>("tabular_grafica");
+  const [mathContextCategory, setMathContextCategory] = useState<MathContextCategory>("matematico_cientifico");
+  const [mathTags, setMathTags] = useState("");
 
   // Visual generation
   const [includeVisual, setIncludeVisual] = useState(false);
@@ -166,6 +194,9 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
     setSelectedCompetencyId("");
     setEnglishSection("");
     setStructureType("INDIVIDUAL");
+    setMathQuestionType("tabular_grafica");
+    setMathContextCategory("matematico_cientifico");
+    setMathTags("");
     fetchAreaDetail(authFetch, selectedAreaId)
       .then((data) => { if (active) setCompetencies(data.competencies); })
       .catch(() => {})
@@ -223,6 +254,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
 
   const selectedAreaCode = areas.find((a) => a.id === selectedAreaId)?.code ?? "";
   const isING = selectedAreaCode === "ING";
+  const isMAT = selectedAreaCode === "MAT";
   const isBlockMode = structureType === "QUESTION_BLOCK";
   const selectedEnglishContext = ENGLISH_CONTEXT_OPTIONS.find((option) => (
     englishSection !== "" && option.sections.includes(Number(englishSection))
@@ -235,6 +267,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
     count !== 5 ||
     structureType !== "INDIVIDUAL" ||
     difficulty !== "medium" ||
+    (isMAT && (mathQuestionType !== "tabular_grafica" || mathContextCategory !== "matematico_cientifico" || mathTags.trim() !== "")) ||
     includeVisual ||
     hasRunningJob;
 
@@ -292,6 +325,12 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
       if (isING && englishSection !== "") {
         body.english_section = Number(englishSection);
       }
+      if (isMAT) {
+        body.question_type = mathQuestionType;
+        body.context_category = mathContextCategory;
+        const parsedTags = parseTagsInput(mathTags);
+        if (parsedTags.length > 0) body.tags = parsedTags;
+      }
       if (additionalContext.trim()) {
         body.additional_context = additionalContext.trim();
       }
@@ -306,7 +345,8 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
     }
   }, [
     authFetch, competencies, count, difficulty, includeVisual, visualType,
-    isBlockMode, isING, englishSection, additionalContext, structureType,
+    isBlockMode, isING, isMAT, englishSection, additionalContext, structureType,
+    mathContextCategory, mathQuestionType, mathTags,
     selectedAreaCode, selectedAreaId, selectedCompetencyId,
   ]);
 
@@ -549,6 +589,72 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </div>
             </div>
 
+            {isMAT && (
+              <div className="space-y-3 rounded-2xl border border-primary/15 bg-primary/5 p-4">
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-primary/10">
+                    <span className="material-symbols-outlined text-[16px] text-primary">functions</span>
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-bold text-on-surface">Parametros MAT del prompt</p>
+                    <p className="text-[11px] text-secondary">
+                      Estos campos guian distractores, contexto ICFES y tags tematicos al generar con IA.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {MATH_QUESTION_TYPES.map((option) => {
+                    const isSelected = mathQuestionType === option.key;
+                    return (
+                      <button
+                        key={option.key}
+                        type="button"
+                        onClick={() => setMathQuestionType(option.key)}
+                        className={`min-h-19 rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                          isSelected
+                            ? "border-primary bg-white text-on-surface"
+                            : "border-transparent bg-white/70 text-secondary hover:border-primary/30"
+                        }`}
+                      >
+                        <span className="block text-[12px] font-bold leading-tight">{option.label}</span>
+                        <span className="mt-1 block text-[10px] leading-tight text-secondary">{option.copy}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <label className="space-y-1.5">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
+                      Categoria de contexto
+                    </span>
+                    <select
+                      value={mathContextCategory}
+                      onChange={(e) => setMathContextCategory(e.target.value as MathContextCategory)}
+                      className="w-full rounded-xl border border-outline-variant/20 bg-white px-3 py-2.5 text-sm font-medium text-on-surface outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
+                    >
+                      {MATH_CONTEXT_CATEGORIES.map((option) => (
+                        <option key={option.key} value={option.key}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="space-y-1.5">
+                    <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
+                      Tags tematicos
+                    </span>
+                    <input
+                      type="text"
+                      value={mathTags}
+                      onChange={(e) => setMathTags(e.target.value)}
+                      placeholder="Funciones lineales, Porcentajes"
+                      className="w-full rounded-xl border border-outline-variant/20 bg-white px-3 py-2.5 text-sm text-on-surface outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
             {/* Cantidad */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
@@ -771,6 +877,21 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
                   {jobDetail.cognitive_level && (
                     <span className="rounded-full bg-surface-container-high px-3 py-1 text-[11px] font-semibold text-secondary">
                       Nivel cognitivo {jobDetail.cognitive_level}
+                    </span>
+                  )}
+                  {jobDetail.question_type && (
+                    <span className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
+                      MAT: {jobDetail.question_type}
+                    </span>
+                  )}
+                  {jobDetail.context_category && (
+                    <span className="rounded-full bg-surface-container-high px-3 py-1 text-[11px] font-semibold text-secondary">
+                      Contexto {jobDetail.context_category}
+                    </span>
+                  )}
+                  {jobDetail.tags && jobDetail.tags.length > 0 && (
+                    <span className="rounded-full bg-surface-container-high px-3 py-1 text-[11px] font-semibold text-secondary">
+                      Tags: {jobDetail.tags.slice(0, 3).join(", ")}
                     </span>
                   )}
                 </div>

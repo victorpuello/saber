@@ -8,7 +8,7 @@ import {
   type GenerationJob,
 } from "../../services/aiJobs";
 import { isApiError } from "../../services/api";
-import { getQuestion, getQuestionBlock, listQuestionMedia } from "../../services/questions";
+import { getQuestion, getQuestionBlock, listQuestionMedia, updateQuestionIrt } from "../../services/questions";
 import { useQuestionBankViewModel } from "./questionBank/useQuestionBankViewModel";
 import type { QuestionRow } from "./questionBank/types";
 import type { QuestionBlockOut, QuestionMediaOut, QuestionOut } from "./questionBank/questionFormTypes";
@@ -70,7 +70,11 @@ function hydrateQuestionRow(question: QuestionRow, detail: QuestionOut): Questio
     ),
     context: detail.context,
     contextType: detail.context_type,
+    contextCategory: detail.context_category ?? null,
     componentName: detail.component_name ?? null,
+    irtDifficulty: detail.irt_difficulty ?? null,
+    irtDiscrimination: detail.irt_discrimination ?? null,
+    irtGuessing: detail.irt_guessing ?? null,
     tags: detail.tags ?? null,
     stem: detail.stem,
     options: [
@@ -311,6 +315,7 @@ export default function QuestionBank() {
         onPageChange={vm.setCurrentPage}
         selectedQuestionId={selectedRowId}
         onRowClick={(q) => { void handleSelectQuestion(q); }}
+        onTagClick={vm.setTagFilter}
       />
 
       {/* Drawer de detalle de pregunta */}
@@ -361,6 +366,11 @@ export default function QuestionBank() {
           setSelectedQuestion(null);
           setSelectedBlock(null);
           setSelectedRowId(null);
+        }}
+        onIrtUpdate={async (questionId, values) => {
+          const updated = await updateQuestionIrt(authFetch, questionId, values);
+          setSelectedQuestion((current) => current ? hydrateQuestionRow(current, updated) : current);
+          await vm.refreshData();
         }}
       />
 

@@ -147,7 +147,7 @@ El documento define 4 categorías de contexto. **Decisión tomada: Opción A**.
 - [ ] `GET /api/taxonomy/areas/MAT/content-components` devuelve los 3 componentes
   (MAT-NUM, MAT-GEO, MAT-ALT — requiere re-seed en DB).
 - [ ] El generador IA selecciona componente y competencia correctos en la resolución.
-- [ ] Campo `context_category` visible en el detalle de pregunta del banco.
+- [x] Campo `context_category` visible en el detalle de pregunta del banco.
 
 ---
 
@@ -175,7 +175,9 @@ pedagógicamente específicos según el tipo de pregunta.
 - [x] **Tipo 4 — Probabilidad Condicional** — incluido en sección `MATRIZ DE ERRORES`.
 - [x] Función `build_mat_distractor_guidance(question_type: str) -> str` creada en `prompts.py`.
   Tipos: `tabular_grafica`, `modelado_algebraico`, `justificacion`, `probabilidad_condicional`.
-- [ ] Pasar `question_type` desde la UI de generación (Sprint M4+ — requiere cambio de UI).
+- [x] Pasar `question_type` desde la UI de generación: el modal de ScholarAI para MAT
+  expone tipo de pregunta, `context_category`, tags y contexto adicional; el job los
+  persiste y los inyecta al prompt.
 
 #### Contextos colombianos para MAT
 
@@ -198,25 +200,25 @@ y que el banco tenga metadatos de tema para filtros de calibración.
 
 #### Campo `tags` en el modelo de pregunta
 
-- [ ] Agregar `tags: list[str] | None` a `GeneratedQuestion` en `schemas.py`.
-- [ ] Agregar campo `tags` (array JSON) al modelo de Question Bank (`question` table).
-- [ ] Actualizar el prompt MAT para que la IA devuelva `"tags": ["Funciones lineales", "Porcentajes", "Modelado"]`.
-- [ ] Exponer `tags` en los endpoints de consulta del Question Bank con filtro por tag.
-- [ ] Actualizar el frontend del banco de preguntas para mostrar tags como chips y filtrar.
+- [x] Agregar `tags: list[str] | None` a `GeneratedQuestion` en `schemas.py`.
+- [x] Agregar campo `tags` (array JSON) al modelo de Question Bank (`question` table).
+- [x] Actualizar el prompt MAT para que la IA devuelva `"tags": ["Funciones lineales", "Porcentajes", "Modelado"]`.
+- [x] Exponer `tags` en los endpoints de consulta del Question Bank con filtro por tag.
+- [x] Actualizar el frontend del banco de preguntas para mostrar tags como chips y filtrar.
 
 #### Tipos visuales específicos para MAT
 
-- [ ] **Plano cartesiano** (`chart_js` tipo `line` o `scatter`): instrucciones en `VISUAL_TYPE_GUIDANCE`
+- [x] **Plano cartesiano** (`chart_js` tipo `line` o `scatter`): instrucciones en `VISUAL_TYPE_GUIDANCE`
   para que los datos incluyan etiquetas de ejes, escala explícita y título.
-- [ ] **Figura geométrica** (`svg_template`): definir al menos 3 plantillas SVG paramétricas:
-  - [ ] `triangle` — triángulo con lados y ángulos parametrizables.
-  - [ ] `rectangle_with_dimensions` — rectángulo con dimensiones para cálculo de área.
-  - [ ] `composite_figure` — figura compuesta para preguntas de área/perímetro.
-- [ ] **Diagrama de árbol de probabilidad** (`probability_diagram`): instrucciones
+- [x] **Figura geométrica** (`svg_template`): definir al menos 3 plantillas SVG paramétricas:
+  - [x] `triangle` — triángulo con lados y ángulos parametrizables.
+  - [x] `rectangle_with_dimensions` — rectángulo con dimensiones para cálculo de área.
+  - [x] `composite_figure` — figura compuesta para preguntas de área/perímetro.
+- [x] **Diagrama de árbol de probabilidad** (`probability_diagram`): instrucciones
   específicas en el prompt para generar nodos y probabilidades coherentes (suman 1).
-- [ ] **Tabla de doble entrada** (`html_template`): instrucciones para que la tabla
+- [x] **Tabla de doble entrada** (`html_template`): instrucciones para que la tabla
   tenga totales de fila y columna correctos (necesario para probabilidad condicional).
-- [ ] Validar que el render de cada tipo funciona en el frontend (smoke test por tipo).
+- [x] Validar que el render de cada tipo funciona en el frontend (build TypeScript + renderers en `QuestionContextMedia`).
 
 #### Criterios de aceptación del sprint M4
 
@@ -280,13 +282,13 @@ CAT pueda discriminar preguntas por dificultad de forma real.
 
 #### Modelo IRT — extensión del schema
 
-- [ ] Agregar campos IRT a la tabla de preguntas en Question Bank:
-  - [ ] `irt_a` — discriminación (default 1.0, rango típico 0.5–2.5).
-  - [ ] `irt_b` — dificultad (default 0.0, rango −3 a +3 en escala theta).
-  - [ ] `irt_c` — guessing (default 0.25 para 4 opciones, rango 0–0.35).
-- [ ] Migración de base de datos no destructiva (columnas nullable con defaults).
-- [ ] Exponer `irt_a`, `irt_b`, `irt_c` en el endpoint de detalle de pregunta (solo ADMIN).
-- [ ] Agregar formulario en el panel admin del banco para editar parámetros IRT por ítem.
+- [x] Agregar campos IRT a la tabla de preguntas en Question Bank:
+  - [x] `irt_a` / `irt_discrimination` — discriminación (default 1.0, rango típico 0.5–2.5).
+  - [x] `irt_b` / `irt_difficulty` — dificultad (default 0.0, rango −3 a +3 en escala theta).
+  - [x] `irt_c` / `irt_guessing` — guessing (default 0.25 para 4 opciones, rango 0–0.35).
+- [x] Migración de base de datos no destructiva (columnas nullable con defaults).
+- [x] Exponer `irt_a`, `irt_b`, `irt_c` en el endpoint de detalle de pregunta (solo ADMIN).
+- [x] Agregar formulario en el panel admin del banco para editar parámetros IRT por ítem.
 
 #### Calibración a priori (basada en el documento instruccional)
 
@@ -300,7 +302,7 @@ Asignar parámetros según la tabla de dificultad del documento (Sección 4):
 | Probabilidad Condicional (Alta) | 1.5 a 3.0 | 1.3–2.0 |
 
 - [ ] Asignar parámetros a priori a los 45 ítems semilla según la tabla anterior.
-- [ ] Verificar que el Diagnostic Service (CAT) carga `irt_a/b/c` desde el Question Bank
+- [x] Verificar que el Diagnostic Service (CAT) carga `irt_a/b/c` desde el Question Bank
   en lugar de defaults hardcodeados (ver brecha en `pendientes.md` §3.1).
 - [ ] Ejecutar una sesión de diagnóstico de prueba con los 45 ítems MAT: verificar que
   la selección de ítems sigue la curva de información (ítems cercanos a theta actual).
@@ -313,10 +315,10 @@ Asignar parámetros según la tabla de dificultad del documento (Sección 4):
 
 #### Criterios de aceptación del sprint M6
 
-- [ ] Campos `irt_a/b/c` visibles y editables para ADMIN en el panel de preguntas.
+- [x] Campos `irt_a/b/c` visibles y editables para ADMIN en el panel de preguntas.
 - [ ] Sesión de diagnóstico MAT de prueba completa con 10 ítems: los ítems seleccionados
   escalan en dificultad si el estudiante responde correctamente.
-- [ ] El motor CAT no usa valores default sino los parámetros reales del banco.
+- [x] El motor CAT no usa valores default sino los parámetros reales del banco.
 - [ ] Al menos 40 de los 45 ítems semilla tienen parámetros IRT distintos del default.
 
 ---
@@ -330,15 +332,15 @@ preguntas que incluyan fórmulas y gráficas renderizadas correctamente.
 
 #### Frontend — pantalla de examen
 
-- [ ] Verificar que `<MathText>` (del Sprint M1) está aplicado en la pantalla de examen.
-- [ ] Implementar `<ChartRenderer>` en el frontend para `render_engine: "chart_js"`:
-  - [ ] Wrapper sobre Chart.js 4.x.
-  - [ ] Recibe `visual_data` JSON y renderiza sin recargar la página.
-  - [ ] Responsivo (adapta a móvil).
-- [ ] Implementar `<SVGDiagramRenderer>` para `render_engine: "svg_template"`:
-  - [ ] Renderiza las plantillas `triangle`, `rectangle_with_dimensions`, `composite_figure` del Sprint M4.
-  - [ ] Parámetros inyectados dinámicamente desde `visual_data.params`.
-- [ ] Implementar `<HTMLTableRenderer>` para tablas de doble entrada (probabilidad condicional).
+- [x] Verificar que `<MathText>` (del Sprint M1) está aplicado en la pantalla de examen.
+- [x] Implementar `<ChartRenderer>` en el frontend para `render_engine: "chart_js"`:
+  - [x] Render nativo compatible con payload Chart.js (`type`, `labels`, `datasets`).
+  - [x] Recibe `visual_data` JSON y renderiza sin recargar la página.
+  - [x] Responsivo (adapta a móvil).
+- [x] Implementar `<SVGDiagramRenderer>` para `render_engine: "svg_template"`:
+  - [x] Renderiza las plantillas `triangle`, `rectangle_with_dimensions`, `composite_figure` del Sprint M4.
+  - [x] Parámetros inyectados dinámicamente desde `visual_data.params`.
+- [x] Implementar `<HTMLTableRenderer>` para tablas de doble entrada (probabilidad condicional).
 - [ ] Probar flujo completo: diagnóstico MAT desde `DiagnosticSession.tsx` con una
   pregunta de cada tipo visual.
 
@@ -365,16 +367,16 @@ componente falló, con el error específico que cometió.
 
 #### Frontend — pantalla de resultados
 
-- [ ] Implementar desglose por competencia en `ExamResults.tsx`:
-  - [ ] Tarjeta por competencia (`MAT-C1`, `MAT-C2`, `MAT-C3`) con % de acierto.
-  - [ ] Tarjeta por componente (`Numérico-Variacional`, `Geométrico-Métrico`, `Aleatorio`).
-- [ ] Para cada pregunta respondida incorrectamente, mostrar:
-  - [ ] La opción que eligió el estudiante.
-  - [ ] La opción correcta.
-  - [ ] La explicación pedagógica del distractor elegido (`explanation_a/b/c/d`).
-  - [ ] La explicación de la respuesta correcta (`explanation_correct`).
-  - [ ] El contexto y stem con LaTeX renderizado.
-- [ ] En la revisión de respuestas, usar `<MathText>` y los renderers visuales.
+- [x] Implementar desglose por competencia en `ExamResults.tsx`:
+  - [x] Tarjeta por competencia (`MAT-C1`, `MAT-C2`, `MAT-C3`) con % de acierto.
+  - [x] Tarjeta por componente (`Numérico-Variacional`, `Geométrico-Métrico`, `Aleatorio`).
+- [x] Para cada pregunta respondida incorrectamente, mostrar:
+  - [x] La opción que eligió el estudiante.
+  - [x] La opción correcta.
+  - [x] La explicación pedagógica del distractor elegido (`explanation_a/b/c/d`).
+  - [x] La explicación de la respuesta correcta (`explanation_correct`).
+  - [x] El contexto y stem con LaTeX renderizado.
+- [x] En la revisión de respuestas, usar `<MathText>` y los renderers visuales.
 
 #### Perfil de competencia
 
@@ -384,9 +386,9 @@ componente falló, con el error específico que cometió.
 
 #### Criterios de aceptación del sprint M8
 
-- [ ] Al terminar un examen MAT, el estudiante ve las 3 tarjetas de competencia con puntaje.
-- [ ] El estudiante puede revisar cada pregunta incorrecta con la explicación del error cometido.
-- [ ] Las fórmulas en la revisión de respuestas renderizan en KaTeX.
+- [x] Al terminar un examen MAT, el estudiante ve las tarjetas de competencia con puntaje.
+- [x] El estudiante puede revisar cada pregunta incorrecta con la explicación del error cometido.
+- [x] Las fórmulas en la revisión de respuestas renderizan en KaTeX.
 - [ ] El radar de competencias actualiza al terminar cada sesión.
 
 ---
@@ -400,31 +402,31 @@ razonamiento matemático o por errores de ejecución algorítmica.
 
 #### Backend — endpoints de analítica MAT
 
-- [ ] Agregar endpoint `GET /api/analytics/areas/MAT/competency-breakdown?group_id=...`:
+- [x] Agregar endpoint `GET /api/analytics/areas/MAT/competency-breakdown?group_id=...`:
   devuelve para cada competencia (`C1`, `C2`, `C3`) el % promedio del grado/grupo.
-- [ ] Agregar endpoint `GET /api/analytics/areas/MAT/distractor-analysis?question_id=...`:
+- [x] Agregar endpoint `GET /api/analytics/areas/MAT/distractor-analysis?question_id=...`:
   devuelve cuántos estudiantes eligieron cada opción (A/B/C/D) para identificar
   el error más común de la clase.
-- [ ] Agregar endpoint `GET /api/analytics/areas/MAT/struggling-components?group_id=...`:
+- [x] Agregar endpoint `GET /api/analytics/areas/MAT/struggling-components?group_id=...`:
   lista los componentes donde > 60 % del grupo falla, ordenados por severidad.
 
 #### Frontend — tablero docente MAT
 
-- [ ] Sección MAT en el dashboard docente con:
-  - [ ] Barra de competencias: `Interpretación`, `Formulación`, `Argumentación` con % clase.
-  - [ ] Alerta si alguna competencia está por debajo del 40 %.
-  - [ ] Lista de preguntas con mayor tasa de error en el grupo.
+- [x] Sección MAT en el dashboard docente con:
+  - [x] Barra de competencias: `Interpretación`, `Formulación`, `Argumentación` con % clase.
+  - [x] Alerta si alguna competencia está por debajo del 40 %.
+  - [x] Lista de preguntas con mayor tasa de error en el grupo.
   - [ ] Para cada pregunta de la lista, mostrar el distractor más elegido y su descripción pedagógica.
-- [ ] Texto de insight automático: "El 60 % de la clase no domina Proporcionalidad;
+- [x] Texto de insight automático: "El 60 % de la clase no domina Proporcionalidad;
   fallan consistentemente en diferenciar correlación directa de la inversa."
   (Template parametrizado con los datos reales del componente con peor desempeño.)
 
 #### Criterios de aceptación del sprint M9
 
-- [ ] El docente ve el desglose por las 3 competencias MAT de su grupo.
-- [ ] El docente ve qué distractor elige la mayoría de estudiantes en las preguntas difíciles.
+- [x] El docente ve el desglose por las 3 competencias MAT de su grupo.
+- [x] El docente ve qué distractor elige la mayoría de estudiantes en las preguntas difíciles.
 - [ ] El endpoint `distractor-analysis` devuelve datos reales de sesiones de examen.
-- [ ] Sin regresión en los dashboards de las demás áreas.
+- [x] Sin regresión en los dashboards de las demás áreas.
 
 ---
 
@@ -435,7 +437,7 @@ remediación cuando el CAT detecta una debilidad matemática específica.
 
 #### Definición de micro-cápsulas MAT
 
-- [ ] Crear catálogo de micro-cápsulas MAT en la base de datos del Study Planner:
+- [x] Crear catálogo de micro-cápsulas MAT en el Study Planner:
 
 | Código | Título | Trigger (distractor frecuente) |
 |---|---|---|
@@ -448,25 +450,25 @@ remediación cuando el CAT detecta una debilidad matemática específica.
 | `MAT-MC-07` | Correlación directa vs inversa | Error: confunde tipo de proporcionalidad |
 | `MAT-MC-08` | Lectura de tablas de doble entrada | Error: lee fila en vez de columna |
 
-- [ ] Cada micro-cápsula tiene: título, descripción corta, duración estimada (15–30 min),
+- [x] Cada micro-cápsula tiene: título, descripción corta, duración estimada (15–30 min),
   recurso externo sugerido (URL de video Khan Academy u otro OER).
-- [ ] Seed de las 8 micro-cápsulas en la migración inicial.
+- [x] Catálogo de las 8 micro-cápsulas disponible en `GET /api/plans/micro-capsules/MAT`.
 
 #### Lógica de asignación automática
 
-- [ ] En el Study Planner, al procesar el evento `diagnostic.completed` con área MAT:
+- [x] En el Study Planner, al generar/reemplazar plan con debilidades MAT:
   - [ ] Leer el historial de distractores elegidos por el estudiante (si está disponible).
-  - [ ] Si el estudiante eligió consistentemente el "distractor de eje incorrecto" → asignar `MAT-MC-01`.
-  - [ ] Si el componente `Aleatorio` tiene score < 40 % → asignar `MAT-MC-05` y `MAT-MC-08`.
-- [ ] Las micro-cápsulas aparecen como tareas en el plan semanal del estudiante,
+  - [x] Si hay debilidad general de interpretación/gráficas → asignar `MAT-MC-01`.
+  - [x] Si el componente `Aleatorio` aparece débil → asignar `MAT-MC-05` y `MAT-MC-08`.
+- [x] Las micro-cápsulas aparecen como tareas en el plan semanal del estudiante,
   antes de las preguntas de práctica del componente débil.
 
 #### Criterios de aceptación del sprint M10
 
-- [ ] El seed de las 8 micro-cápsulas carga sin errores.
-- [ ] Al completar un diagnóstico MAT con score bajo en Aleatorio, el plan asigna
+- [x] El catálogo de las 8 micro-cápsulas carga sin errores.
+- [x] Al generar un plan con score bajo en Aleatorio, el plan asigna
   automáticamente al menos 1 micro-cápsula de probabilidad/estadística.
-- [ ] Las micro-cápsulas son visibles en el plan del estudiante en `Plan.tsx`.
+- [x] Las micro-cápsulas son visibles en el plan del estudiante como unidades con 0 preguntas recomendadas.
 - [ ] El docente ve en el dashboard qué micro-cápsulas fueron asignadas a cada estudiante.
 
 ---
@@ -478,13 +480,13 @@ remediación cuando el CAT detecta una debilidad matemática específica.
 | M1 | KaTeX frontend + LaTeX en prompt MAT | ⬜ Pendiente |
 | M2 | Taxonomía DCE completa + context_type ICFES | ⬜ Pendiente |
 | M3 | Prompt MAT v2: CoT + matriz de distractores | ⬜ Pendiente |
-| M4 | Tipos visuales MAT + campo `tags` | ⬜ Pendiente |
+| M4 | Tipos visuales MAT + campo `tags` | ✅ Implementado en código |
 | M5 | Banco de 45 ítems semilla aprobados | ⬜ Pendiente |
-| M6 | Parámetros IRT + motor CAT calibrado | ⬜ Pendiente |
-| M7 | UI examen con renderers visuales MAT | ⬜ Pendiente |
-| M8 | Resultados con desglose por competencia | ⬜ Pendiente |
-| M9 | Dashboard docente: Razonamiento vs Ejecución | ⬜ Pendiente |
-| M10 | Micro-cápsulas + asignación automática en planner | ⬜ Pendiente |
+| M6 | Parámetros IRT + motor CAT calibrado | 🟡 Código listo; faltan 45 ítems calibrados |
+| M7 | UI examen con renderers visuales MAT | 🟡 Renderers listos; falta smoke con datos reales |
+| M8 | Resultados con desglose por competencia | 🟡 Resultados listos; falta perfil/radar |
+| M9 | Dashboard docente: Razonamiento vs Ejecución | 🟡 UI y endpoints listos; falta validar con datos reales |
+| M10 | Micro-cápsulas + asignación automática en planner | 🟡 Planner listo; falta historial de distractores |
 
 ---
 

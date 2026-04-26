@@ -54,6 +54,17 @@ type ParsedVisualData =
   | { kind: "json"; value: unknown }
   | null;
 
+function numericParam(params: Record<string, unknown>, key: string, fallback: number): number {
+  const value = params[key];
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function stringParam(params: Record<string, unknown>, key: string, fallback: string): string {
+  const value = params[key];
+  return value === undefined || value === null || value === "" ? fallback : String(value);
+}
+
 function resolveMediaUrl(url: string | null | undefined): string | null {
   if (!url) {
     return null;
@@ -311,6 +322,116 @@ function parseVisualData(media: RenderableQuestionMedia): ParsedVisualData {
   } catch {
     return { kind: "json", value: raw };
   }
+}
+
+function renderMathTemplate(
+  media: RenderableQuestionMedia,
+  template: string,
+  params: Record<string, unknown>,
+  compact: boolean,
+) {
+  const unit = stringParam(params, "unit", "");
+  const shell = `overflow-hidden rounded-2xl border border-outline-variant/15 bg-white ${compact ? "p-3" : "p-4"}`;
+
+  if (template === "triangle") {
+    const base = numericParam(params, "base", numericParam(params, "side_c", 8));
+    const height = numericParam(params, "height", 5);
+    const sideA = numericParam(params, "side_a", height);
+    const sideB = numericParam(params, "side_b", Math.round(Math.sqrt(base ** 2 + height ** 2)));
+    const sideC = numericParam(params, "side_c", base);
+    return (
+      <div className={shell}>
+        <svg viewBox="0 0 280 180" className="w-full" role="img" aria-label={media.alt_text}>
+          <polygon points="35,140 245,140 90,35" fill="#dbeafe" stroke="#1d4ed8" strokeWidth="2" />
+          <line x1="90" y1="35" x2="90" y2="140" stroke="#64748b" strokeDasharray="4 4" strokeWidth="1.5" />
+          <path d="M90 128 h12 v12" fill="none" stroke="#64748b" strokeWidth="1.5" />
+          <text x="140" y="162" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0f172a">base = {base}{unit}</text>
+          <text x="75" y="90" textAnchor="end" fontSize="13" fontWeight="700" fill="#0f172a">h = {height}{unit}</text>
+          <text x="48" y="88" textAnchor="middle" fontSize="12" fill="#475569">{sideA}{unit}</text>
+          <text x="178" y="83" textAnchor="middle" fontSize="12" fill="#475569">{sideB}{unit}</text>
+          <text x="140" y="132" textAnchor="middle" fontSize="12" fill="#475569">{sideC}{unit}</text>
+        </svg>
+      </div>
+    );
+  }
+
+  if (template === "rectangle_with_dimensions") {
+    const width = numericParam(params, "width", 12);
+    const height = numericParam(params, "height", 7);
+    return (
+      <div className={shell}>
+        <svg viewBox="0 0 280 170" className="w-full" role="img" aria-label={media.alt_text}>
+          <rect x="45" y="35" width="190" height="95" rx="4" fill="#dcfce7" stroke="#047857" strokeWidth="2" />
+          <line x1="45" y1="145" x2="235" y2="145" stroke="#334155" strokeWidth="1.5" />
+          <line x1="28" y1="35" x2="28" y2="130" stroke="#334155" strokeWidth="1.5" />
+          <text x="140" y="162" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0f172a">{width}{unit}</text>
+          <text x="18" y="86" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0f172a" transform="rotate(-90 18 86)">{height}{unit}</text>
+          <text x="140" y="88" textAnchor="middle" fontSize="12" fill="#047857">Rectangulo</text>
+        </svg>
+      </div>
+    );
+  }
+
+  if (template === "composite_figure") {
+    const width = numericParam(params, "width", 12);
+    const height = numericParam(params, "height", 8);
+    const cutoutWidth = numericParam(params, "cutout_width", 4);
+    const cutoutHeight = numericParam(params, "cutout_height", 3);
+    return (
+      <div className={shell}>
+        <svg viewBox="0 0 300 210" className="w-full" role="img" aria-label={media.alt_text}>
+          <path d="M45 35 H255 V165 H145 V105 H45 Z" fill="#fef3c7" stroke="#b45309" strokeWidth="2" />
+          <path d="M145 105 H255 V165 H145 Z" fill="#fff7ed" stroke="#f59e0b" strokeDasharray="5 4" strokeWidth="1.5" />
+          <text x="150" y="192" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0f172a">ancho total = {width}{unit}</text>
+          <text x="25" y="100" textAnchor="middle" fontSize="13" fontWeight="700" fill="#0f172a" transform="rotate(-90 25 100)">alto total = {height}{unit}</text>
+          <text x="200" y="98" textAnchor="middle" fontSize="12" fill="#92400e">recorte {cutoutWidth}{unit} x {cutoutHeight}{unit}</text>
+        </svg>
+      </div>
+    );
+  }
+
+  if (template === "probability_tree") {
+    const branches = Array.isArray(params.branches)
+      ? (params.branches as Array<Record<string, unknown>>)
+      : [];
+    const yStep = branches.length > 1 ? 120 / (branches.length - 1) : 0;
+    return (
+      <div className={shell}>
+        <svg viewBox="0 0 420 190" className="w-full" role="img" aria-label={media.alt_text}>
+          <circle cx="45" cy="95" r="12" fill="#dbeafe" stroke="#1d4ed8" strokeWidth="2" />
+          <text x="45" y="125" textAnchor="middle" fontSize="11" fill="#334155">{stringParam(params, "root", "Inicio")}</text>
+          {branches.map((branch, index) => {
+            const y = 35 + index * yStep;
+            const children = Array.isArray(branch.children)
+              ? (branch.children as Array<Record<string, unknown>>)
+              : [];
+            const childStep = children.length > 1 ? 48 / (children.length - 1) : 0;
+            return (
+              <g key={`${media.id}-branch-${index}`}>
+                <line x1="57" y1="95" x2="170" y2={y} stroke="#64748b" strokeWidth="1.5" />
+                <circle cx="180" cy={y} r="11" fill="#dcfce7" stroke="#047857" strokeWidth="2" />
+                <text x="118" y={(95 + y) / 2 - 4} textAnchor="middle" fontSize="11" fill="#0f172a">{String(branch.label ?? `R${index + 1}`)}</text>
+                <text x="118" y={(95 + y) / 2 + 10} textAnchor="middle" fontSize="10" fill="#64748b">P={String(branch.prob ?? "")}</text>
+                {children.map((child, childIndex) => {
+                  const cy = y - 24 + childIndex * childStep;
+                  return (
+                    <g key={`${media.id}-child-${index}-${childIndex}`}>
+                      <line x1="191" y1={y} x2="330" y2={cy} stroke="#64748b" strokeWidth="1.5" />
+                      <circle cx="342" cy={cy} r="10" fill="#fef3c7" stroke="#b45309" strokeWidth="2" />
+                      <text x="266" y={(y + cy) / 2 - 4} textAnchor="middle" fontSize="11" fill="#0f172a">{String(child.label ?? `C${childIndex + 1}`)}</text>
+                      <text x="266" y={(y + cy) / 2 + 10} textAnchor="middle" fontSize="10" fill="#64748b">P={String(child.prob ?? "")}</text>
+                    </g>
+                  );
+                })}
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function renderProgrammaticMedia(media: RenderableQuestionMedia, compact: boolean) {
@@ -578,6 +699,11 @@ function renderProgrammaticMedia(media: RenderableQuestionMedia, compact: boolea
   }
 
   if (parsed.kind === "params") {
+    const mathTemplate = renderMathTemplate(media, parsed.template, parsed.params, compact);
+    if (mathTemplate) {
+      return mathTemplate;
+    }
+
     const renderValue = (v: unknown): string => {
       if (v === null || v === undefined) return "—";
       if (typeof v === "object") return JSON.stringify(v);
