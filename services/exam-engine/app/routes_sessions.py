@@ -7,8 +7,6 @@ from datetime import UTC, datetime
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
-
-logger = logging.getLogger(__name__)
 from saber11_shared.auth import CurrentUser, get_current_user, require_role
 from saber11_shared.events import EventBus
 from sqlalchemy import func, select
@@ -29,6 +27,8 @@ from .schemas import (
     SessionStatsOut,
     SessionSummary,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 

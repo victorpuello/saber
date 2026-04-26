@@ -1,5 +1,4 @@
 import pytest
-
 from app.generator import _extract_valid_block_items
 
 

@@ -23,8 +23,8 @@ from .schemas import (
     DiagnosticResultsOut,
     DiagnosticSessionOut,
     DiagnosticSessionSummary,
-    DiagnosticStatsOut,
     DiagnosticStartRequest,
+    DiagnosticStatsOut,
     NextQuestionOut,
     StudentProfileOut,
 )

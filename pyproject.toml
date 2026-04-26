@@ -8,7 +8,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "S", "B", "A", "SIM"]
-ignore = ["S101", "B008"]  # S101: assert en tests, B008: Depends() en FastAPI
+ignore = ["S101", "B008", "E501", "UP042", "S110", "SIM108"]  # S101: assert en tests, B008: Depends() en FastAPI, E501/UP042/S110/SIM108: estilo y compatibilidad actual del monorepo
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101"]

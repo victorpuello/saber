@@ -13,7 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from .config import settings
 from .generator import generate_question, generate_question_block
 from .models import AIGenerationLog, GenerationJob, GenerationJobItem
-from .question_bank_client import send_generated_block_to_question_bank, send_generated_question_to_question_bank
+from .question_bank_client import (
+    send_generated_block_to_question_bank,
+    send_generated_question_to_question_bank,
+)
 from .validator import validate_question, validate_question_block
 
 logger = logging.getLogger(__name__)

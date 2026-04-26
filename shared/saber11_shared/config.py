@@ -17,6 +17,6 @@ class BaseServiceSettings(BaseSettings):
     redis_url: str = "redis://redis-saber11:6379/0"
 
     # JWT del simulador (para validar tokens que llegan vía gateway)
-    jwt_secret: str = "dev-secret-change-in-production"
+    jwt_secret: str = "dev-secret-change-in-production"  # noqa: S105
 
     model_config = {"env_file": ".env", "extra": "ignore"}

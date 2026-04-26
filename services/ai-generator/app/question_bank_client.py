@@ -6,10 +6,10 @@ from typing import Any
 
 import httpx
 
-logger = logging.getLogger(__name__)
-
 from .config import settings
 from .schemas import GeneratedQuestion, GeneratedQuestionBlock
+
+logger = logging.getLogger(__name__)
 
 
 async def _post_with_404_retry(
@@ -218,8 +218,12 @@ async def send_generated_question_to_question_bank(question: GeneratedQuestion) 
                             archive_resp.raise_for_status()
                     elif delete_resp.status_code not in {204, 404}:
                         delete_resp.raise_for_status()
-                except Exception:
-                    pass
+                except Exception as cleanup_err:
+                    logger.warning(
+                        "Fallo al revertir pregunta incompleta %s: %s",
+                        question_data["id"],
+                        cleanup_err,
+                    )
                 raise
 
         return question_data
