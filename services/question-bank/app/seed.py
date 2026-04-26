@@ -142,6 +142,7 @@ TAXONOMY_SEED: list[dict] = [
             "problemas utilizando conceptos matemáticos."
         ),
         "competencies": [
+            # ── C1: Interpretación y Representación ───────────────────────────
             {
                 "code": "MAT-C1",
                 "name": "Interpretación y representación",
@@ -175,8 +176,55 @@ TAXONOMY_SEED: list[dict] = [
                             },
                         ],
                     },
+                    {
+                        "code": "MAT-C1-A2",
+                        "statement": (
+                            "El estudiante extrae la información relevante de "
+                            "situaciones cuantitativas para resolver problemas."
+                        ),
+                        "evidences": [
+                            {
+                                "code": "MAT-C1-A2-E1",
+                                "observable_behavior": (
+                                    "Selecciona e interpreta los datos necesarios "
+                                    "de enunciados numéricos o estadísticos."
+                                ),
+                            },
+                            {
+                                "code": "MAT-C1-A2-E2",
+                                "observable_behavior": (
+                                    "Reconoce la magnitud y unidad apropiada "
+                                    "en una situación de medición."
+                                ),
+                            },
+                        ],
+                    },
+                    {
+                        "code": "MAT-C1-A3",
+                        "statement": (
+                            "El estudiante compara y ordena representaciones "
+                            "matemáticas según sus propiedades."
+                        ),
+                        "evidences": [
+                            {
+                                "code": "MAT-C1-A3-E1",
+                                "observable_behavior": (
+                                    "Ordena magnitudes, fracciones o números "
+                                    "expresados en distintas notaciones."
+                                ),
+                            },
+                            {
+                                "code": "MAT-C1-A3-E2",
+                                "observable_behavior": (
+                                    "Identifica equivalencias entre representaciones "
+                                    "(decimal, fraccionaria, porcentual)."
+                                ),
+                            },
+                        ],
+                    },
                 ],
             },
+            # ── C2: Formulación y Ejecución ───────────────────────────────────
             {
                 "code": "MAT-C2",
                 "name": "Formulación y ejecución",
@@ -210,8 +258,55 @@ TAXONOMY_SEED: list[dict] = [
                             },
                         ],
                     },
+                    {
+                        "code": "MAT-C2-A2",
+                        "statement": (
+                            "El estudiante modela situaciones del mundo real "
+                            "con expresiones algebraicas o geométricas."
+                        ),
+                        "evidences": [
+                            {
+                                "code": "MAT-C2-A2-E1",
+                                "observable_behavior": (
+                                    "Traduce un problema verbal a una ecuación, "
+                                    "inecuación o función matemática."
+                                ),
+                            },
+                            {
+                                "code": "MAT-C2-A2-E2",
+                                "observable_behavior": (
+                                    "Calcula medidas geométricas (perímetro, área, "
+                                    "volumen) aplicando las fórmulas correspondientes."
+                                ),
+                            },
+                        ],
+                    },
+                    {
+                        "code": "MAT-C2-A3",
+                        "statement": (
+                            "El estudiante aplica conceptos probabilísticos y "
+                            "estadísticos para resolver problemas."
+                        ),
+                        "evidences": [
+                            {
+                                "code": "MAT-C2-A3-E1",
+                                "observable_behavior": (
+                                    "Calcula probabilidades simples o condicionales "
+                                    "con base en la información dada."
+                                ),
+                            },
+                            {
+                                "code": "MAT-C2-A3-E2",
+                                "observable_behavior": (
+                                    "Interpreta medidas de tendencia central "
+                                    "(media, mediana, moda) en contexto."
+                                ),
+                            },
+                        ],
+                    },
                 ],
             },
+            # ── C3: Argumentación ─────────────────────────────────────────────
             {
                 "code": "MAT-C3",
                 "name": "Argumentación",
@@ -236,15 +331,77 @@ TAXONOMY_SEED: list[dict] = [
                                     "un razonamiento matemático."
                                 ),
                             },
+                            {
+                                "code": "MAT-C3-A1-E2",
+                                "observable_behavior": (
+                                    "Selecciona la justificación correcta para "
+                                    "un procedimiento o resultado matemático."
+                                ),
+                            },
+                        ],
+                    },
+                    {
+                        "code": "MAT-C3-A2",
+                        "statement": (
+                            "El estudiante evalúa la pertinencia de un "
+                            "procedimiento matemático para una situación dada."
+                        ),
+                        "evidences": [
+                            {
+                                "code": "MAT-C3-A2-E1",
+                                "observable_behavior": (
+                                    "Determina si un procedimiento es correcto, "
+                                    "incompleto o incorrecto para resolver un problema."
+                                ),
+                            },
+                            {
+                                "code": "MAT-C3-A2-E2",
+                                "observable_behavior": (
+                                    "Identifica el error en un razonamiento matemático "
+                                    "incorrecto y explica por qué es incorrecto."
+                                ),
+                            },
+                        ],
+                    },
+                    {
+                        "code": "MAT-C3-A3",
+                        "statement": (
+                            "El estudiante generaliza patrones y propiedades "
+                            "a partir de casos particulares."
+                        ),
+                        "evidences": [
+                            {
+                                "code": "MAT-C3-A3-E1",
+                                "observable_behavior": (
+                                    "Reconoce regularidades en sucesiones "
+                                    "numéricas o geométricas."
+                                ),
+                            },
+                            {
+                                "code": "MAT-C3-A3-E2",
+                                "observable_behavior": (
+                                    "Aplica una propiedad matemática para explicar "
+                                    "por qué un resultado se cumple en general."
+                                ),
+                            },
                         ],
                     },
                 ],
             },
         ],
         "content_components": [
-            {"code": "MAT-CC1", "name": "Álgebra y cálculo"},
-            {"code": "MAT-CC2", "name": "Geometría"},
-            {"code": "MAT-CC3", "name": "Estadística"},
+            {
+                "code": "MAT-NUM",
+                "name": "Numérico-Variacional (funciones, proporcionalidad, interés, sucesiones)",
+            },
+            {
+                "code": "MAT-GEO",
+                "name": "Geométrico-Métrico (áreas, volúmenes, Pitágoras, trigonometría básica)",
+            },
+            {
+                "code": "MAT-ALT",
+                "name": "Aleatorio (estadística, probabilidad, conteo)",
+            },
         ],
     },
     # =========================================================================

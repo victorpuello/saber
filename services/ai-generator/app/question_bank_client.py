@@ -9,7 +9,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 from .config import settings
-from .schemas import GeneratedQuestion
+from .schemas import GeneratedQuestion, GeneratedQuestionBlock
 
 
 async def _post_with_404_retry(
@@ -113,6 +113,7 @@ async def send_generated_question_to_question_bank(question: GeneratedQuestion) 
             "content_component_id": content_component_id,
             "context": question.context,
             "context_type": question.context_type,
+            "context_category": question.context_category,
             "stem": question.stem,
             "option_a": question.option_a,
             "option_b": question.option_b,
@@ -126,6 +127,7 @@ async def send_generated_question_to_question_bank(question: GeneratedQuestion) 
             "explanation_d": question.explanation_d,
             "cognitive_process": question.cognitive_process,
             "difficulty_estimated": question.difficulty_estimated,
+            "tags": question.tags,
             "source": "AI",
             "english_section": question.english_section,
             "mcer_level": question.mcer_level,
@@ -221,3 +223,86 @@ async def send_generated_question_to_question_bank(question: GeneratedQuestion) 
                 raise
 
         return question_data
+
+
+async def send_generated_block_to_question_bank(block: GeneratedQuestionBlock) -> dict[str, Any]:
+    """Envía un bloque generado al Question Bank."""
+    internal_headers = {
+        "X-User-Id": "0",
+        "X-User-Role": "ADMIN",
+        "X-Service": "ai-generator",
+    }
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(
+            f"{settings.question_bank_url}/api/taxonomy/areas/by-code/{block.area_code}",
+            headers=internal_headers,
+        )
+        resp.raise_for_status()
+        area = resp.json()
+
+        competencies = area.get("competencies", [])
+        competency = next(
+            (c for c in competencies if c.get("code") == block.competency_code),
+            None,
+        )
+        if not competency:
+            raise ValueError(f"Competencia no encontrada en QB: {block.competency_code}")
+
+        assertions = competency.get("assertions", [])
+        assertion = next(
+            (a for a in assertions if a.get("code") == block.assertion_code),
+            None,
+        )
+        if not assertion:
+            raise ValueError(f"Afirmacion no encontrada en QB: {block.assertion_code}")
+
+        evidence_id = None
+        if block.evidence_code:
+            evidence = next(
+                (
+                    e
+                    for e in assertion.get("evidences", [])
+                    if e.get("code") == block.evidence_code
+                ),
+                None,
+            )
+            if not evidence:
+                raise ValueError(f"Evidencia no encontrada en QB: {block.evidence_code}")
+            evidence_id = evidence.get("id")
+
+        content_component_id = None
+        if block.content_component_code:
+            content_component = next(
+                (
+                    cc
+                    for cc in area.get("content_components", [])
+                    if cc.get("code") == block.content_component_code
+                ),
+                None,
+            )
+            if not content_component:
+                raise ValueError(
+                    f"Componente de contenido no encontrado en QB: {block.content_component_code}"
+                )
+            content_component_id = content_component.get("id")
+
+        payload = {
+            "area_id": area["id"],
+            "competency_id": competency["id"],
+            "assertion_id": assertion["id"],
+            "evidence_id": evidence_id,
+            "content_component_id": content_component_id,
+            "context": block.context,
+            "context_type": block.context_type,
+            "context_category": block.context_category,
+            "source": "AI",
+            "items": [item.model_dump() for item in block.items],
+        }
+
+        resp = await client.post(
+            f"{settings.question_bank_url}/api/questions/blocks",
+            headers=internal_headers,
+            json=payload,
+        )
+        resp.raise_for_status()
+        return resp.json()

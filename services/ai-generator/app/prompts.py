@@ -45,6 +45,63 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura exacta:
 NO incluyas texto fuera del JSON. NO uses markdown. Solo JSON puro.
 """
 
+_MAT_SYSTEM_SUFFIX = """\
+
+## REGLAS ADICIONALES PARA MATEMÁTICAS (MAT)
+8. TODA expresión matemática DEBE estar en LaTeX: $inline$ o $$bloque$$.
+   Nunca escribas una ecuación como texto plano (sin $ o $$).
+9. Antes de escribir cualquier opción ejecuta el cálculo en un <scratchpad>
+   mental (no aparece en el JSON). Verifica el resultado antes de continuar.
+10. Incluye el campo "context_category" con una de estas cuatro categorías ICFES:
+    - "familiar_personal": hogar, familia, salud cotidiana
+    - "laboral_ocupacional": trabajo, negocios, economía laboral
+    - "comunitario_social": transporte, servicios públicos, ciudad, medio ambiente
+    - "matematico_cientifico": matemática abstracta, ciencia, ingeniería
+"""
+
+MAT_SYSTEM_PROMPT = SYSTEM_PROMPT.rstrip() + _MAT_SYSTEM_SUFFIX
+
+BLOCK_SYSTEM_PROMPT = """\
+Eres un constructor experto de bloques de preguntas para la prueba Saber 11 del ICFES (Colombia).
+
+## REGLAS INQUEBRANTABLES
+1. Devuelve un bloque con contexto compartido y entre 2 y 3 subpreguntas derivadas del mismo estímulo.
+2. Cada subpregunta debe evaluarse de forma independiente.
+3. La respuesta correcta de cada subpregunta debe ser inequívoca.
+4. Devuelve SOLO JSON válido, sin markdown ni texto adicional.
+
+## FORMATO DE RESPUESTA (JSON estricto)
+{
+    "context": "Texto o situación compartida",
+    "context_type": "tipo_de_contexto",
+    "items": [
+        {
+            "stem": "Enunciado de la subpregunta",
+            "option_a": "Opción A",
+            "option_b": "Opción B",
+            "option_c": "Opción C",
+            "option_d": "Opción D",
+            "correct_answer": "A|B|C|D",
+            "explanation_correct": "Por qué la correcta es correcta",
+            "explanation_a": "Por qué A no es correcta",
+            "explanation_b": "Por qué B no es correcta",
+            "explanation_c": "Por qué C no es correcta",
+            "explanation_d": "Por qué D no es correcta",
+            "cognitive_process": "proceso_cognitivo_evaluado",
+            "difficulty_estimated": 0.5
+        }
+    ]
+}
+"""
+
+BLOCK_SUFFIX = """
+
+## ESTRUCTURA SOLICITADA: BLOQUE DE PREGUNTAS
+- Genera exactamente 2 subpreguntas en el array `items`.
+- Las subpreguntas comparten el MISMO contexto superior.
+- No repitas el stem ni cambies de escenario entre subpreguntas.
+"""
+
 # =============================================================================
 # Prompt con visual programático
 # =============================================================================
@@ -106,17 +163,76 @@ Evidencia: {evidence_behavior}
 Componente: {content_component}
 
 ### Tipos de contexto válidos:
-- math_problem: Problemas en contexto cotidiano o profesional
+- math_problem: Problemas en contexto cotidiano o profesional (tarifas SITP/TransMilenio,
+  precios en COP, tasas Bancolombia, estadísticas DANE, planos de vivienda VIS,
+  facturación EPM/ETB)
 - scientific_scenario: Datos experimentales que requieran análisis cuantitativo
 - discontinuous_text: Tablas, gráficas estadísticas
+
+### Categoría de contexto ICFES (campo "context_category")
+Elige una de estas cuatro categorías para el campo "context_category":
+- "familiar_personal": hogar, familia, salud, compras personales
+- "laboral_ocupacional": trabajo, salarios, producción, negocios
+- "comunitario_social": transporte SITP/TransMilenio, servicios públicos, ciudad, medio ambiente
+- "matematico_cientifico": matemática abstracta, ciencia, ingeniería, geometría pura
+
+### FORMATO MATEMÁTICO OBLIGATORIO
+Toda expresión matemática DEBE estar en notación LaTeX:
+- Bloque (ecuación centrada): $$C(x) = 0.9(5000 + 1200x)$$
+- Inline (dentro del texto): el costo es $C(x) = 5000 + 1200x$ por kilogramo.
+- Fracciones: $$\\frac{{a + b}}{{c}}$$
+- Raíces: $$\\sqrt{{a^2 + b^2}}$$
+- Potencias: $x^2$, subíndices: $a_n$
+INCORRECTO: escribir "C(x) = 0.9*(5000+1200x)" sin marcadores $ o $$.
+CORRECTO: "$$C(x) = 0.9(5000 + 1200x)$$"
+
+### VALIDACIÓN MATEMÁTICA (OBLIGATORIO antes de generar opciones)
+Razona el problema paso a paso en un bloque <scratchpad> interno:
+1. Identifica los datos del enunciado.
+2. Plantea la operación o modelo matemático correcto.
+3. Ejecuta los cálculos y verifica el resultado.
+4. Solo después de estar seguro del resultado, genera la opción correcta.
+El <scratchpad> NO aparece en el JSON de respuesta.
+
+### MATRIZ DE ERRORES POR TIPO DE PREGUNTA
+Identifica cuál de estos 4 tipos aplica y usa los distractores pedagógicos indicados:
+
+**Tipo 1 — Tabular/Gráfica** (Interpretación y Representación):
+  - Distractor 1: leer el eje incorrecto (confundir eje X por eje Y o viceversa)
+  - Distractor 2: confundir valor absoluto con porcentaje (o al revés)
+  - Distractor 3: ignorar la escala o unidad del gráfico
+
+**Tipo 2 — Modelado Algebraico** (Formulación y Ejecución):
+  - Distractor 1: signos invertidos en la ecuación (suma donde va resta)
+  - Distractor 2: variable mal asignada al modelo (intercambiar roles de variables)
+  - Distractor 3: responde un paso intermedio, no la pregunta final
+
+**Tipo 3 — Justificación de Procedimientos** (Argumentación):
+  - Distractor 1: procedimiento correcto pero por razón equivocada
+  - Distractor 2: premisa verdadera que no conduce a la conclusión solicitada
+  - Distractor 3: aplica una excepción como si fuera regla general
+
+**Tipo 4 — Probabilidad Condicional** (Aleatorio):
+  - Distractor 1: usa el total de la muestra en vez del subgrupo condicionado
+  - Distractor 2: invierte numerador y denominador de la fracción
+  - Distractor 3: confunde probabilidad conjunta P(A∩B) con P(A|B)
+
+### ETIQUETAS TEMÁTICAS (campo "tags")
+Incluye el campo "tags" con 1-3 etiquetas cortas en español que identifiquen el subtema
+matemático evaluado. Ejemplos:
+- ["Funciones lineales", "Modelado algebraico"]
+- ["Proporcionalidad", "Porcentajes", "Interés simple"]
+- ["Probabilidad condicional"]
+- ["Geometría analítica", "Circunferencia"]
+- ["Sucesiones", "Progresión aritmética"]
+- ["Estadística", "Medidas de tendencia central"]
+- ["Sistemas de ecuaciones"]
 
 ### Guía específica:
 - Presentar situaciones que requieran MODELAR matemáticamente, no calcular mecánicamente.
 - Para Interpretación: el estudiante extrae información de representaciones.
 - Para Formulación: el estudiante traduce el problema a lenguaje matemático.
 - Para Argumentación: el estudiante justifica o valida procedimientos/resultados.
-- Distractores: errores de signo, confusión de fórmula, error en la lectura de gráfica,
-  aplicación incorrecta de propiedad.
 """,
 
     "SC": """\
@@ -527,8 +643,10 @@ VISUAL_TYPE_GUIDANCE: dict[str, str] = {
         "visual_data debe ser compatible con Chart.js."
     ),
     "table": (
-        "Genera una tabla HTML con datos. "
-        'visual_data = {"html": "<table>...</table>"}'
+        "Genera una tabla HTML de doble entrada con datos numéricos coherentes. "
+        "Los totales de filas y columnas DEBEN cuadrar aritméticamente. "
+        'visual_data = {"html": "<table><thead>...</thead><tbody>...</tbody></table>"} '
+        "Usa etiquetas <th> para encabezados, <td> para datos. Incluye una fila de totales."
     ),
     "diagram": (
         "Genera un diagrama SVG parametrizado. "
@@ -543,12 +661,21 @@ VISUAL_TYPE_GUIDANCE: dict[str, str] = {
         'visual_data = {"events": [{"year": ..., "label": ..., "description": ...}]}'
     ),
     "geometric_figure": (
-        "Genera una figura geométrica SVG. "
-        'visual_data = {"template": "geometric", "params": {...}}'
+        "Genera una figura geométrica SVG con dimensiones numéricas explícitas. "
+        "Tipos soportados: triangle (base, height, sides), rectangle (width, height), "
+        "composite (figura formada por 2 rectángulos o triángulo + rectángulo). "
+        'visual_data = {"template": "geometric", "shape": "triangle|rectangle|composite", '
+        '"params": {"base": 8, "height": 5, "unit": "cm", "labels": {"A": "...", "B": "..."}}} '
+        "Los valores numéricos deben ser consistentes con la pregunta matemática."
     ),
     "probability_diagram": (
-        "Genera un diagrama de probabilidad (árbol). "
-        'visual_data = {"template": "probability_tree", "params": {...}}'
+        "Genera un árbol de probabilidad con ramas y probabilidades coherentes (suman 1). "
+        "Estructura: nodo raíz → eventos de primer nivel → eventos de segundo nivel. "
+        'visual_data = {"template": "probability_tree", "params": { '
+        '"root": "Experimento", '
+        '"branches": [{"label": "A", "prob": 0.6, "children": [{"label": "B", "prob": 0.4}, {"label": "¬B", "prob": 0.6}]}, '
+        '{"label": "¬A", "prob": 0.4, "children": [{"label": "B", "prob": 0.3}, {"label": "¬B", "prob": 0.7}]}]}} '
+        "VERIFICA que las probabilidades en cada nivel sumen exactamente 1."
     ),
     "state_structure": (
         "Genera un diagrama de estructura del Estado colombiano. "
@@ -559,6 +686,47 @@ VISUAL_TYPE_GUIDANCE: dict[str, str] = {
         'visual_data = {"html": "<div>...</div>"}'
     ),
 }
+
+
+_MAT_DISTRACTOR_GUIDANCE: dict[str, str] = {
+    "tabular_grafica": (
+        "Este ítem evalúa lectura de tablas o gráficas. "
+        "Distractor 1: leer el eje incorrecto (X por Y). "
+        "Distractor 2: confundir valor absoluto con porcentaje. "
+        "Distractor 3: ignorar la escala o unidad del eje."
+    ),
+    "modelado_algebraico": (
+        "Este ítem evalúa modelado algebraico. "
+        "Distractor 1: signos invertidos en la ecuación. "
+        "Distractor 2: variable mal asignada al modelo. "
+        "Distractor 3: resultado de paso intermedio (no la respuesta final)."
+    ),
+    "justificacion": (
+        "Este ítem evalúa argumentación matemática. "
+        "Distractor 1: procedimiento correcto por razón equivocada. "
+        "Distractor 2: premisa verdadera que no concluye lo solicitado. "
+        "Distractor 3: excepción aplicada como regla general."
+    ),
+    "probabilidad_condicional": (
+        "Este ítem evalúa probabilidad condicional. "
+        "Distractor 1: usa el total de muestra en vez del subgrupo condicionado. "
+        "Distractor 2: numerador y denominador invertidos. "
+        "Distractor 3: confunde P(A∩B) con P(A|B)."
+    ),
+}
+
+
+def build_mat_distractor_guidance(question_type: str) -> str:
+    """Devuelve la guía pedagógica de distractores para un tipo de pregunta MAT.
+
+    Args:
+        question_type: One of 'tabular_grafica', 'modelado_algebraico',
+                       'justificacion', 'probabilidad_condicional'.
+
+    Returns:
+        Guidance string to append to the MAT prompt, or empty string if unknown type.
+    """
+    return _MAT_DISTRACTOR_GUIDANCE.get(question_type, "")
 
 
 def build_user_prompt(
@@ -572,6 +740,7 @@ def build_user_prompt(
     mcer_level: str | None = None,
     include_visual: bool = False,
     visual_type: str | None = None,
+    structure_type: str = "INDIVIDUAL",
 ) -> str:
     """Construye el user prompt parametrizado según el área.
 
@@ -607,5 +776,8 @@ def build_user_prompt(
         guidance = VISUAL_TYPE_GUIDANCE.get(visual_type, "")
         if guidance:
             prompt += f"\nTipo visual solicitado: {visual_type}\n{guidance}\n"
+
+    if structure_type == "QUESTION_BLOCK":
+        prompt += BLOCK_SUFFIX
 
     return prompt

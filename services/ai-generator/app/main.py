@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from saber11_shared.database import Base
 from saber11_shared.events import EventBus
 from saber11_shared.health import create_health_router
+from sqlalchemy import text
 
 from .config import settings
 from .database import SessionLocal, engine
@@ -34,6 +35,11 @@ async def _wait_for_db(retries: int = 10, delay: float = 2.0) -> None:
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+                await conn.execute(
+                    text(
+                        "ALTER TABLE generation_jobs ADD COLUMN IF NOT EXISTS structure_type VARCHAR(20) DEFAULT 'INDIVIDUAL'"
+                    )
+                )
             return
         except Exception as exc:
             if attempt == retries:

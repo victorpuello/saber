@@ -130,6 +130,7 @@ export interface QuestionCreatePayload {
 
   cognitive_process: string | null;
   difficulty_estimated: number | null;
+  tags?: string[] | null;
 
   source: QuestionSourceBackend;
   structure_type?: StructureType;
@@ -208,6 +209,7 @@ export interface QuestionOut {
   cognitive_process: string | null;
   difficulty_estimated: number | null;
   discrimination_index: number | null;
+  tags: string[] | null;
 
   source: string;
   created_by_user_id: number | null;
@@ -500,6 +502,50 @@ export const CONTEXT_TYPE_OPTIONS: { value: ContextType; label: string }[] = [
   { value: "graphic_notice", label: "Aviso gráfico" },
   { value: "dialogue", label: "Diálogo" },
   { value: "cloze_text", label: "Texto cloze" },
+];
+
+export const ENGLISH_CONTEXT_PRESET_OPTIONS: {
+  key: string;
+  label: string;
+  subtitle: string;
+  contextType: ContextType;
+  englishSection: number;
+}[] = [
+  {
+    key: "notice-sign",
+    label: "Aviso / señal",
+    subtitle: "Parte 1 · NoticeSign",
+    contextType: "react_component",
+    englishSection: 1,
+  },
+  {
+    key: "matching-lexical",
+    label: "Matching léxico",
+    subtitle: "Parte 2 · definición corta",
+    contextType: "continuous_text",
+    englishSection: 2,
+  },
+  {
+    key: "dialogue-chat",
+    label: "Diálogo",
+    subtitle: "Parte 3 · ChatUI",
+    contextType: "react_component",
+    englishSection: 3,
+  },
+  {
+    key: "cloze-text",
+    label: "Texto cloze",
+    subtitle: "Partes 4 y 7 · [BLANK]",
+    contextType: "cloze_text",
+    englishSection: 4,
+  },
+  {
+    key: "reading-email",
+    label: "Lectura / email",
+    subtitle: "Partes 5 y 6 · texto o correo",
+    contextType: "continuous_text",
+    englishSection: 5,
+  },
 ];
 
 export const CORRECT_ANSWER_OPTIONS: CorrectAnswer[] = ["A", "B", "C", "D"];

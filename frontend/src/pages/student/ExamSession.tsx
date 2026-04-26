@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import MathText from "../../components/MathText";
 import QuestionContextMedia from "../../components/QuestionContextMedia";
 import ClozeText, { isClozeContext } from "../../components/english/ClozeText";
 import { isReactEnglishContext } from "../../components/english/EnglishContextBlock";
@@ -408,7 +409,7 @@ export default function ExamSession() {
               ) : !rendersInteractiveContext ? (
                 <article className="space-y-4 text-[16px] leading-[1.85] text-on-surface-variant">
                   {contextQuestion.context.split("\n\n").map((para, i) => (
-                    <p key={i}>{para}</p>
+                    <MathText key={i} as="p">{para}</MathText>
                   ))}
                 </article>
               ) : null}
@@ -479,9 +480,9 @@ export default function ExamSession() {
               </div>
             )}
 
-            <p className="mb-5 text-[16px] font-medium leading-[1.65] text-on-surface">
-              {currentQ.stem}
-            </p>
+            <MathText as="p" className="mb-5 text-[16px] font-medium leading-[1.65] text-on-surface">
+              {currentQ.stem.replace(/\[BLANK\]/gi, '[_________________]')}
+            </MathText>
 
             {isCurrentCloze ? (
               <div className="rounded-[18px] bg-surface-container-low p-4 text-sm leading-relaxed text-on-surface-variant">
@@ -514,13 +515,14 @@ export default function ExamSession() {
                     >
                       {displayLetter}
                     </div>
-                    <p
+                    <MathText
+                      as="p"
                       className={`text-[14px] leading-relaxed ${
                         isSelected ? "font-medium text-on-surface" : "text-on-surface-variant"
                       }`}
                     >
                       {text}
-                    </p>
+                    </MathText>
                   </button>
                   );
                 })}

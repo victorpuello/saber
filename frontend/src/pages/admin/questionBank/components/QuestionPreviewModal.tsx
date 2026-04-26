@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { QuestionRow } from "../types";
 import type { QuestionBlockOut, QuestionMediaOut } from "../questionFormTypes";
+import MathText from "../../../../components/MathText";
 import QuestionContextMedia from "../../../../components/QuestionContextMedia";
 
 interface PreviewItem {
@@ -51,6 +52,12 @@ export default function QuestionPreviewModal({ question, block, media, onClose }
       : [];
 
   const context = block?.context ?? question?.context ?? "";
+  const contextType = block?.context_type ?? question?.contextType ?? null;
+  const componentName = block?.items[0]?.component_name ?? question?.componentName ?? null;
+  const rendersEnglishContext = contextType === "react_component";
+  const contextTitle = rendersEnglishContext
+    ? (componentName === "NoticeSign" ? "Aviso / señal" : componentName ?? "Contexto interactivo")
+    : (context.split("\n")[0]?.slice(0, 72) || "Contexto");
   const currentItem = items[blockIndex] ?? null;
   const blockSize = items.length;
 
@@ -75,7 +82,7 @@ export default function QuestionPreviewModal({ question, block, media, onClose }
   if (!currentItem) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col overflow-hidden bg-surface">
+    <div className="fixed inset-0 z-200 flex flex-col overflow-hidden bg-surface">
       {/* Header */}
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/15 bg-white px-6 shadow-[0_2px_12px_rgba(25,28,30,0.06)]">
         <div className="flex items-center gap-3">
@@ -117,7 +124,7 @@ export default function QuestionPreviewModal({ question, block, media, onClose }
               {isBlock ? "Contexto compartido" : "Material de lectura"}
             </span>
             <h2 className="text-[16px] font-bold text-on-surface">
-              {context.split("\n")[0]?.slice(0, 72) || "Contexto"}
+              {contextTitle}
             </h2>
             {isBlock && (
               <p className="mt-1 text-[12px] text-secondary">
@@ -129,13 +136,28 @@ export default function QuestionPreviewModal({ question, block, media, onClose }
           <div className="flex-1 overflow-y-auto px-8.5 pb-8 [scrollbar-color:var(--color-surface-container-highest)_transparent] [scrollbar-width:thin]">
             <div className="space-y-6">
               {media.length > 0 && (
-                <QuestionContextMedia media={media} />
+                <QuestionContextMedia
+                  media={media}
+                  context={context}
+                  contextType={contextType}
+                  componentName={componentName}
+                />
               )}
-              <article className="space-y-4 text-[16px] leading-[1.85] text-on-surface-variant">
-                {context.split("\n\n").map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
-              </article>
+              {media.length === 0 && rendersEnglishContext && (
+                <QuestionContextMedia
+                  media={[]}
+                  context={context}
+                  contextType={contextType}
+                  componentName={componentName}
+                />
+              )}
+              {!rendersEnglishContext && (
+                <article className="space-y-4 text-[16px] leading-[1.85] text-on-surface-variant">
+                  {context.split("\n\n").map((para, i) => (
+                    <MathText key={i} as="p">{para}</MathText>
+                  ))}
+                </article>
+              )}
             </div>
           </div>
         </div>
@@ -194,9 +216,9 @@ export default function QuestionPreviewModal({ question, block, media, onClose }
               </div>
             )}
 
-            <p className="mb-5 text-[16px] font-medium leading-[1.65] text-on-surface">
+            <MathText as="p" className="mb-5 text-[16px] font-medium leading-[1.65] text-on-surface">
               {currentItem.stem}
-            </p>
+            </MathText>
 
             <div className="flex flex-col gap-2.5">
               {OPTIONS.map(({ letter, key }) => {
@@ -223,9 +245,9 @@ export default function QuestionPreviewModal({ question, block, media, onClose }
                     >
                       {letter}
                     </div>
-                    <p className={`text-[14px] leading-relaxed ${isSelected ? "font-medium text-on-surface" : "text-on-surface-variant"}`}>
+                    <MathText as="p" className={`text-[14px] leading-relaxed ${isSelected ? "font-medium text-on-surface" : "text-on-surface-variant"}`}>
                       {text}
-                    </p>
+                    </MathText>
                   </button>
                 );
               })}

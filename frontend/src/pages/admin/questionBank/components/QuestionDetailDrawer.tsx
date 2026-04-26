@@ -53,6 +53,10 @@ export default function QuestionDetailDrawer({ question, block = null, media = [
   const [showPreview, setShowPreview] = useState(false);
   const status = question?.status ?? null;
   const isBlock = block !== null;
+  const context = block?.context ?? question?.context ?? "";
+  const contextType = block?.context_type ?? question?.contextType ?? null;
+  const componentName = block?.items[0]?.component_name ?? question?.componentName ?? null;
+  const rendersEnglishContext = contextType === "react_component";
   const canReview = !!status && !loading && status === "PENDIENTE";
   const canEditDraft = !!status && !loading && status === "BORRADOR";
   const detailTarget = block
@@ -216,12 +220,29 @@ export default function QuestionDetailDrawer({ question, block = null, media = [
                 </h3>
                 {media.length > 0 && (
                   <div className="mb-3.5">
-                    <QuestionContextMedia media={media} compact />
+                    <QuestionContextMedia
+                      media={media}
+                      context={context}
+                      contextType={contextType}
+                      componentName={componentName}
+                      compact
+                    />
                   </div>
                 )}
-                <p className="rounded-xl bg-surface-container-low p-3.5 text-sm leading-relaxed text-on-surface-variant">
-                  {block?.context ?? question?.context}
-                </p>
+                {media.length === 0 && rendersEnglishContext && (
+                  <QuestionContextMedia
+                    media={[]}
+                    context={context}
+                    contextType={contextType}
+                    componentName={componentName}
+                    compact
+                  />
+                )}
+                {!rendersEnglishContext && (
+                  <p className="rounded-xl bg-surface-container-low p-3.5 text-sm leading-relaxed text-on-surface-variant">
+                    {context}
+                  </p>
+                )}
               </div>
 
               {block ? (
@@ -240,7 +261,7 @@ export default function QuestionDetailDrawer({ question, block = null, media = [
                             Respuesta correcta: {item.correct_answer}
                           </span>
                         </div>
-                        <p className="text-sm leading-relaxed text-on-surface">{item.stem}</p>
+                        <p className="text-sm leading-relaxed text-on-surface">{item.stem.replace(/\[BLANK\]/gi, '[_________________]')}</p>
                         <div className="mt-3 flex flex-col gap-2">
                           {[
                             { letter: "A", text: item.option_a },
@@ -279,7 +300,7 @@ export default function QuestionDetailDrawer({ question, block = null, media = [
                       Enunciado
                     </h3>
                     <p className="rounded-xl bg-surface-container-low p-3.5 text-sm leading-relaxed text-on-surface-variant">
-                      {question.stem}
+                      {question.stem.replace(/\[BLANK\]/gi, '[_________________]')}
                     </p>
                   </div>
 
@@ -312,6 +333,25 @@ export default function QuestionDetailDrawer({ question, block = null, media = [
                   </div>
                 </>
               ) : null}
+
+              {/* Tags */}
+              {question && question.tags && question.tags.length > 0 && (
+                <div>
+                  <h3 className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.2em] text-secondary">
+                    Etiquetas
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {question.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Metadatos */}
               {question && (

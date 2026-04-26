@@ -42,6 +42,14 @@ class ContextType(str, Enum):
     react_component = "react_component"
 
 
+class ContextCategory(str, Enum):
+    """Categorías de contexto ICFES (transversales a todas las áreas)."""
+    familiar_personal = "familiar_personal"
+    laboral_ocupacional = "laboral_ocupacional"
+    comunitario_social = "comunitario_social"
+    matematico_cientifico = "matematico_cientifico"
+
+
 class CorrectAnswer(str, Enum):
     A = "A"
     B = "B"
@@ -163,6 +171,7 @@ class QuestionCreate(BaseModel):
 
     context: str = Field(min_length=10)
     context_type: ContextType
+    context_category: ContextCategory | None = None
     stem: str = Field(min_length=5)
 
     option_a: str = Field(min_length=1)
@@ -179,6 +188,7 @@ class QuestionCreate(BaseModel):
 
     cognitive_process: str | None = None
     difficulty_estimated: float | None = Field(None, ge=0, le=1)
+    tags: list[str] | None = None
 
     source: QuestionSource = QuestionSource.MANUAL
     structure_type: StructureType = StructureType.INDIVIDUAL
@@ -196,6 +206,8 @@ class QuestionCreate(BaseModel):
 class QuestionUpdate(BaseModel):
     context: str | None = Field(None, min_length=10)
     context_type: ContextType | None = None
+    context_category: ContextCategory | None = None
+    tags: list[str] | None = None
     structure_type: StructureType | None = None
     block_id: uuid.UUID | None = None
     block_item_order: int | None = Field(None, ge=1, le=3)
@@ -261,6 +273,7 @@ class QuestionBlockCreate(BaseModel):
 
     context: str = Field(min_length=10)
     context_type: ContextType
+    context_category: ContextCategory | None = None
     source: QuestionSource = QuestionSource.MANUAL
 
     items: list[QuestionBlockItemCreate] = Field(min_length=2, max_length=3)
@@ -296,6 +309,7 @@ class QuestionOut(BaseModel):
 
     context: str
     context_type: str
+    context_category: str | None = None
     structure_type: str
     block_id: uuid.UUID | None = None
     block_item_order: int | None = None
@@ -317,6 +331,7 @@ class QuestionOut(BaseModel):
     cognitive_process: str | None = None
     difficulty_estimated: float | None = None
     discrimination_index: float | None = None
+    tags: list[str] | None = None
 
     source: str
     created_by_user_id: int | None = None
@@ -352,6 +367,7 @@ class QuestionSummary(BaseModel):
     cognitive_process: str | None = None
     difficulty_estimated: float | None = None
     discrimination_index: float | None = None
+    tags: list[str] | None = None
     created_at: datetime
 
 
@@ -376,6 +392,7 @@ class QuestionBlockOut(BaseModel):
     block_size: int
     context: str
     context_type: str
+    context_category: str | None = None
     area_id: uuid.UUID
     competency_id: uuid.UUID
     assertion_id: uuid.UUID

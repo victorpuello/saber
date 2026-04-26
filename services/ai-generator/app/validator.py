@@ -6,7 +6,7 @@ enviar la pregunta al flujo de revisión.
 
 import json
 
-from .schemas import GeneratedQuestion
+from .schemas import GeneratedQuestion, GeneratedQuestionBlock
 
 # Contextos válidos por área
 VALID_CONTEXT_TYPES: dict[str, set[str]] = {
@@ -198,7 +198,26 @@ def validate_question(
         elif isinstance(dm, dict) and not dm.get("grammar_tags"):
             warnings.append("dce_metadata.grammar_tags vacío — revisor no podrá filtrar por etiqueta")
 
-    # ── 8. Dificultad estimada ────────────────────────────────────────
+    # ── 8. LaTeX en preguntas de Matemáticas ─────────────────────────
+
+    if area_code == "MAT":
+        math_fields = [
+            question.context or "",
+            question.stem or "",
+            question.option_a or "",
+            question.option_b or "",
+            question.option_c or "",
+            question.option_d or "",
+        ]
+        has_latex = any("$" in field for field in math_fields)
+        if not has_latex:
+            warnings.append(
+                "Pregunta MAT sin marcadores LaTeX ($ o $$). "
+                "Las expresiones matemáticas deben usar notación KaTeX para renderizar correctamente."
+            )
+            score -= 0.1
+
+    # ── 9. Dificultad estimada ────────────────────────────────────────
 
     if (
         question.difficulty_estimated is not None
@@ -206,7 +225,7 @@ def validate_question(
     ):
         warnings.append("difficulty_estimated fuera de rango típico (0.1-0.95)")
 
-    # ── 9. Visual programático ────────────────────────────────────────
+    # ── 10. Visual programático ───────────────────────────────────────
 
     if question.media:
         media = question.media
@@ -227,6 +246,61 @@ def validate_question(
 
     score = 0.0 if errors else max(0.0, min(1.0, score))
 
+    return {
+        "is_valid": len(errors) == 0,
+        "errors": errors,
+        "warnings": warnings,
+        "score": round(score, 2),
+    }
+
+
+def validate_question_block(block: GeneratedQuestionBlock, area_code: str) -> dict:
+    errors: list[str] = []
+    warnings: list[str] = []
+    item_scores: list[float] = []
+
+    if not block.context or len(block.context.strip()) < 10:
+      errors.append("Contexto compartido vacío o demasiado corto")
+
+    if len(block.items) < 2 or len(block.items) > 3:
+      errors.append("Un bloque debe tener entre 2 y 3 subpreguntas")
+
+    for index, item in enumerate(block.items, start=1):
+        item_validation = validate_question(
+            GeneratedQuestion(
+                area_code=block.area_code,
+                competency_code=block.competency_code,
+                assertion_code=block.assertion_code,
+                evidence_code=block.evidence_code,
+                content_component_code=block.content_component_code,
+                context=block.context,
+                context_type=block.context_type,
+                stem=item.stem,
+                option_a=item.option_a,
+                option_b=item.option_b,
+                option_c=item.option_c,
+                option_d=item.option_d,
+                correct_answer=item.correct_answer,
+                explanation_correct=item.explanation_correct,
+                explanation_a=item.explanation_a,
+                explanation_b=item.explanation_b,
+                explanation_c=item.explanation_c,
+                explanation_d=item.explanation_d,
+                cognitive_process=item.cognitive_process,
+                difficulty_estimated=item.difficulty_estimated,
+                english_section=item.english_section,
+                mcer_level=item.mcer_level,
+                component_name=item.component_name,
+                dce_metadata=item.dce_metadata,
+                media=None,
+            ),
+            area_code,
+        )
+        item_scores.append(item_validation.get("score", 0.0))
+        errors.extend([f"Item {index}: {message}" for message in item_validation["errors"]])
+        warnings.extend([f"Item {index}: {message}" for message in item_validation["warnings"]])
+
+    score = sum(item_scores) / len(item_scores) if item_scores else 0.0
     return {
         "is_valid": len(errors) == 0,
         "errors": errors,

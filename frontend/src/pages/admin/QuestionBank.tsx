@@ -19,7 +19,6 @@ import {
   QBTable,
   QBJobsStatusBar,
   QBJobsTray,
-  EnglishAuditPanel,
   NewManualQuestionModal,
   GenerateAIModal,
   QuestionDetailDrawer,
@@ -70,6 +69,9 @@ function hydrateQuestionRow(question: QuestionRow, detail: QuestionOut): Questio
       detail.difficulty_estimated != null ? Number(detail.difficulty_estimated) : null,
     ),
     context: detail.context,
+    contextType: detail.context_type,
+    componentName: detail.component_name ?? null,
+    tags: detail.tags ?? null,
     stem: detail.stem,
     options: [
       { letter: "A", text: detail.option_a, correct: detail.correct_answer === "A" },
@@ -284,17 +286,17 @@ export default function QuestionBank() {
         onOpenTray={() => setIsTrayOpen(true)}
       />
 
-      <EnglishAuditPanel audit={vm.englishAudit} />
-
       {/* Filters bar */}
       <QBFilters
         filters={vm.filters}
         searchQuery={vm.searchQuery}
+        tagFilter={vm.tagFilter}
         areaOptions={vm.areaOptions}
         dificultadOptions={vm.dificultadOptions}
         estadoOptions={vm.estadoOptions}
         onUpdate={vm.updateFilter}
         onSearchChange={vm.setSearchQuery}
+        onTagFilterChange={vm.setTagFilter}
         onClear={vm.clearFilters}
       />
 

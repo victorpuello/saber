@@ -55,6 +55,24 @@ const TAB_ORDER: FormTab[] = ["taxonomy", "content", "explanations", "review"];
 const MIN_BLOCK_ITEMS = 2;
 const MAX_BLOCK_ITEMS = 3;
 
+const ENGLISH_COMPONENT_BY_SECTION: Record<number, string | null> = {
+  1: "NoticeSign",
+  2: null,
+  3: "ChatUI",
+  4: null,
+  5: null,
+  6: null,
+  7: null,
+};
+
+function deriveEnglishComponentName(englishSection: string): string | null {
+  const section = Number(englishSection);
+  if (!Number.isInteger(section)) {
+    return null;
+  }
+  return ENGLISH_COMPONENT_BY_SECTION[section] ?? null;
+}
+
 type SaveResult = QuestionOut | QuestionBlockOut;
 
 interface FormViewModelOptions {
@@ -735,6 +753,7 @@ export function useNewQuestionFormViewModel(onSuccessOrOpts?: ((q: SaveResult) =
         ? Number(formData.english_section)
         : null,
       mcer_level: formData.mcer_level || null,
+      component_name: deriveEnglishComponentName(formData.english_section),
     };
   }, [formData]);
 
@@ -754,6 +773,7 @@ export function useNewQuestionFormViewModel(onSuccessOrOpts?: ((q: SaveResult) =
     difficulty_estimated: item.difficulty_estimated ? Number(item.difficulty_estimated) : null,
     english_section: item.english_section ? Number(item.english_section) : null,
     mcer_level: item.mcer_level || null,
+    component_name: deriveEnglishComponentName(item.english_section),
   }), []);
 
   const buildBlockPayload = useCallback((): QuestionBlockCreatePayload => ({

@@ -37,8 +37,11 @@ export interface QuestionRow {
   performance: number | null; // 0-100
   difficulty: Difficulty;
   context: string;
+  contextType?: string | null;
+  componentName?: string | null;
   stem: string;
   options: QuestionOption[];
+  tags: string[] | null;
 }
 
 export interface ActivityItem {

@@ -39,6 +39,7 @@ export interface QuestionSummary {
   cognitive_process: string | null;
   difficulty_estimated: number | null;
   discrimination_index: number | null;
+  tags: string[] | null;
   created_at: string;
 }
 
@@ -91,6 +92,7 @@ export interface ListQuestionsParams {
   competency_id?: string;
   status?: QuestionStatusBackend;
   source?: string;
+  tag?: string;
   group_units?: boolean;
   page?: number;
   page_size?: number;
@@ -138,6 +140,7 @@ export async function listQuestions(
   if (params.competency_id) qs.set("competency_id", params.competency_id);
   if (params.status) qs.set("status", params.status);
   if (params.source) qs.set("source", params.source);
+  if (params.tag) qs.set("tag", params.tag);
   if (params.group_units) qs.set("group_units", "true");
   if (params.page) qs.set("page", String(params.page));
   if (params.page_size) qs.set("page_size", String(params.page_size));

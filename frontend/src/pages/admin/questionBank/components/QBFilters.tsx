@@ -3,11 +3,13 @@ import type { QBFiltersState } from "../types";
 interface QBFiltersProps {
   filters: QBFiltersState;
   searchQuery: string;
+  tagFilter: string;
   areaOptions: string[];
   dificultadOptions: string[];
   estadoOptions: string[];
   onUpdate: <K extends keyof QBFiltersState>(key: K, value: QBFiltersState[K]) => void;
   onSearchChange: (value: string) => void;
+  onTagFilterChange: (value: string) => void;
   onClear: () => void;
 }
 
@@ -50,11 +52,13 @@ function FilterSelect({
 export default function QBFilters({
   filters,
   searchQuery,
+  tagFilter,
   areaOptions,
   dificultadOptions,
   estadoOptions,
   onUpdate,
   onSearchChange,
+  onTagFilterChange,
   onClear,
 }: QBFiltersProps) {
   return (
@@ -98,6 +102,25 @@ export default function QBFilters({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar por código o enunciado…"
               className="w-full rounded-xl bg-surface-container-lowest py-2.5 pl-10 pr-3 text-sm text-on-surface outline-none ring-1 ring-outline-variant/20 transition placeholder:text-secondary/50 focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+        </div>
+
+        {/* Tag filter */}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-secondary">
+            Etiqueta
+          </label>
+          <div className="relative">
+            <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[16px] text-outline">
+              label
+            </span>
+            <input
+              type="text"
+              value={tagFilter}
+              onChange={(e) => onTagFilterChange(e.target.value)}
+              placeholder="ej. Funciones lineales"
+              className="w-full rounded-xl bg-surface-container-lowest py-2.5 pl-9 pr-3 text-sm text-on-surface outline-none ring-1 ring-outline-variant/20 transition placeholder:text-secondary/50 focus:ring-2 focus:ring-primary/40"
             />
           </div>
         </div>

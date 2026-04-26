@@ -9,6 +9,7 @@ import {
   type CreateGenerationJobPayload,
   type GenerationJobDetail,
   type GenerationJobStatus,
+  type GenerationStructureType,
 } from "../../../../services/aiJobs";
 import type { AreaSummary, CompetencyItem, MediaType } from "../questionFormTypes";
 import ConfirmModal from "../../../../components/ConfirmModal";
@@ -42,6 +43,14 @@ interface VisualTypeOption {
   areas?: string[];
 }
 
+interface EnglishContextOption {
+  sections: number[];
+  title: string;
+  subtitle: string;
+  component: string;
+  icon: string;
+}
+
 const VISUAL_TYPE_OPTIONS: VisualTypeOption[] = [
   { type: "chart", label: "Gráfica", emoji: "📊" },
   { type: "table", label: "Tabla", emoji: "📋" },
@@ -53,6 +62,44 @@ const VISUAL_TYPE_OPTIONS: VisualTypeOption[] = [
   { type: "infographic", label: "Infografía", emoji: "📰" },
   { type: "state_structure", label: "Estructura estatal", emoji: "🏛️", areas: ["SC"] },
   { type: "public_sign", label: "Aviso / señal", emoji: "🪧" },
+];
+
+const ENGLISH_CONTEXT_OPTIONS: EnglishContextOption[] = [
+  {
+    sections: [1],
+    title: "Aviso / señal",
+    subtitle: "Parte 1 · NoticeSign",
+    component: "NoticeSign",
+    icon: "signpost",
+  },
+  {
+    sections: [2],
+    title: "Matching léxico",
+    subtitle: "Parte 2 · definición",
+    component: "Lista de palabras",
+    icon: "match_case",
+  },
+  {
+    sections: [3],
+    title: "Diálogo",
+    subtitle: "Parte 3 · ChatUI",
+    component: "ChatUI",
+    icon: "forum",
+  },
+  {
+    sections: [4, 7],
+    title: "Cloze text",
+    subtitle: "Partes 4 y 7 · [BLANK]",
+    component: "ClozeText",
+    icon: "fact_check",
+  },
+  {
+    sections: [5, 6],
+    title: "Lectura / email",
+    subtitle: "Partes 5 y 6 · texto o correo",
+    component: "EmailWrapper opcional",
+    icon: "mail",
+  },
 ];
 
 const STATUS_META: Record<GenerationJobStatus, { label: string; tone: string }> = {
@@ -79,6 +126,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
   const [selectedAreaId, setSelectedAreaId] = useState("");
   const [competencies, setCompetencies] = useState<CompetencyItem[]>([]);
   const [selectedCompetencyId, setSelectedCompetencyId] = useState("");
+  const [structureType, setStructureType] = useState<GenerationStructureType>("INDIVIDUAL");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [count, setCount] = useState(5);
   const [additionalContext, setAdditionalContext] = useState("");
@@ -117,6 +165,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
     setLoadingComps(true);
     setSelectedCompetencyId("");
     setEnglishSection("");
+    setStructureType("INDIVIDUAL");
     fetchAreaDetail(authFetch, selectedAreaId)
       .then((data) => { if (active) setCompetencies(data.competencies); })
       .catch(() => {})
@@ -174,15 +223,27 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
 
   const selectedAreaCode = areas.find((a) => a.id === selectedAreaId)?.code ?? "";
   const isING = selectedAreaCode === "ING";
+  const isBlockMode = structureType === "QUESTION_BLOCK";
+  const selectedEnglishContext = ENGLISH_CONTEXT_OPTIONS.find((option) => (
+    englishSection !== "" && option.sections.includes(Number(englishSection))
+  ));
   const hasRunningJob = jobDetail ? !isTerminalStatus(jobDetail.status) : creatingJob;
   const isTracking = creatingJob || !!jobDetail;
   const isDirty =
     selectedAreaId !== "" ||
     additionalContext !== "" ||
     count !== 5 ||
+    structureType !== "INDIVIDUAL" ||
     difficulty !== "medium" ||
     includeVisual ||
     hasRunningJob;
+
+  useEffect(() => {
+    if (isING || isBlockMode) {
+      setIncludeVisual(false);
+      setVisualType("");
+    }
+  }, [isBlockMode, isING]);
 
   const handleClose = useCallback(() => {
     if (creatingJob) return;
@@ -202,7 +263,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
       setError("Selecciona un área del examen.");
       return;
     }
-    if (includeVisual && !visualType) {
+    if (!isING && includeVisual && !visualType) {
       setError("Selecciona un tipo de visual o desactiva la opción de visual.");
       return;
     }
@@ -217,13 +278,14 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
       const body: CreateGenerationJobPayload = {
         area_code: selectedAreaCode,
         count,
+        structure_type: structureType,
       };
       if (selectedCompetencyId) {
         const comp = competencies.find((c) => c.id === selectedCompetencyId);
         if (comp) body.competency_code = comp.code;
       }
       if (cognitiveLevel !== undefined) body.cognitive_level = cognitiveLevel;
-      if (includeVisual && visualType) {
+      if (!isING && !isBlockMode && includeVisual && visualType) {
         body.include_visual = true;
         body.visual_type = visualType;
       }
@@ -244,7 +306,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
     }
   }, [
     authFetch, competencies, count, difficulty, includeVisual, visualType,
-    isING, englishSection, additionalContext,
+    isBlockMode, isING, englishSection, additionalContext, structureType,
     selectedAreaCode, selectedAreaId, selectedCompetencyId,
   ]);
 
@@ -405,6 +467,35 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </div>
             </div>
 
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
+                Estructura
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { value: "INDIVIDUAL", label: "Individual", copy: "1 pregunta por unidad" },
+                  { value: "QUESTION_BLOCK", label: "Bloque de preguntas", copy: "2 subpreguntas por bloque" },
+                ] as const).map((option) => {
+                  const isSelected = structureType === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setStructureType(option.value)}
+                      className={`rounded-xl border-2 px-3 py-3 text-left transition ${
+                        isSelected
+                          ? "border-primary bg-primary-fixed"
+                          : "border-transparent bg-surface-container-high hover:bg-surface-container-highest"
+                      }`}
+                    >
+                      <div className="text-sm font-bold text-on-surface">{option.label}</div>
+                      <div className="mt-1 text-[11px] text-secondary">{option.copy}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Sección inglés (solo ING) */}
             {isING && (
               <div className="space-y-1.5">
@@ -480,7 +571,7 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
                     const n = parseInt(e.target.value, 10);
                     if (!Number.isNaN(n)) setCount(Math.max(1, Math.min(20, n)));
                   }}
-                  className="w-[72px] rounded-xl border border-outline-variant/20 bg-surface-container-highest py-3 text-center text-sm font-medium text-on-surface outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
+                  className="w-18 rounded-xl border border-outline-variant/20 bg-surface-container-highest py-3 text-center text-sm font-medium text-on-surface outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
                 />
                 <button
                   type="button"
@@ -493,81 +584,145 @@ export default function GenerateAIModal({ onClose, onSuccess }: GenerateAIModalP
               </div>
             </div>
 
-            {/* Visual generado por IA */}
-            <div className="space-y-3 rounded-2xl border border-outline-variant/15 bg-surface-container-low p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-violet-100">
+            {isING ? (
+              <div className="space-y-3 rounded-2xl border border-outline-variant/15 bg-surface-container-low p-4">
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-violet-100">
                     <span
                       className="material-symbols-outlined text-[16px] text-violet-700"
                       style={{ fontVariationSettings: "'FILL' 1" }}
                     >
-                      image
+                      dashboard_customize
                     </span>
                   </div>
                   <div>
-                    <p className="text-[13px] font-bold text-on-surface">Visual generado por IA</p>
-                    <p className="text-[11px] text-secondary">La IA crea datos programáticos para el visual</p>
+                    <p className="text-[13px] font-bold text-on-surface">Visuales de inglés por sección</p>
+                    <p className="text-[11px] text-secondary">
+                      La sección define el contexto que verá el estudiante.
+                    </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={includeVisual}
-                  onClick={() => {
-                    setIncludeVisual((v) => !v);
-                    if (includeVisual) setVisualType("");
-                  }}
-                  className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${
-                    includeVisual ? "bg-violet-600" : "bg-surface-container-highest"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200 ${
-                      includeVisual ? "left-5.5" : "left-0.5"
-                    }`}
-                  />
-                </button>
-              </div>
 
-              {includeVisual && (
-                <div className="space-y-2.5 pt-1">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
-                    Tipo de visual
-                  </p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {sortedVisualOptions.map(({ type, label, emoji, areas: relevantAreas }) => {
-                      const isSelected = visualType === type;
-                      const isRelevant = relevantAreas?.includes(selectedAreaCode);
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => setVisualType(isSelected ? "" : type)}
-                          className={`relative flex flex-col items-center gap-1 rounded-xl border-2 px-1 py-2.5 text-center transition ${
-                            isSelected
-                              ? "border-violet-500 bg-violet-50"
-                              : "border-transparent bg-white hover:border-violet-200 hover:bg-violet-50/40"
-                          }`}
-                        >
-                          {isRelevant && (
-                            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-violet-500" />
-                          )}
-                          <span className="text-base">{emoji}</span>
-                          <span className={`text-[10px] font-semibold leading-tight ${isSelected ? "text-violet-700" : "text-secondary"}`}>
-                            {label}
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {ENGLISH_CONTEXT_OPTIONS.map((option) => {
+                    const isSelected = englishSection !== "" && option.sections.includes(Number(englishSection));
+                    return (
+                      <button
+                        key={option.title}
+                        type="button"
+                        onClick={() => setEnglishSection(isSelected ? "" : option.sections[0])}
+                        className={`flex min-h-18 items-start gap-2 rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                          isSelected
+                            ? "border-violet-500 bg-violet-50"
+                            : "border-transparent bg-white hover:border-violet-200 hover:bg-violet-50/40"
+                        }`}
+                      >
+                        <span className={`material-symbols-outlined mt-0.5 text-[18px] ${isSelected ? "text-violet-700" : "text-secondary"}`}>
+                          {option.icon}
+                        </span>
+                        <span className="min-w-0">
+                          <span className={`block text-[12px] font-bold leading-tight ${isSelected ? "text-violet-800" : "text-on-surface"}`}>
+                            {option.title}
                           </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[10px] text-secondary">
-                    <span className="mr-1 inline-block h-2 w-2 rounded-full bg-violet-500 align-middle" />
-                    Sugeridos para {selectedAreaCode || "el área seleccionada"}
-                  </p>
+                          <span className="mt-0.5 block text-[10px] leading-tight text-secondary">
+                            {option.subtitle}
+                          </span>
+                          <span className="mt-1 block text-[10px] font-semibold leading-tight text-violet-700">
+                            {option.component}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
+
+                <p className="text-[10px] text-secondary">
+                  {selectedEnglishContext
+                    ? `Seleccionado: ${selectedEnglishContext.title}`
+                    : "Selecciona una sección arriba o elige un tipo visual aquí."}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 rounded-2xl border border-outline-variant/15 bg-surface-container-low p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-violet-100">
+                      <span
+                        className="material-symbols-outlined text-[16px] text-violet-700"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        image
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-on-surface">Visual generado por IA</p>
+                      <p className="text-[11px] text-secondary">La IA crea datos programáticos para el visual</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={includeVisual}
+                    onClick={() => {
+                      setIncludeVisual((v) => !v);
+                      if (includeVisual) setVisualType("");
+                    }}
+                    disabled={isBlockMode}
+                    className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${
+                      includeVisual ? "bg-violet-600" : "bg-surface-container-highest"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200 ${
+                        includeVisual ? "left-5.5" : "left-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {isBlockMode ? (
+                  <p className="text-[11px] text-secondary">
+                    Los bloques IA usan un contexto compartido textual y no combinan visual programático en esta versión.
+                  </p>
+                ) : includeVisual && (
+                  <div className="space-y-2.5 pt-1">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
+                      Tipo de visual
+                    </p>
+                    <div className="grid grid-cols-5 gap-2">
+                      {sortedVisualOptions.map(({ type, label, emoji, areas: relevantAreas }) => {
+                        const isSelected = visualType === type;
+                        const isRelevant = relevantAreas?.includes(selectedAreaCode);
+                        return (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setVisualType(isSelected ? "" : type)}
+                            className={`relative flex flex-col items-center gap-1 rounded-xl border-2 px-1 py-2.5 text-center transition ${
+                              isSelected
+                                ? "border-violet-500 bg-violet-50"
+                                : "border-transparent bg-white hover:border-violet-200 hover:bg-violet-50/40"
+                            }`}
+                          >
+                            {isRelevant && (
+                              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-violet-500" />
+                            )}
+                            <span className="text-base">{emoji}</span>
+                            <span className={`text-[10px] font-semibold leading-tight ${isSelected ? "text-violet-700" : "text-secondary"}`}>
+                              {label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[10px] text-secondary">
+                      <span className="mr-1 inline-block h-2 w-2 rounded-full bg-violet-500 align-middle" />
+                      Sugeridos para {selectedAreaCode || "el área seleccionada"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Contexto adicional */}
             <div className="space-y-1.5">

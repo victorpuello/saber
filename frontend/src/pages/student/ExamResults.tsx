@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import MathText from "../../components/MathText";
 import { fetchSessionResults, type QuestionResultDetail, type SessionResults } from "../../services/examSession";
 
 // ── Performance level helper ─────────────────────────────────────────
@@ -55,9 +56,9 @@ function QuestionResultRow({ question: q }: { question: QuestionResultDetail }) 
             <p className="text-[11px] font-bold uppercase tracking-widest text-secondary">
               Pregunta {q.position}
             </p>
-            <p className="mt-0.5 text-sm font-medium text-on-surface">
-              {q.stem.length > 100 ? q.stem.slice(0, 100) + "…" : q.stem}
-            </p>
+            <MathText as="p" className="mt-0.5 text-sm font-medium text-on-surface">
+              {(q.stem.replace(/\[BLANK\]/gi, '[_________________]').length > 100 ? q.stem.replace(/\[BLANK\]/gi, '[_________________]').slice(0, 100) + "…" : q.stem.replace(/\[BLANK\]/gi, '[_________________]'))}
+            </MathText>
             <div className="mt-2 flex flex-wrap gap-4 text-xs">
               <span>
                 Tu respuesta:{" "}
@@ -88,7 +89,7 @@ function QuestionResultRow({ question: q }: { question: QuestionResultDetail }) 
               <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-rose-600">
                 Tu opción ({q.selected_answer})
               </p>
-              <p>{q.explanation_selected}</p>
+              <MathText as="p">{q.explanation_selected}</MathText>
             </div>
           )}
           {q.explanation_correct && (
@@ -96,7 +97,7 @@ function QuestionResultRow({ question: q }: { question: QuestionResultDetail }) 
               <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
                 Respuesta correcta ({q.correct_answer})
               </p>
-              <p>{q.explanation_correct}</p>
+              <MathText as="p">{q.explanation_correct}</MathText>
             </div>
           )}
         </div>

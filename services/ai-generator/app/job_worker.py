@@ -11,10 +11,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from .config import settings
-from .generator import generate_question
+from .generator import generate_question, generate_question_block
 from .models import AIGenerationLog, GenerationJob, GenerationJobItem
-from .question_bank_client import send_generated_question_to_question_bank
-from .validator import validate_question
+from .question_bank_client import send_generated_block_to_question_bank, send_generated_question_to_question_bank
+from .validator import validate_question, validate_question_block
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +173,7 @@ async def _mark_job_running(
             "model": job.model,
             "competency_code": job.competency_code,
             "cognitive_level": job.cognitive_level,
+            "structure_type": job.structure_type,
             "include_visual": job.include_visual,
             "visual_type": job.visual_type,
             "english_section": job.english_section,
@@ -207,50 +208,80 @@ async def _process_job_item(
         logger.info("Procesando job %s item %s", job_id, item_index)
 
         try:
-            question, token_usage, provider_name, model_name = await asyncio.wait_for(
-                generate_question(
-                    db=db,
-                    area_code=params["area_code"],
-                    provider=params["provider"],
-                    model_override=params["model"],
-                    competency_code=params["competency_code"],
-                    cognitive_level=params["cognitive_level"],
-                    include_visual=params["include_visual"],
-                    visual_type=params["visual_type"],
-                    english_section=params["english_section"],
-                ),
-                timeout=settings.ai_jobs_item_timeout_seconds,
-            )
+            if params["structure_type"] == "QUESTION_BLOCK":
+                block, token_usage, provider_name, model_name = await asyncio.wait_for(
+                    generate_question_block(
+                        db=db,
+                        area_code=params["area_code"],
+                        provider=params["provider"],
+                        model_override=params["model"],
+                        competency_code=params["competency_code"],
+                        cognitive_level=params["cognitive_level"],
+                        english_section=params["english_section"],
+                    ),
+                    timeout=settings.ai_jobs_item_timeout_seconds,
+                )
+                validation = validate_question_block(block, params["area_code"])
+                item.created_question_area_code = block.area_code
+                item.created_question_competency_code = block.competency_code
+                item.created_question_assertion_code = block.assertion_code
+                item.created_question_evidence_code = block.evidence_code
 
-            validation = validate_question(question, params["area_code"])
+                if validation.get("is_valid"):
+                    await send_generated_block_to_question_bank(block)
+                    item.is_valid = True
+                    item.status = ITEM_STATUS_COMPLETED
+                    job.total_valid += 1
+                else:
+                    item.is_valid = False
+                    item.status = ITEM_STATUS_FAILED
+                    item.error = "Bloque invalido segun validador"
+                    job.total_failed += 1
+            else:
+                question, token_usage, provider_name, model_name = await asyncio.wait_for(
+                    generate_question(
+                        db=db,
+                        area_code=params["area_code"],
+                        provider=params["provider"],
+                        model_override=params["model"],
+                        competency_code=params["competency_code"],
+                        cognitive_level=params["cognitive_level"],
+                        include_visual=params["include_visual"],
+                        visual_type=params["visual_type"],
+                        english_section=params["english_section"],
+                    ),
+                    timeout=settings.ai_jobs_item_timeout_seconds,
+                )
+
+                validation = validate_question(question, params["area_code"])
+                item.created_question_area_code = question.area_code
+                item.created_question_competency_code = question.competency_code
+                item.created_question_assertion_code = question.assertion_code
+                item.created_question_evidence_code = question.evidence_code
+
+                if validation.get("is_valid"):
+                    await send_generated_question_to_question_bank(question)
+                    item.is_valid = True
+                    item.status = ITEM_STATUS_COMPLETED
+                    job.total_valid += 1
+                else:
+                    item.is_valid = False
+                    item.status = ITEM_STATUS_FAILED
+                    item.error = "Pregunta invalida segun validador"
+                    job.total_failed += 1
+
             item.provider = provider_name
             item.model = model_name
             item.token_input = _pick_token(token_usage, "input_tokens", "prompt_tokens")
             item.token_output = _pick_token(token_usage, "output_tokens", "completion_tokens")
-            item.created_question_area_code = question.area_code
-            item.created_question_competency_code = question.competency_code
-            item.created_question_assertion_code = question.assertion_code
-            item.created_question_evidence_code = question.evidence_code
-
             job.total_generated += 1
-
-            if validation.get("is_valid"):
-                await send_generated_question_to_question_bank(question)
-                item.is_valid = True
-                item.status = ITEM_STATUS_COMPLETED
-                job.total_valid += 1
-            else:
-                item.is_valid = False
-                item.status = ITEM_STATUS_FAILED
-                item.error = "Pregunta invalida segun validador"
-                job.total_failed += 1
 
             log = AIGenerationLog(
                 provider=provider_name,
                 model=model_name,
                 area_code=params["area_code"],
                 is_valid=bool(validation.get("is_valid")),
-                score=validation.get("quality_score"),
+                score=validation.get("score"),
                 input_tokens=item.token_input,
                 output_tokens=item.token_output,
                 error=item.error,

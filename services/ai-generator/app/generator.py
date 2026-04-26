@@ -12,13 +12,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .config import settings
 from .key_store import get_decrypted_api_key, get_enabled_providers, get_provider_config
 from .prompts import (
+    BLOCK_SYSTEM_PROMPT,
     ING_COMPONENT_MAP,
     ING_SECTION_COMPETENCE,
     ING_SECTION_DESCRIPTIONS,
+    MAT_SYSTEM_PROMPT,
     SYSTEM_PROMPT,
     build_user_prompt,
 )
-from .schemas import GeneratedMedia, GeneratedQuestion
+from .schemas import GeneratedMedia, GeneratedQuestion, GeneratedQuestionBlock, GeneratedQuestionBlockItem
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,14 @@ IMPORTANTE DE FORMATO:
 - No uses saltos de linea literales dentro de strings; usa una sola linea por campo.
 - Escapa comillas dobles internas con \\\" cuando sea necesario.
 - Manten explanation_correct y explanation_a/b/c/d en maximo 2 frases cada una.
+"""
+
+_BLOCK_STRUCTURE_RETRY_SUFFIX = """
+
+IMPORTANTE DE ESTRUCTURA PARA BLOQUES:
+- El array `items` debe contener entre 2 y 3 subpreguntas completas.
+- Si entregas una sola subpregunta, la respuesta es invalida.
+- Cada item debe incluir stem, opciones, respuesta correcta y explicaciones.
 """
 
 
@@ -256,13 +266,74 @@ def _build_retry_prompt(user_prompt: str) -> str:
     return f"{user_prompt}{_JSON_RETRY_SUFFIX}"
 
 
+def _extract_valid_block_items(data: dict) -> list[dict]:
+    raw_items = data.get("items")
+    if not isinstance(raw_items, list):
+        raise ValueError("El bloque generado no contiene items validos")
+
+    if not 2 <= len(raw_items) <= 3:
+        raise ValueError(
+            f"El bloque generado debe contener entre 2 y 3 items y se recibieron {len(raw_items)}",
+        )
+
+    for index, item in enumerate(raw_items, start=1):
+        if not isinstance(item, dict):
+            raise ValueError(f"El item {index} del bloque generado no es un objeto valido")
+
+    return raw_items
+
+
+def _english_mcer_level(english_section: int | None) -> str | None:
+    if not english_section:
+        return None
+    if english_section == 1:
+        return "A-"
+    if english_section <= 3:
+        return "A1"
+    if english_section <= 5:
+        return "A2"
+    if english_section == 6:
+        return "B1"
+    return "B+"
+
+
+def _english_metadata(
+    *,
+    area_code: str,
+    english_section: int | None,
+    assertion_statement: str,
+) -> tuple[str | None, str | None, dict | None]:
+    if area_code != "ING" or not english_section:
+        return None, None, None
+
+    mcer_level = _english_mcer_level(english_section)
+    component_name = ING_COMPONENT_MAP.get(english_section)
+    dce_metadata = {
+        "competence": ING_SECTION_COMPETENCE.get(english_section, "linguistica"),
+        "assertion": assertion_statement,
+        "cognitive_level": (
+            "analisis_sintesis" if english_section in (6, 7)
+            else "comprension_aplicacion" if english_section in (3, 4, 5)
+            else "reconocimiento"
+        ),
+        "grammar_tags": [],
+        "part_description": ING_SECTION_DESCRIPTIONS.get(english_section, ""),
+    }
+    return mcer_level, component_name, dce_metadata
+
+
 # =============================================================================
 # Generación multi-proveedor
 # =============================================================================
 
 
 async def _call_anthropic(
-    api_key: str, model: str, user_prompt: str, max_tokens: int, temperature: float
+    api_key: str,
+    model: str,
+    user_prompt: str,
+    max_tokens: int,
+    temperature: float,
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> tuple[str, dict]:
     """Llama a Anthropic Claude y retorna (texto_respuesta, token_usage)."""
     client = anthropic.AsyncAnthropic(api_key=api_key)
@@ -270,7 +341,7 @@ async def _call_anthropic(
         model=model,
         max_tokens=max_tokens,
         temperature=temperature,
-        system=SYSTEM_PROMPT,
+        system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
     )
     token_usage = {
@@ -281,13 +352,18 @@ async def _call_anthropic(
 
 
 async def _call_gemini(
-    api_key: str, model: str, user_prompt: str, max_tokens: int, temperature: float
+    api_key: str,
+    model: str,
+    user_prompt: str,
+    max_tokens: int,
+    temperature: float,
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> tuple[str, dict]:
     """Llama a Google Gemini y retorna (texto_respuesta, token_usage)."""
     genai.configure(api_key=api_key)
     gemini_model = genai.GenerativeModel(
         model_name=model,
-        system_instruction=SYSTEM_PROMPT,
+        system_instruction=system_prompt,
         generation_config=genai.GenerationConfig(
             max_output_tokens=max_tokens,
             temperature=temperature,
@@ -438,35 +514,11 @@ async def generate_question(
     content_comp = resolved["content_component"]
 
     # MCER level y metadatos específicos de inglés
-    mcer_level = None
-    component_name: str | None = None
-    dce_metadata: dict | None = None
-
-    if area_code == "ING" and english_section:
-        if english_section == 1:
-            mcer_level = "A-"
-        elif english_section <= 3:
-            mcer_level = "A1"
-        elif english_section <= 5:
-            mcer_level = "A2"
-        elif english_section == 6:
-            mcer_level = "B1"
-        else:
-            mcer_level = "B+"
-
-        component_name = ING_COMPONENT_MAP.get(english_section)
-
-        dce_metadata = {
-            "competence": ING_SECTION_COMPETENCE.get(english_section, "linguistica"),
-            "assertion": assertion.get("statement", ""),
-            "cognitive_level": (
-                "analisis_sintesis" if english_section in (6, 7)
-                else "comprension_aplicacion" if english_section in (3, 4, 5)
-                else "reconocimiento"
-            ),
-            "grammar_tags": [],
-            "part_description": ING_SECTION_DESCRIPTIONS.get(english_section, ""),
-        }
+    mcer_level, component_name, dce_metadata = _english_metadata(
+        area_code=area_code,
+        english_section=english_section,
+        assertion_statement=assertion.get("statement", ""),
+    )
 
     user_prompt = build_user_prompt(
         area_code=area_code,
@@ -478,12 +530,14 @@ async def generate_question(
         mcer_level=mcer_level,
         include_visual=include_visual,
         visual_type=visual_type,
+        structure_type="INDIVIDUAL",
     )
 
     retry_prompt = _build_retry_prompt(user_prompt)
     data: dict | None = None
     token_usage: dict = {}
     last_parse_error: ValueError | None = None
+    active_system_prompt = MAT_SYSTEM_PROMPT if area_code == "MAT" else SYSTEM_PROMPT
 
     for attempt in (1, 2):
         attempt_prompt = user_prompt if attempt == 1 else retry_prompt
@@ -496,6 +550,7 @@ async def generate_question(
                 attempt_prompt,
                 max_tokens,
                 attempt_temperature,
+                active_system_prompt,
             )
         elif provider_name == "gemini":
             raw_text, token_usage = await _call_gemini(
@@ -504,6 +559,7 @@ async def generate_question(
                 attempt_prompt,
                 max_tokens,
                 attempt_temperature,
+                active_system_prompt,
             )
         else:
             msg = f"Proveedor no implementado: {provider_name}"
@@ -610,6 +666,8 @@ async def generate_question(
         content_component_code=content_comp.get("code") if content_comp else None,
         context=data["context"],
         context_type=data["context_type"],
+        context_category=data.get("context_category"),
+        tags=data.get("tags") if isinstance(data.get("tags"), list) else None,
         stem=data["stem"],
         option_a=data["option_a"],
         option_b=data["option_b"],
@@ -631,6 +689,172 @@ async def generate_question(
     )
 
     return question, token_usage, provider_name, model_name
+
+
+async def generate_question_block(
+    *,
+    db: AsyncSession,
+    area_code: str,
+    provider: str | None = None,
+    model_override: str | None = None,
+    competency_code: str | None = None,
+    cognitive_level: int | None = None,
+    english_section: int | None = None,
+) -> tuple[GeneratedQuestionBlock, dict, str, str]:
+    provider_name = provider or settings.default_provider
+    provider_config = await get_provider_config(db, provider_name)
+
+    api_key: str | None = None
+    if provider is not None:
+        if not provider_config or not provider_config.is_enabled:
+            msg = f"Proveedor '{provider_name}' no disponible o deshabilitado"
+            raise ValueError(msg)
+        api_key = await get_decrypted_api_key(db, provider_name)
+    else:
+        if provider_config and provider_config.is_enabled:
+            try:
+                api_key = await get_decrypted_api_key(db, provider_name)
+            except ValueError:
+                logger.warning(
+                    "Proveedor default '%s' sin API key válida; se buscará fallback",
+                    provider_name,
+                )
+
+        if api_key is None:
+            enabled_providers = await get_enabled_providers(db)
+            fallback_found = False
+            for candidate in enabled_providers:
+                try:
+                    candidate_key = await get_decrypted_api_key(db, candidate.provider)
+                except ValueError:
+                    continue
+
+                provider_name = candidate.provider
+                provider_config = candidate
+                api_key = candidate_key
+                fallback_found = True
+                logger.info("Usando proveedor fallback para bloque: %s", provider_name)
+                break
+
+            if not fallback_found or provider_config is None or api_key is None:
+                raise ValueError("No hay proveedores habilitados con API key configurada")
+
+    if model_override:
+        model_name = model_override
+    else:
+        model_name = provider_config.default_model
+    max_tokens = provider_config.max_tokens
+    temperature = provider_config.temperature
+
+    taxonomy = await _fetch_taxonomy()
+    resolved = _resolve_taxonomy_ids(taxonomy, area_code, competency_code, cognitive_level)
+
+    comp = resolved["competency"]
+    assertion = resolved["assertion"]
+    evidence = resolved["evidence"]
+    content_comp = resolved["content_component"]
+
+    mcer_level, component_name, dce_metadata = _english_metadata(
+        area_code=area_code,
+        english_section=english_section,
+        assertion_statement=assertion.get("statement", ""),
+    )
+
+    user_prompt = build_user_prompt(
+        area_code=area_code,
+        competency_name=comp.get("name", ""),
+        assertion_statement=assertion.get("statement", ""),
+        evidence_behavior=evidence.get("observable_behavior", "") if evidence else "",
+        content_component=content_comp.get("name") if content_comp else None,
+        english_section=english_section,
+        mcer_level=mcer_level,
+        structure_type="QUESTION_BLOCK",
+    )
+    retry_prompt = _build_retry_prompt(user_prompt) + _BLOCK_STRUCTURE_RETRY_SUFFIX
+
+    data: dict | None = None
+    token_usage: dict = {}
+    last_parse_error: ValueError | None = None
+
+    for attempt in (1, 2):
+        attempt_prompt = user_prompt if attempt == 1 else retry_prompt
+        attempt_temperature = temperature if attempt == 1 else min(temperature, 0.2)
+
+        if provider_name == "anthropic":
+            raw_text, token_usage = await _call_anthropic(
+                api_key,
+                model_name,
+                attempt_prompt,
+                max_tokens,
+                attempt_temperature,
+                BLOCK_SYSTEM_PROMPT,
+            )
+        elif provider_name == "gemini":
+            raw_text, token_usage = await _call_gemini(
+                api_key,
+                model_name,
+                attempt_prompt,
+                max_tokens,
+                attempt_temperature,
+                BLOCK_SYSTEM_PROMPT,
+            )
+        else:
+            raise ValueError(f"Proveedor no implementado: {provider_name}")
+
+        try:
+            data = _parse_provider_json(raw_text)
+            break
+        except ValueError as err:
+            last_parse_error = err
+
+    if data is None:
+        if last_parse_error is not None:
+            raise last_parse_error
+        raise ValueError("No se pudo parsear la respuesta del proveedor")
+
+    raw_items = _extract_valid_block_items(data)
+
+    if dce_metadata is not None:
+        ai_grammar_tags = data.get("grammar_tags", [])
+        if isinstance(ai_grammar_tags, list):
+            dce_metadata["grammar_tags"] = ai_grammar_tags
+
+    items = [
+        GeneratedQuestionBlockItem(
+            stem=item["stem"],
+            option_a=item["option_a"],
+            option_b=item["option_b"],
+            option_c=item["option_c"],
+            option_d=item.get("option_d"),
+            correct_answer=item["correct_answer"],
+            explanation_correct=item["explanation_correct"],
+            explanation_a=item.get("explanation_a", ""),
+            explanation_b=item.get("explanation_b", ""),
+            explanation_c=item.get("explanation_c", ""),
+            explanation_d=item.get("explanation_d"),
+            cognitive_process=item.get("cognitive_process"),
+            difficulty_estimated=item.get("difficulty_estimated"),
+            english_section=english_section,
+            mcer_level=mcer_level,
+            component_name=component_name,
+            dce_metadata=dce_metadata.copy() if dce_metadata else None,
+        )
+        for item in raw_items
+    ]
+
+    block = GeneratedQuestionBlock(
+        area_code=area_code,
+        competency_code=comp.get("code", ""),
+        assertion_code=assertion.get("code", ""),
+        evidence_code=evidence.get("code", "") if evidence else "",
+        content_component_code=content_comp.get("code") if content_comp else None,
+        context=data["context"],
+        context_type=data["context_type"],
+        context_category=data.get("context_category"),
+        items=items,
+    )
+
+    return block, token_usage, provider_name, model_name
 
 
 def invalidate_taxonomy_cache():

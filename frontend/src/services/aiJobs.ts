@@ -15,11 +15,14 @@ export type GenerationJobItemStatus =
   | "FAILED"
   | "CANCELLED";
 
+export type GenerationStructureType = "INDIVIDUAL" | "QUESTION_BLOCK";
+
 export interface CreateGenerationJobPayload {
   area_code: string;
   provider?: "anthropic" | "gemini";
   model?: string;
   count: number;
+  structure_type?: GenerationStructureType;
   include_visual?: boolean;
   visual_type?: string;
   competency_code?: string;
@@ -39,6 +42,7 @@ export interface GenerationJob {
   model: string | null;
   competency_code: string | null;
   cognitive_level: number | null;
+  structure_type: GenerationStructureType;
   include_visual: boolean;
   visual_type: string | null;
   english_section: number | null;

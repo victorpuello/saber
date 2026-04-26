@@ -1,12 +1,14 @@
 """Rutas API CRUD de preguntas + flujo de revisión."""
 
+import json
 import uuid
 from datetime import UTC, datetime
 from math import ceil
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from saber11_shared.auth import CurrentUser, get_current_user, require_role
-from sqlalchemy import func, select
+from sqlalchemy import cast, func, select
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import Area, Question
@@ -46,6 +48,7 @@ async def list_questions(
     competency_id: uuid.UUID | None = None,
     status: QuestionStatus | None = None,
     source: str | None = None,
+    tag: str | None = None,
     group_units: bool = Query(False),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -72,6 +75,10 @@ async def list_questions(
     if source:
         query = query.where(Question.source == source.upper())
         count_query = count_query.where(Question.source == source.upper())
+    if tag:
+        tag_filter = Question.tags.op("@>")(cast(json.dumps([tag]), JSONB))
+        query = query.where(tag_filter)
+        count_query = count_query.where(tag_filter)
 
     offset = (page - 1) * page_size
 
@@ -240,6 +247,7 @@ async def create_question_block(
             content_component_id=data.content_component_id,
             context=data.context,
             context_type=data.context_type,
+            context_category=data.context_category,
             structure_type=StructureType.QUESTION_BLOCK.value,
             block_id=block_id,
             block_item_order=idx,
@@ -325,6 +333,7 @@ async def update_question_block(
         )
         question.context = data.context or shared.context
         question.context_type = data.context_type or shared.context_type
+        question.context_category = data.context_category if data.context_category is not None else shared.context_category
         question.structure_type = StructureType.QUESTION_BLOCK.value
         question.block_id = block_id
         question.block_item_order = idx
@@ -829,6 +838,7 @@ def _serialize_block(items: list[Question]) -> QuestionBlockOut:
         block_size=first.block_size or len(ordered_items),
         context=first.context,
         context_type=first.context_type,
+        context_category=first.context_category,
         area_id=first.area_id,
         competency_id=first.competency_id,
         assertion_id=first.assertion_id,

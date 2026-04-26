@@ -187,6 +187,13 @@ class Question(Base):
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     review_notes: Mapped[str | None] = mapped_column(Text)
 
+    # Categoría de contexto ICFES (Opción A: campo adicional sin migrar context_type)
+    # familiar_personal | laboral_ocupacional | comunitario_social | matematico_cientifico
+    context_category: Mapped[str | None] = mapped_column(String(30))
+
+    # Etiquetas temáticas para filtrado y calibración (ej. ["Funciones lineales", "Porcentajes"])
+    tags: Mapped[list | None] = mapped_column(JSONB)
+
     # Inglés
     english_section: Mapped[int | None] = mapped_column(
         Integer, CheckConstraint("english_section BETWEEN 1 AND 7")

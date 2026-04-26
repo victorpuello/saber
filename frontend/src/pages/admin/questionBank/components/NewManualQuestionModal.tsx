@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { QuestionBlockOut, QuestionOut, QuestionFormData, QuestionBlockFormItem } from "../questionFormTypes";
-import { CONTEXT_TYPE_OPTIONS } from "../questionFormTypes";
+import { CONTEXT_TYPE_OPTIONS, ENGLISH_CONTEXT_PRESET_OPTIONS } from "../questionFormTypes";
 import { useNewQuestionFormViewModel } from "../useNewQuestionFormViewModel";
 import ConfirmModal from "../../../../components/ConfirmModal";
 import { API_BASE } from "../../../../services/api";
@@ -113,6 +113,9 @@ export default function NewManualQuestionModal({
     editQuestionId,
     editBlockId,
   });
+  const contextTypeOptions = vm.isEnglish
+    ? CONTEXT_TYPE_OPTIONS.filter((option) => ["continuous_text", "react_component", "cloze_text"].includes(option.value))
+    : CONTEXT_TYPE_OPTIONS;
 
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null);
@@ -269,6 +272,35 @@ export default function NewManualQuestionModal({
                 <label className="text-[10px] font-bold uppercase tracking-[0.14em] text-secondary">
                   Tipo de contexto
                 </label>
+                {vm.isEnglish && (
+                  <div className="mb-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                    {ENGLISH_CONTEXT_PRESET_OPTIONS.map((option) => {
+                      const currentSection = Number(vm.formData.english_section || 0);
+                      const isSelected =
+                        vm.formData.context_type === option.contextType
+                        && currentSection === option.englishSection;
+
+                      return (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => {
+                            vm.updateField("context_type", option.contextType);
+                            vm.updateField("english_section", String(option.englishSection));
+                          }}
+                          className={`rounded-xl border-2 px-3 py-2.5 text-left transition ${
+                            isSelected
+                              ? "border-primary bg-primary-fixed"
+                              : "border-transparent bg-white hover:border-primary/20 hover:bg-primary-fixed/30"
+                          }`}
+                        >
+                          <div className="text-[12px] font-bold text-on-surface">{option.label}</div>
+                          <div className="mt-1 text-[10px] leading-tight text-secondary">{option.subtitle}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 <div className="relative">
                   <select
                     value={vm.formData.context_type}
@@ -277,7 +309,7 @@ export default function NewManualQuestionModal({
                     className="w-full appearance-none rounded-xl border border-outline-variant/20 bg-white py-3 pl-3.5 pr-9 text-sm font-medium text-on-surface outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
                   >
                     <option value="">Seleccionar</option>
-                    {CONTEXT_TYPE_OPTIONS.map((option) => (
+                    {contextTypeOptions.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
@@ -291,7 +323,9 @@ export default function NewManualQuestionModal({
             <p className="mt-3 text-[12px] leading-relaxed text-secondary">
               {vm.isBlockMode
                 ? "Un bloque comparte un mismo contexto y permite entre 2 y 3 subpreguntas derivadas."
-                : "La estructura individual crea una sola pregunta evaluable con cualquiera de los 8 contextos disponibles."}
+                : vm.isEnglish
+                  ? "En Inglés puedes usar presets por sección para cargar los tipos exclusivos y luego ajustar la sección si hace falta."
+                  : "La estructura individual crea una sola pregunta evaluable con cualquiera de los 8 contextos disponibles."}
             </p>
           </section>
 

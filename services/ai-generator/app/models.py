@@ -94,6 +94,7 @@ class GenerationJob(Base):
     model: Mapped[str | None] = mapped_column(String(100))
     competency_code: Mapped[str | None] = mapped_column(String(30))
     cognitive_level: Mapped[int | None] = mapped_column(Integer)
+    structure_type: Mapped[str] = mapped_column(String(20), default="INDIVIDUAL", nullable=False)
     include_visual: Mapped[bool] = mapped_column(Boolean, default=False)
     visual_type: Mapped[str | None] = mapped_column(String(50))
     english_section: Mapped[int | None] = mapped_column(Integer)

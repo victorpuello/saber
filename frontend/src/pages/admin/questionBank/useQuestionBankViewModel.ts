@@ -11,8 +11,6 @@ import {
   submitForReview,
   submitBlockForReview,
   deleteQuestion,
-  fetchEnglishAudit,
-  type EnglishAudit,
   type QuestionSummary,
   type QuestionStats,
 } from "../../../services/questions";
@@ -91,8 +89,11 @@ function mapQuestionSummaryToRow(
       question.difficulty_estimated != null ? Number(question.difficulty_estimated) : null,
     ),
     context: "",
+    contextType: question.context_type,
+    componentName: null,
     stem,
     options: [],
+    tags: question.tags ?? null,
   };
 }
 
@@ -170,7 +171,6 @@ export function useQuestionBankViewModel() {
 
   // Stats
   const [stats, setStats] = useState<QuestionStats | null>(null);
-  const [englishAudit, setEnglishAudit] = useState<EnglishAudit | null>(null);
 
   // Filters
   const areaOptions = useMemo(
@@ -185,6 +185,7 @@ export function useQuestionBankViewModel() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
 
   // Loading guard
   const loadingRef = useRef(false);
@@ -193,7 +194,6 @@ export function useQuestionBankViewModel() {
   useEffect(() => {
     fetchAreas(authFetch).then(setAreas).catch(() => {});
     fetchQuestionStats(authFetch).then(setStats).catch(() => {});
-    fetchEnglishAudit(authFetch).then(setEnglishAudit).catch(() => {});
   }, [authFetch]);
 
   // ── Load questions when filters/page change ────────────────────────
@@ -217,6 +217,7 @@ export function useQuestionBankViewModel() {
     listQuestions(authFetch, {
       area_id: selectedArea?.id,
       status: statusBE,
+      tag: tagFilter.trim() || undefined,
       group_units: true,
       page: currentPage,
       page_size: ITEMS_PER_PAGE,
@@ -237,7 +238,7 @@ export function useQuestionBankViewModel() {
         setLoading(false);
         loadingRef.current = false;
       });
-  }, [authFetch, filters.area, filters.estado, currentPage, areas, areaLookup]);
+  }, [authFetch, filters.area, filters.estado, tagFilter, currentPage, areas, areaLookup]);
 
   // ── Client-side search on loaded questions ─────────────────────────
   const displayedQuestions = useMemo(() => {
@@ -247,7 +248,8 @@ export function useQuestionBankViewModel() {
       (r) =>
         r.code.toLowerCase().includes(q) ||
         r.enunciado.toLowerCase().includes(q) ||
-        r.stem.toLowerCase().includes(q),
+        r.stem.toLowerCase().includes(q) ||
+        (r.tags ?? []).some((t) => t.toLowerCase().includes(q)),
     );
   }, [questions, searchQuery]);
 
@@ -268,6 +270,7 @@ export function useQuestionBankViewModel() {
       estado: ESTADO_OPTIONS[0],
     });
     setSearchQuery("");
+    setTagFilter("");
     setCurrentPage(1);
   }, []);
 
@@ -276,7 +279,6 @@ export function useQuestionBankViewModel() {
     // Force re-fetch by toggling a dummy state
     setCurrentPage((p) => p);
     fetchQuestionStats(authFetch).then(setStats).catch(() => {});
-    fetchEnglishAudit(authFetch).then(setEnglishAudit).catch(() => {});
     // Re-trigger question load
     loadingRef.current = false;
     const selectedArea =
@@ -292,6 +294,7 @@ export function useQuestionBankViewModel() {
     return listQuestions(authFetch, {
       area_id: selectedArea?.id,
       status: statusBE,
+      tag: tagFilter.trim() || undefined,
       group_units: true,
       page: currentPage,
       page_size: ITEMS_PER_PAGE,
@@ -307,7 +310,7 @@ export function useQuestionBankViewModel() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [authFetch, filters.area, filters.estado, currentPage, areas, areaLookup]);
+  }, [authFetch, filters.area, filters.estado, tagFilter, currentPage, areas, areaLookup]);
 
   const handleReview = useCallback(
     async (questionId: string, action: "APPROVE" | "REJECT", notes?: string) => {
@@ -368,8 +371,9 @@ export function useQuestionBankViewModel() {
     setCurrentPage,
     searchQuery,
     setSearchQuery,
+    tagFilter,
+    setTagFilter,
     refreshData,
-    englishAudit,
     handleReview,
     handleSubmitForReview,
     handleReviewBlock,

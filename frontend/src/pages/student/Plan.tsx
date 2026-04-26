@@ -612,7 +612,7 @@ export default function StudentPlanPage() {
                   {areaLabel(session.unit.area_code)}
                 </span>
               </div>
-              <p className="mb-4 text-[15px] font-medium leading-[1.65] text-on-surface">{q.stem}</p>
+              <p className="mb-4 text-[15px] font-medium leading-[1.65] text-on-surface">{q.stem.replace(/\[BLANK\]/gi, '[_________________]')}</p>
               <div className="flex flex-col gap-2">
                 {opts.map(({ key, text }) => {
                   const isSelected = session.selected === key;

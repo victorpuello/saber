@@ -69,6 +69,11 @@ class GenerationJobItemStatus(str, Enum):
     cancelled = "CANCELLED"
 
 
+class StructureType(str, Enum):
+    individual = "INDIVIDUAL"
+    question_block = "QUESTION_BLOCK"
+
+
 # =============================================================================
 # Request / Response
 # =============================================================================
@@ -129,6 +134,7 @@ class CreateGenerationJobRequest(BaseModel):
     provider: AIProvider | None = None
     model: str | None = None
     count: int = Field(ge=1, le=20, description="Cantidad de preguntas a generar")
+    structure_type: StructureType = StructureType.individual
     include_visual: bool = False
     visual_type: MediaType | None = None
     competency_code: str | None = None
@@ -163,6 +169,7 @@ class GeneratedQuestion(BaseModel):
     # Estructura tripartita
     context: str
     context_type: str
+    context_category: str | None = None
     stem: str
 
     # Opciones
@@ -182,6 +189,7 @@ class GeneratedQuestion(BaseModel):
     # Metadatos
     cognitive_process: str | None = None
     difficulty_estimated: float | None = Field(None, ge=0, le=1)
+    tags: list[str] | None = None
 
     # Inglés
     english_section: int | None = None
@@ -191,6 +199,38 @@ class GeneratedQuestion(BaseModel):
 
     # Visual programático (opcional)
     media: GeneratedMedia | None = None
+
+
+class GeneratedQuestionBlockItem(BaseModel):
+    stem: str
+    option_a: str
+    option_b: str
+    option_c: str
+    option_d: str | None = None
+    correct_answer: str = Field(pattern=r"^[A-D]$")
+    explanation_correct: str
+    explanation_a: str | None = None
+    explanation_b: str | None = None
+    explanation_c: str | None = None
+    explanation_d: str | None = None
+    cognitive_process: str | None = None
+    difficulty_estimated: float | None = Field(None, ge=0, le=1)
+    english_section: int | None = None
+    mcer_level: str | None = None
+    component_name: str | None = None
+    dce_metadata: dict | None = None
+
+
+class GeneratedQuestionBlock(BaseModel):
+    area_code: str
+    competency_code: str
+    assertion_code: str
+    evidence_code: str
+    content_component_code: str | None = None
+    context: str
+    context_type: str
+    context_category: str | None = None
+    items: list[GeneratedQuestionBlockItem] = Field(min_length=2, max_length=3)
 
 
 class GenerateResponse(BaseModel):
@@ -247,6 +287,7 @@ class GenerationJobResponse(BaseModel):
     model: str | None = None
     competency_code: str | None = None
     cognitive_level: int | None = None
+    structure_type: StructureType = StructureType.individual
     include_visual: bool
     visual_type: str | None = None
     english_section: int | None = None
