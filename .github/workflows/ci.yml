@@ -29,16 +29,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
       - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: pnpm
           cache-dependency-path: gateway/pnpm-lock.yaml
-
-      - name: Instalar pnpm
-        run: |
-          npm install --global pnpm@10
-          pnpm --version
 
       - run: pnpm install --frozen-lockfile
 
@@ -64,16 +64,16 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
       - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Instalar pnpm
-        run: |
-          npm install --global pnpm@10
-          pnpm --version
 
       - run: pnpm install --frozen-lockfile
 
